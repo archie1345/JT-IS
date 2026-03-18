@@ -48,6 +48,10 @@ auth.json
 .phpactor.json
 .phpunit.result.cache
 Homestead.json
+
+# Database secrets - never commit passwords
+db/password.txt
+
 Homestead.yaml
 npm-debug.log
 yarn-error.log

@@ -11,8 +11,63 @@ services:
   server:
     build:
       context: .
+    container_name: jte-server
     ports:
-      - 9000:80
+      - "9000:80"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=laravel
+      - DB_USERNAME=laravel
+      - DB_PASSWORD_FILE=/run/secrets/db-password
+  db:
+    image: mysql:8.0
+    restart: always
+    container_name: jte-db
+    secrets:
+      - db-password
+    volumes:
+      - db-data:/var/lib/mysql
+    environment:
+      - MYSQL_DATABASE=laravel
+      - MYSQL_USER=laravel
+      - MYSQL_PASSWORD_FILE=/run/secrets/db-password
+      - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/db-password
+    expose:
+      - 3306
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    restart: always
+    container_name: jte-phpmyadmin
+    ports:
+      - "9468:80"
+    depends_on:
+      - db
+    environment:
+      - PMA_HOST=db
+      - PMA_USER=laravel
+      - PMA_PASSWORD_FILE=/run/secrets/db-password
+      - PMA_ROOT_PASSWORD_FILE=/run/secrets/db-password
+    secrets:
+      - db-password
+
+volumes:
+  db-data:
+
+secrets:
+  db-password:
+    file: db/password.txt
 
 # The commented out section below is an example of how to define a PostgreSQL
 # database that your application can use. `depends_on` tells Docker Compose to

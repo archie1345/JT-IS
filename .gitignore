@@ -43,6 +43,8 @@ auth.json
 /vendor
 .DS_Store
 .env
+.env.example
+laravel
 .env.backup
 .env.production
 .phpactor.json

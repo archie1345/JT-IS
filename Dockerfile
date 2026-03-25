@@ -3,7 +3,7 @@
 ############################
 # Dependencies stage
 ############################
-FROM php:8.5 as deps
+FROM php:8.3 as deps
 
 WORKDIR /app
 
@@ -29,13 +29,13 @@ COPY composer.json composer.lock ./
 RUN composer install \
     --no-interaction \
     --prefer-dist \
-    --optimize-autoloader \
-    --no-scripts
+    --optimize-autoloader 
+    #\ --no-scripts
 
 ############################
 # Application stage
 ############################
-FROM php:8.5-apache as final
+FROM php:8.3-apache as final
 
 WORKDIR /var/www/html
 
@@ -49,6 +49,16 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install gd zip pdo pdo_mysql bcmath \
     && a2enmod rewrite
 
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+RUN apt-get update && apt-get install -y \
+    git curl unzip \
+    nodejs npm \
+    && docker-php-ext-install pdo pdo_mysql
+
+RUN mkdir -p /var/www/.npm && chown -R www-data:www-data /var/www
+
+WORKDIR /var/www/html
 # Use production php.ini
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 

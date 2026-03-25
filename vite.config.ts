@@ -5,6 +5,11 @@ import laravel from 'laravel-vite-plugin';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+    server: {
+        host: true,
+        port: 5173,
+        strictPort: true,
+    },
     plugins: [
         laravel({
             input: ['resources/js/app.ts'],
@@ -22,6 +27,17 @@ export default defineConfig({
         }),
         wayfinder({
             formVariants: true,
+            // artisanCommand: [
+            //     'docker',
+            //     'compose',
+            //     'exec',
+            //     '-T',
+            //     'server',
+            //     'php',
+            //     'artisan',
+            //     'wayfinder:generate',
+            //     '--with-form',
+            // ],
         }),
     ],
 });

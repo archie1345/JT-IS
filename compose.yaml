@@ -14,6 +14,7 @@ services:
     container_name: jte-server
     ports:
       - "9000:80"
+      - "5173:5173"
     volumes:
       - .:/var/www/html
     depends_on:
@@ -25,18 +26,7 @@ services:
       - DB_DATABASE=laravel
       - DB_USERNAME=laravel
       - DB_PASSWORD_FILE=/run/secrets/db-password
-  node:
-    image: node:20
-    container_name: jte-node
-    working_dir: /var/www/html
-    user: node
-    volumes:
-      - .:/var/www/html
-    ports:
-      - "5173:5173"
-    depends_on:
-      - server
-    command: sh -c "npm install && npm run dev"
+    # command: sh -c "npm install && npm run dev"
   db:
     image: mysql:8.0
     restart: always

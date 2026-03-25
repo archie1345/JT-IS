@@ -1,9 +1,9 @@
-# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1.4
 
 ############################
 # Dependencies stage
 ############################
-FROM php:8.3 as deps
+FROM php:8.4 as deps
 
 WORKDIR /app
 
@@ -16,8 +16,8 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg62-turbo-dev \
     libfreetype6-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd zip pdo pdo_mysql bcmath
+ && docker-php-ext-configure gd --with-freetype --with-jpeg \
+ && docker-php-ext-install gd zip pdo pdo_mysql bcmath
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -29,13 +29,13 @@ COPY composer.json composer.lock ./
 RUN composer install \
     --no-interaction \
     --prefer-dist \
-    --optimize-autoloader 
-    #\ --no-scripts
+    --optimize-autoloader \
+    --no-scripts
 
 ############################
 # Application stage
 ############################
-FROM php:8.3-apache as final
+FROM php:8.4-apache as final
 
 WORKDIR /var/www/html
 
@@ -45,20 +45,25 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg62-turbo-dev \
     libfreetype6-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd zip pdo pdo_mysql bcmath \
-    && a2enmod rewrite
+ && docker-php-ext-configure gd --with-freetype --with-jpeg \
+ && docker-php-ext-install gd zip pdo pdo_mysql bcmath \
+ && a2enmod rewrite
 
+# Copy Composer from deps stage
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+# Additional runtime tools
 RUN apt-get update && apt-get install -y \
-    git curl unzip \
-    nodejs npm \
-    && docker-php-ext-install pdo pdo_mysql
+    git \
+    curl \
+    unzip \
+    nodejs \
+    npm \
+ && docker-php-ext-install pdo pdo_mysql
 
+# Set npm cache permissions
 RUN mkdir -p /var/www/.npm && chown -R www-data:www-data /var/www
 
-WORKDIR /var/www/html
 # Use production php.ini
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 

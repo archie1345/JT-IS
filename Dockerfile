@@ -1,4 +1,15 @@
-# syntax=docker/dockerfile:1.4
+# syntax=docker/dockerfile:1.5
+
+
+############################
+# Node stage (New)
+############################
+FROM node:20 as node-deps
+WORKDIR /app
+COPY package*.json vite.config.ts ./
+RUN npm install
+COPY resources/ resources/
+RUN npm run build
 
 ############################
 # Dependencies stage
@@ -49,16 +60,23 @@ RUN apt-get update && apt-get install -y \
  && docker-php-ext-install gd zip pdo pdo_mysql bcmath \
  && a2enmod rewrite
 
+RUN docker-php-ext-install opcache
+
+
+# RUN apt-get update && apt-get install -y \
+#     libzip-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
+#     git curl unzip nodejs npm \
+#  && docker-php-ext-configure gd --with-freetype --with-jpeg \
+#  && docker-php-ext-install gd zip pdo pdo_mysql bcmath opcache a2enmod rewrite
+
+
 # Copy Composer from deps stage
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Additional runtime tools
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    unzip \
-    nodejs \
-    npm \
+RUN apt-get update && apt-get install -y git curl unzip \
+ && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+ && apt-get install -y nodejs \
  && docker-php-ext-install pdo pdo_mysql
 
 # Set npm cache permissions
@@ -81,16 +99,30 @@ RUN echo '<VirtualHost *:80>' > /etc/apache2/sites-available/000-default.conf &&
     echo '            RewriteRule ^ index.php [QSA,L]' >> /etc/apache2/sites-available/000-default.conf && \
     echo '        </IfModule>' >> /etc/apache2/sites-available/000-default.conf && \
     echo '    </Directory>' >> /etc/apache2/sites-available/000-default.conf && \
-    echo '</VirtualHost>' >> /etc/apache2/sites-available/000-default.conf
+    echo '</VirtualHost>' >> /etc/apache2/sites-available/000-default.conf && \
+    echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
+    RUN { \
+        echo 'opcache.memory_consumption=128'; \
+        echo 'opcache.interned_strings_buffer=8'; \
+        echo 'opcache.max_accelerated_files=4000'; \
+        echo 'opcache.revalidate_freq=0'; \
+        echo 'opcache.fast_shutdown=1'; \
+        } > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
 # Copy vendor from deps stage
 COPY --from=deps /app/vendor ./vendor
 
-# Copy application
+# Copy Node dependencies
+COPY --from=node-deps /app/public/build ./public/build
+
+# Copy application code
 COPY . .
 
-# Set permissions (important for Laravel)
-RUN chown -R www-data:www-data . && \
-    chown -R www-data:www-data /var/www/html
+# Ensure permissions are set as ROOT before switching user
+USER root
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-USER www-data
+# Now switch to the limited user
+# USER www-data

@@ -14,9 +14,10 @@ services:
     container_name: jte-server
     ports:
       - "9000:80"
-      - "5173:5173"
+      # - "5173:5173"
     volumes:
       - .:/var/www/html
+      - /var/www/html/node_modules
     depends_on:
       db:
         condition: service_healthy
@@ -26,7 +27,29 @@ services:
       - DB_DATABASE=laravel
       - DB_USERNAME=laravel
       - DB_PASSWORD_FILE=/run/secrets/db-password
-    # command: sh -c "npm install && npm run dev"
+    command: >
+      sh -c "
+      composer install --no-interaction --prefer-dist &&
+      php artisan migrate --force &&
+      chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache &&
+      chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache &&
+      apache2-foreground
+      "
+
+  vite:
+    image: node:20-alpine # Much faster, no need to build a Dockerfile!
+    container_name: jte-vite
+    working_dir: /var/www/html
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/var/www/html
+      - /var/www/html/node_modules # Protects container's node_modules
+    # The --host flag is CRITICAL for Vite inside Docker
+    command: sh -c "npm install && npm run dev -- --host"
+    environment:
+      # Helps Vite watch for file changes on Windows/WSL systems
+      - CHOKIDAR_USEPOLLING=true
   db:
     image: mysql:8.0
     restart: always

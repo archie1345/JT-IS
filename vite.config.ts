@@ -12,6 +12,9 @@ export default defineConfig({
         hmr: {
             host: 'localhost',
         },
+        watch: {
+            usePolling: true,
+        },
     },
     plugins: [
         laravel({
@@ -28,19 +31,8 @@ export default defineConfig({
                 },
             },
         }),
-        wayfinder({
-            formVariants: true,
-            // artisanCommand: [
-            //     'docker',
-            //     'compose',
-            //     'exec',
-            //     '-T',
-            //     'server',
-            //     'php',
-            //     'artisan',
-            //     'wayfinder:generate',
-            //     '--with-form',
-            // ],
-        }),
+        // wayfinder({
+        //     formVariants: false,
+        // }),
     ],
 });

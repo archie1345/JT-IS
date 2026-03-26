@@ -1,0 +1,27 @@
+.input-group:focus-within {
+    background-color: #EBEEFF !important;
+    border-color: #81CBFF !important;
+    box-shadow: 0 0 0 0.25rem rgba(129, 203, 255, 0.25);
+    transition: all 0.2s ease-in-out;
+}
+
+.form-control:focus {
+    box-shadow: none;
+    background-color: transparent;
+}
+
+h1{
+    font-size: 3rem !important;
+}
+h2{
+    font-size: 2.5rem !important;
+}
+h3{
+    font-size: 2rem !important;
+}
+h4{
+    font-size: 1.5rem !important;
+}
+h5{
+    font-size: 1.25rem !important;
+}

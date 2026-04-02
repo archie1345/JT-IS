@@ -37,8 +37,8 @@ auth.json
 /public/storage
 /storage/*.key
 /storage/pail
-/resources/js/actions
-/resources/js/routes
+# /resources/js/actions
+# /resources/js/routes
 /resources/js/wayfinder
 /vendor
 .DS_Store
@@ -63,3 +63,4 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+/resources/js/*_original_templates/

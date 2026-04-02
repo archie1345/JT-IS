@@ -5,8 +5,6 @@ import { createApp, h } from 'vue';
 import '../css/app.css';
 import '../css/custom.css';
 import { initializeTheme } from '@/composables/useAppearance';
-import 'bootstrap/dist/css/bootstrap.css'
-import 'bootstrap'
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -27,5 +25,4 @@ createInertiaApp({
     },
 });
 
-// This will set light / dark mode on page load...
 initializeTheme();

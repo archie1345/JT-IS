@@ -1,14 +1,7 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
-import InputError from '@/components/InputError.vue';
-import TextLink from '@/components/TextLink.vue';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
 import AuthBase from '@/layouts/AuthLayout.vue';
-import { login } from '@/routes';
-import { store } from '@/routes/register';
+
 </script>
 
 <template>
@@ -19,90 +12,81 @@ import { store } from '@/routes/register';
         <Head title="Register" />
 
         <Form
-            v-bind="store.form()"
+            action="/register"
+            method="post"
             :reset-on-success="['password', 'password_confirmation']"
             v-slot="{ errors, processing }"
-            class="flex flex-col gap-6"
+            class="space-y-5"
         >
-            <div class="grid gap-6">
-                <div class="grid gap-2">
-                    <Label for="name">Name</Label>
-                    <Input
-                        id="name"
-                        type="text"
-                        required
-                        autofocus
-                        :tabindex="1"
-                        autocomplete="name"
-                        name="name"
-                        placeholder="Full name"
-                    />
-                    <InputError :message="errors.name" />
-                </div>
-
-                <div class="grid gap-2">
-                    <Label for="email">Email address</Label>
-                    <Input
-                        id="email"
-                        type="email"
-                        required
-                        :tabindex="2"
-                        autocomplete="email"
-                        name="email"
-                        placeholder="email@example.com"
-                    />
-                    <InputError :message="errors.email" />
-                </div>
-
-                <div class="grid gap-2">
-                    <Label for="password">Password</Label>
-                    <Input
-                        id="password"
-                        type="password"
-                        required
-                        :tabindex="3"
-                        autocomplete="new-password"
-                        name="password"
-                        placeholder="Password"
-                    />
-                    <InputError :message="errors.password" />
-                </div>
-
-                <div class="grid gap-2">
-                    <Label for="password_confirmation">Confirm password</Label>
-                    <Input
-                        id="password_confirmation"
-                        type="password"
-                        required
-                        :tabindex="4"
-                        autocomplete="new-password"
-                        name="password_confirmation"
-                        placeholder="Confirm password"
-                    />
-                    <InputError :message="errors.password_confirmation" />
-                </div>
-
-                <Button
-                    type="submit"
-                    class="mt-2 w-full"
-                    tabindex="5"
-                    :disabled="processing"
-                    data-test="register-user-button"
+            <div>
+                <label for="name" class="mb-2 block text-sm font-medium text-slate-700">Name</label>
+                <input
+                    id="name"
+                    type="text"
+                    name="name"
+                    required
+                    autofocus
+                    autocomplete="name"
+                    placeholder="Full name"
+                    class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:outline-none"
                 >
-                    <Spinner v-if="processing" />
-                    Create account
-                </Button>
+                <p v-if="errors.name" class="mt-2 text-sm text-red-600">{{ errors.name }}</p>
             </div>
 
-            <div class="text-center text-sm text-muted-foreground">
+            <div>
+                <label for="email" class="mb-2 block text-sm font-medium text-slate-700">Email address</label>
+                <input
+                    id="email"
+                    type="email"
+                    name="email"
+                    required
+                    autocomplete="email"
+                    placeholder="email@example.com"
+                    class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:outline-none"
+                >
+                <p v-if="errors.email" class="mt-2 text-sm text-red-600">{{ errors.email }}</p>
+            </div>
+
+            <div>
+                <label for="password" class="mb-2 block text-sm font-medium text-slate-700">Password</label>
+                <input
+                    id="password"
+                    type="password"
+                    name="password"
+                    required
+                    autocomplete="new-password"
+                    placeholder="Password"
+                    class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:outline-none"
+                >
+                <p v-if="errors.password" class="mt-2 text-sm text-red-600">{{ errors.password }}</p>
+            </div>
+
+            <div>
+                <label for="password_confirmation" class="mb-2 block text-sm font-medium text-slate-700">Confirm password</label>
+                <input
+                    id="password_confirmation"
+                    type="password"
+                    name="password_confirmation"
+                    required
+                    autocomplete="new-password"
+                    placeholder="Confirm password"
+                    class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:outline-none"
+                >
+                <p v-if="errors.password_confirmation" class="mt-2 text-sm text-red-600">{{ errors.password_confirmation }}</p>
+            </div>
+
+            <button
+                type="submit"
+                class="inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
+                :disabled="processing"
+            >
+                {{ processing ? 'Creating account...' : 'Create account' }}
+            </button>
+
+            <p class="text-center text-sm text-slate-500">
                 Already have an account?
-                <TextLink
-                    :href="login()"
-                    class="underline underline-offset-4"
-                    :tabindex="6"
-                    >Log in</TextLink
-                >
-            </div>
+                <a href="/login" class="font-medium text-slate-900 underline underline-offset-4">Log in</a>
+            </p>
         </Form>
     </AuthBase>
 </template>

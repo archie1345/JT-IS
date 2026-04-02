@@ -16,8 +16,22 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
+import Collapsible from './ui/collapsible/Collapsible.vue';
+import SidebarGroup from './ui/sidebar/SidebarGroup.vue';
+import SidebarGroupLabel from './ui/sidebar/SidebarGroupLabel.vue';
+import CollapsibleTrigger from './ui/collapsible/CollapsibleTrigger.vue';
 
 const mainNavItems: NavItem[] = [
+    {
+        title: 'Dashboard',
+        href: dashboard(),
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Dashboard',
+        href: dashboard(),
+        icon: LayoutGrid,
+    },
     {
         title: 'Dashboard',
         href: dashboard(),
@@ -53,7 +67,25 @@ const footerNavItems: NavItem[] = [
             </SidebarMenu>
         </SidebarHeader>
 
-        <SidebarContent>
+        <SidebarContent >
+            <Collapsible 
+            v-for="(item, index) in mainNavItems"
+                :key="index"
+                :title="item.title"
+                :icon="item.icon"
+                :href="item.href">
+                <SidebarGroup>
+                    <SidebarGroupLabel asChild>
+                        <CollapsibleTrigger class="w-full">
+                            <div class="flex items-center gap-2">
+                                <item.icon class="size-4" />
+                                <span>{{ item.title }}</span>
+                            </div>
+                        </CollapsibleTrigger>
+                    </SidebarGroupLabel>
+                </SidebarGroup>
+            </Collapsible>
+            
             <NavMain :items="mainNavItems" />
         </SidebarContent>
 

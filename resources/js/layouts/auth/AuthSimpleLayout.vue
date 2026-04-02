@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import AppLogoIcon from '@/components/AppLogoIcon.vue';
-import { home } from '@/routes';
 
 defineProps<{
     title?: string;
@@ -10,33 +8,25 @@ defineProps<{
 </script>
 
 <template>
-    <div
-        class="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10"
-    >
-        <div class="w-full max-w-sm">
-            <div class="flex flex-col gap-8">
-                <div class="flex flex-col items-center gap-4">
-                    <Link
-                        :href="home()"
-                        class="flex flex-col items-center gap-2 font-medium"
-                    >
-                        <div
-                            class="mb-1 flex h-9 w-9 items-center justify-center rounded-md"
-                        >
-                            <AppLogoIcon
-                                class="size-9 fill-current text-[var(--foreground)] dark:text-white"
-                            />
-                        </div>
-                        <span class="sr-only">{{ title }}</span>
-                    </Link>
-                    <div class="space-y-2 text-center">
-                        <h1 class="text-xl font-medium">{{ title }}</h1>
-                        <p class="text-center text-sm text-muted-foreground">
-                            {{ description }}
-                        </p>
-                    </div>
+    <div class="min-h-screen bg-slate-100 px-6 py-10 text-slate-950 sm:px-8 lg:px-12">
+        <div class="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-md items-center">
+            <div class="w-full rounded-[2rem] bg-white p-8 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.35)] sm:p-10">
+                <Link href="/" class="mb-8 inline-flex items-center text-sm font-medium text-slate-500 transition hover:text-slate-900">
+                    Back to home
+                </Link>
+
+                <div class="space-y-2">
+                    <h1 class="text-3xl font-semibold tracking-tight text-slate-900">
+                        {{ title }}
+                    </h1>
+                    <p v-if="description" class="text-sm leading-6 text-slate-500">
+                        {{ description }}
+                    </p>
                 </div>
-                <slot />
+
+                <div class="mt-8">
+                    <slot />
+                </div>
             </div>
         </div>
     </div>

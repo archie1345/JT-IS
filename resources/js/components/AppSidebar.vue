@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-vue-next';
+import { BookOpen, Coins, FolderGit2, GitBranch, House, LayoutGrid, LucideGitBranchPlus, Network, Target } from 'lucide-vue-next';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -20,22 +20,75 @@ import Collapsible from './ui/collapsible/Collapsible.vue';
 import SidebarGroup from './ui/sidebar/SidebarGroup.vue';
 import SidebarGroupLabel from './ui/sidebar/SidebarGroupLabel.vue';
 import CollapsibleTrigger from './ui/collapsible/CollapsibleTrigger.vue';
+import { Tree } from 'reka-ui/namespaced';
+import { TreeRoot } from 'reka-ui';
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: dashboard(),
-        icon: LayoutGrid,
+        icon: House,
     },
     {
-        title: 'Dashboard',
-        href: dashboard(),
+        title: 'test',
+        href: '',
         icon: LayoutGrid,
+        children: [
+            {
+                title: 'Sub Item 1',
+                href: '',
+                icon: LayoutGrid,
+            },
+            {
+                title: 'Sub Item 2',
+                href: '',
+            }
+        ]
     },
     {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
+        title: 'test2',
+        href: '',
+        icon: Coins,
+        children: [
+            {
+                title: 'Sub Item 3',
+                href: '',
+            },
+            {
+                title: 'Sub Item 4',
+                href: '',
+            }
+        ]
+    },
+    {
+        title: 'test2',
+        href: '',
+        icon: Target,
+        children: [
+            {
+                title: 'Sub Item 3',
+                href: '',
+            },
+            {
+                title: 'Sub Item 4',
+                href: '',
+            }
+        ]
+    },
+    {
+        title: 'test2',
+        href: '',
+        icon: Network,
+        children: [
+            {
+                title: 'Sub Item 3',
+                href: '',
+            },
+            {
+                title: 'Sub Item 4',
+                href: '',
+            }
+        ]
     },
 ];
 
@@ -67,25 +120,7 @@ const footerNavItems: NavItem[] = [
             </SidebarMenu>
         </SidebarHeader>
 
-        <SidebarContent >
-            <Collapsible 
-            v-for="(item, index) in mainNavItems"
-                :key="index"
-                :title="item.title"
-                :icon="item.icon"
-                :href="item.href">
-                <SidebarGroup>
-                    <SidebarGroupLabel asChild>
-                        <CollapsibleTrigger class="w-full">
-                            <div class="flex items-center gap-2">
-                                <item.icon class="size-4" />
-                                <span>{{ item.title }}</span>
-                            </div>
-                        </CollapsibleTrigger>
-                    </SidebarGroupLabel>
-                </SidebarGroup>
-            </Collapsible>
-            
+        <SidebarContent >            
             <NavMain :items="mainNavItems" />
         </SidebarContent>
 

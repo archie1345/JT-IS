@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
+<<<<<<< HEAD
 import icons from 'lucide-vue-next';
+=======
+import { BadgeDollarSign, BookOpen, ChartLine, ClipboardList, Coins, CopyCheck, FileCheckIcon, FilesIcon, FileText, FolderGit2, GitBranch, House, LayoutGrid, LucideGitBranchPlus, Network, ReceiptText, Target, User, WalletCards, Wrench } from 'lucide-vue-next';
+>>>>>>> 440a187901df57f3c1251b64832fa48023d2c47e
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -29,6 +33,7 @@ const mainNavSections: NavSection[] = [
         ],
     },
     {
+<<<<<<< HEAD
         label: 'Marketing',
         items: [          
             {
@@ -87,6 +92,72 @@ const mainNavSections: NavSection[] = [
                 icon: icons.CopyCheck,
             },
         ],
+=======
+        title: 'Finance',
+        href: '',
+        icon: WalletCards,
+        children: [
+            {
+                title: 'Billing',
+                href: '',
+                icon: BadgeDollarSign,
+            },
+            {
+                title: 'Cost Realization',
+                href: '',
+                icon: FileCheckIcon,
+            },
+            {
+                title: 'Profit and Loss',
+                href: '',
+                icon: ChartLine,
+            }
+        ]
+    },
+    {
+        title: 'Marketing',
+        href: '',
+        icon: ClipboardList,
+        children: [
+            {
+                title: 'Pipeline',
+                href: '',
+                icon: Network,
+            },
+            {
+                title: 'Client',
+                href: '',
+                icon: User,
+            },
+            {
+                title: 'Report',
+                href: '',
+                icon: FilesIcon,
+            },
+        ]
+    },
+    {
+        title: 'Operational',
+        href: '',
+        icon: Wrench,
+        children: [
+            {
+                title: 'Project Detail',
+                href: '',
+                icon: ReceiptText,
+            },
+            {
+                title: 'RAB & RAP',
+                href: '',
+                icon: FileText,
+            },
+            {
+                title: 'Progress Update',
+                href: '',
+                icon: CopyCheck,
+            }
+        ]
+>>>>>>> 440a187901df57f3c1251b64832fa48023d2c47e
     },
 ];
 

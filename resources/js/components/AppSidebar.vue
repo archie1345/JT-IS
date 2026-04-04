@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Coins, FolderGit2, GitBranch, House, LayoutGrid, LucideGitBranchPlus, Network, Target } from 'lucide-vue-next';
+import icons from 'lucide-vue-next';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -15,80 +15,78 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import type { NavItem } from '@/types';
-import Collapsible from './ui/collapsible/Collapsible.vue';
-import SidebarGroup from './ui/sidebar/SidebarGroup.vue';
-import SidebarGroupLabel from './ui/sidebar/SidebarGroupLabel.vue';
-import CollapsibleTrigger from './ui/collapsible/CollapsibleTrigger.vue';
-import { Tree } from 'reka-ui/namespaced';
-import { TreeRoot } from 'reka-ui';
+import type { NavItem, NavSection } from '@/types';
 
-const mainNavItems: NavItem[] = [
+const mainNavSections: NavSection[] = [
     {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: House,
+        label: null,
+        items: [
+            {
+                title: 'Dashboard',
+                href: dashboard(),
+                icon: icons.Home,
+            },
+        ],
     },
     {
-        title: 'test',
-        href: '',
-        icon: LayoutGrid,
-        children: [
+        label: 'Marketing',
+        items: [          
             {
-                title: 'Sub Item 1',
-                href: '',
-                icon: LayoutGrid,
+                title: 'Billing',
+                href: '/revenue',
+                icon: icons.BadgeDollarSign,
             },
             {
-                title: 'Sub Item 2',
-                href: '',
-            }
-        ]
+                title: 'Cost Realization',
+                href: '/campaigns',
+                icon: icons.FileCheckIcon,
+            },
+            {
+                title: 'Profit and Loss',
+                href: '/audience',
+                icon: icons.ChartLine,
+            },
+        ],
     },
     {
-        title: 'test2',
-        href: '',
-        icon: Coins,
-        children: [
+        label: 'Marketing',
+        items: [
             {
-                title: 'Sub Item 3',
-                href: '',
+                title: 'pipelines',
+                href: '/campaigns',
+                icon: icons.Network,
             },
             {
-                title: 'Sub Item 4',
-                href: '',
-            }
-        ]
+                title: 'Client',
+                href: '/audience',
+                icon: icons.User,
+            },
+            {
+                title: 'reports',
+                href: '/audience',
+                icon: icons.FilesIcon,
+            },
+        ],
     },
     {
-        title: 'test2',
-        href: '',
-        icon: Target,
-        children: [
+        label: 'Operational',
+        items: [
             {
-                title: 'Sub Item 3',
-                href: '',
+                title: 'Project Details',
+                href: '/campaigns',
+                icon: icons.ReceiptText,
             },
             {
-                title: 'Sub Item 4',
-                href: '',
-            }
-        ]
-    },
-    {
-        title: 'test2',
-        href: '',
-        icon: Network,
-        children: [
-            {
-                title: 'Sub Item 3',
-                href: '',
+                title: 'RAB & RAP',
+                href: '/audience',
+                icon: icons.FileText,
             },
             {
-                title: 'Sub Item 4',
-                href: '',
-            }
-        ]
+                title: 'Progress Update',
+                href: '/audience',
+                icon: icons.CopyCheck,
+            },
+        ],
     },
 ];
 
@@ -96,12 +94,12 @@ const footerNavItems: NavItem[] = [
     {
         title: 'Repository',
         href: 'https://github.com/laravel/vue-starter-kit',
-        icon: FolderGit2,
+        icon: icons.FolderGit2,
     },
     {
         title: 'Documentation',
         href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
+        icon: icons.BookOpen,
     },
 ];
 </script>
@@ -120,8 +118,8 @@ const footerNavItems: NavItem[] = [
             </SidebarMenu>
         </SidebarHeader>
 
-        <SidebarContent >            
-            <NavMain :items="mainNavItems" />
+        <SidebarContent>
+            <NavMain :sections="mainNavSections" />
         </SidebarContent>
 
         <SidebarFooter>

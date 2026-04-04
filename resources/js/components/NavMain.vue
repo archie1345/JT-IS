@@ -21,7 +21,7 @@ const { isCurrentUrl } = useCurrentUrl();
     <div>
         <SidebarGroup
             v-for="(section, index) in sections"
-            :key="section.label ?? `section-${index}`"
+            :key="`${section.label ?? '-'}-${index}`"
             class="px-2 py-0"
         >
             <SidebarGroupLabel v-if="section.label">{{ section.label }}</SidebarGroupLabel>

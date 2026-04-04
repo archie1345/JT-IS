@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Coins, FolderGit2, GitBranch, House, LayoutGrid, LucideGitBranchPlus, Network, Target } from 'lucide-vue-next';
+import { BadgeDollarSign, BookOpen, ChartLine, ClipboardList, Coins, CopyCheck, FileCheckIcon, FilesIcon, FileText, FolderGit2, GitBranch, House, LayoutGrid, LucideGitBranchPlus, Network, ReceiptText, Target, User, WalletCards, Wrench } from 'lucide-vue-next';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -30,63 +30,68 @@ const mainNavItems: NavItem[] = [
         icon: House,
     },
     {
-        title: 'test',
+        title: 'Finance',
         href: '',
-        icon: LayoutGrid,
+        icon: WalletCards,
         children: [
             {
-                title: 'Sub Item 1',
+                title: 'Billing',
                 href: '',
-                icon: LayoutGrid,
+                icon: BadgeDollarSign,
             },
             {
-                title: 'Sub Item 2',
+                title: 'Cost Realization',
                 href: '',
+                icon: FileCheckIcon,
+            },
+            {
+                title: 'Profit and Loss',
+                href: '',
+                icon: ChartLine,
             }
         ]
     },
     {
-        title: 'test2',
+        title: 'Marketing',
         href: '',
-        icon: Coins,
+        icon: ClipboardList,
         children: [
             {
-                title: 'Sub Item 3',
+                title: 'Pipeline',
                 href: '',
+                icon: Network,
             },
             {
-                title: 'Sub Item 4',
+                title: 'Client',
                 href: '',
-            }
+                icon: User,
+            },
+            {
+                title: 'Report',
+                href: '',
+                icon: FilesIcon,
+            },
         ]
     },
     {
-        title: 'test2',
+        title: 'Operational',
         href: '',
-        icon: Target,
+        icon: Wrench,
         children: [
             {
-                title: 'Sub Item 3',
+                title: 'Project Detail',
                 href: '',
+                icon: ReceiptText,
             },
             {
-                title: 'Sub Item 4',
+                title: 'RAB & RAP',
                 href: '',
-            }
-        ]
-    },
-    {
-        title: 'test2',
-        href: '',
-        icon: Network,
-        children: [
-            {
-                title: 'Sub Item 3',
-                href: '',
+                icon: FileText,
             },
             {
-                title: 'Sub Item 4',
+                title: 'Progress Update',
                 href: '',
+                icon: CopyCheck,
             }
         ]
     },

@@ -22,7 +22,7 @@ const { isCurrentUrl } = useCurrentUrl();
         <SidebarGroup
             v-for="(section, index) in sections"
             :key="`${section.label ?? '-'}-${index}`"
-            class="px-2 py-0"
+            class="px-2 py-0 rounded-lg"
         >
             <SidebarGroupLabel v-if="section.label">{{ section.label }}</SidebarGroupLabel>
 
@@ -33,12 +33,12 @@ const { isCurrentUrl } = useCurrentUrl();
                 >
                     <SidebarMenuButton
                         as-child
-                        class="transition-all duration-200 ease-out hover:translate-x-1 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:!justify-center group-data-[collapsible=icon]:hover:translate-x-0"
+                        class="my-1 transition-[padding,width] duration-200 delay-[0ms,100ms] ease-linear group-data-[collapsible=icon]:mx-auto"
                         :is-active="item.href ? isCurrentUrl(item.href) : false"
                     >
-                        <Link :href="item.href" class="flex items-center gap-2">
+                        <Link :href="item.href" class="flex min-w-0 items-center gap-2 transition-[gap] duration-200 ease-linear group-data-[collapsible=icon]:gap-0">
                             <component :is="item.icon" class="shrink-0" />
-                            <span class="group-data-[collapsible=icon]:hidden">{{ item.title }}</span>
+                            <span class="block max-w-[12rem] overflow-hidden whitespace-nowrap opacity-100 transition-[max-width,opacity] duration-150 ease-linear group-data-[collapsible=icon]:opacity-0">{{ item.title }}</span>
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>

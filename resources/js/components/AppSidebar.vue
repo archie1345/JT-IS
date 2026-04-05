@@ -59,7 +59,7 @@ const mainNavSections: NavSection[] = [
             {
                 title: 'Client',
                 href: '',
-                icon: icons.User,
+                icon: icons.Users,
             },
             {
                 title: 'Reports',
@@ -78,7 +78,7 @@ const mainNavSections: NavSection[] = [
             },
             {
                 title: 'RAB & RAP',
-                href: '',
+                href: '/rab-rap',
                 icon: icons.FileText,
             },
             {

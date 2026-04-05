@@ -13,6 +13,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('dashboard/layout', [DashboardLayoutController::class, 'store'])
         ->name('dashboard.layout.store');
     Route::inertia('billing-test', 'BillingTest')->name('billing.test');
+    Route::inertia('rab-rap', 'RabRap')->name('rab-rap');
 });
 
 Route::inertia('/prototype', 'Prototype')->name('prototype');

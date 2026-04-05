@@ -33,12 +33,12 @@ const { isCurrentUrl } = useCurrentUrl();
                 >
                     <SidebarMenuButton
                         as-child
-                        class="transition-all duration-200 ease-out hover:translate-x-1"
+                        class="transition-all duration-200 ease-out hover:translate-x-1 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:!justify-center group-data-[collapsible=icon]:hover:translate-x-0"
                         :is-active="item.href ? isCurrentUrl(item.href) : false"
                     >
-                        <Link :href="item.href">
-                            <component :is="item.icon" />
-                            <span>{{ item.title }}</span>
+                        <Link :href="item.href" class="flex items-center gap-2">
+                            <component :is="item.icon" class="shrink-0" />
+                            <span class="group-data-[collapsible=icon]:hidden">{{ item.title }}</span>
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>

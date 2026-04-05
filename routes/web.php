@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DashboardLayoutController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -9,6 +10,9 @@ Route::inertia('/', 'Welcome', [
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+    Route::post('dashboard/layout', [DashboardLayoutController::class, 'store'])
+        ->name('dashboard.layout.store');
+    Route::inertia('billing-test', 'BillingTest')->name('billing.test');
 });
 
 Route::inertia('/prototype', 'Prototype')->name('prototype');

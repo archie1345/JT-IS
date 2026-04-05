@@ -33,7 +33,7 @@ const mainNavSections: NavSection[] = [
         items: [          
             {
                 title: 'Billing',
-                href: '',
+                href: '/billing-test',
                 icon: icons.BadgeDollarSign,
             },
             {

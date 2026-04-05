@@ -52,7 +52,7 @@ const mainNavSections: NavSection[] = [
         label: 'Marketing',
         items: [
             {
-                title: 'pipelines',
+                title: 'Pipelines',
                 href: '',
                 icon: icons.Network,
             },
@@ -62,7 +62,7 @@ const mainNavSections: NavSection[] = [
                 icon: icons.User,
             },
             {
-                title: 'reports',
+                title: 'Reports',
                 href: '',
                 icon: icons.FilesIcon,
             },

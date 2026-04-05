@@ -11,7 +11,10 @@ class DashboardLayoutController extends Controller
     {
         $validated = $request->validate([
             'layout' => ['required', 'array'],
-            'layout.*' => ['string'],
+            'layout.order' => ['required', 'array'],
+            'layout.order.*' => ['string'],
+            'layout.visible' => ['required', 'array'],
+            'layout.visible.*' => ['string'],
         ]);
 
         $request->user()->forceFill([

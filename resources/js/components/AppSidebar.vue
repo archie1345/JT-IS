@@ -33,7 +33,7 @@ const mainNavSections: NavSection[] = [
         items: [          
             {
                 title: 'Billing',
-                href: '/billing-test',
+                href: '',
                 icon: icons.BadgeDollarSign,
             },
             {
@@ -92,14 +92,9 @@ const mainNavSections: NavSection[] = [
 
 const footerNavItems: NavItem[] = [
     {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: icons.FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: icons.BookOpen,
+        title: 'testing',
+        href: '/billing-test',
+        icon: icons.TestTube,
     },
 ];
 </script>

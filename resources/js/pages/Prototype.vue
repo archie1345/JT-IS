@@ -1,8 +1,51 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 
+type UserRole = 'Admin' | 'User' | 'Guest' | 'Moderator';
+type UserStatus = 'Active' | 'Inactive';
+type SortableColumn = 'name' | 'email' | 'username' | 'status' | 'role';
+
+interface User {
+    id: number;
+    name: string;
+    email: string;
+    username: string;
+    status: UserStatus;
+    role: UserRole;
+    joined: string;
+    lastActive: string;
+    avatar?: string;
+    password?: string;
+}
+
+interface UserForm {
+    id: number | null;
+    name: string;
+    email: string;
+    username: string;
+    password: string;
+    role: UserRole;
+    status: UserStatus;
+}
+
+const createEmptyFormUser = (): UserForm => ({
+    id: null,
+    name: '',
+    email: '',
+    username: '',
+    password: '',
+    role: 'User',
+    status: 'Active',
+});
+
+const sortIcons: Record<'asc' | 'desc' | 'idle', string> = {
+    asc: '↑',
+    desc: '↓',
+    idle: '↕',
+};
+
 // Mock data
-const users = ref([
+const users = ref<User[]>([
     { id: 1, name: 'John Smith', email: 'john.smith@gmail.com', username: 'jonny77', status: 'Active', role: 'Admin', joined: 'March 12, 2023', lastActive: '1 minute ago' },
     { id: 2, name: 'Olivia Bennett', email: 'ollyben@gmail.com', username: 'olly659', status: 'Inactive', role: 'User', joined: 'June 27, 2022', lastActive: '1 month ago' },
     { id: 3, name: 'Daniel Warren', email: 'dwarren3@gmail.com', username: 'dwarren3', status: 'Active', role: 'User', joined: 'January 8, 2024', lastActive: '4 days ago' },
@@ -13,9 +56,9 @@ const users = ref([
 
 // Filtering & Sorting State
 const searchQuery = ref('');
-const selectedRole = ref('');
-const selectedStatus = ref('');
-const sortColumn = ref('name');
+const selectedRole = ref<UserRole | ''>('');
+const selectedStatus = ref<UserStatus | ''>('');
+const sortColumn = ref<SortableColumn>('name');
 const sortAscending = ref(true);
 
 // Modal & Form State
@@ -23,19 +66,11 @@ const showModal = ref(false);
 const isEditing = ref(false);
 
 // We use one object for both adding and editing
-const formUser = ref({ 
-    id: null, 
-    name: '', 
-    email: '', 
-    username: '', 
-    password: '', // Kept blank unless typing a new one
-    role: 'User', 
-    status: 'Active' 
-});
+const formUser = ref<UserForm>(createEmptyFormUser());
 
 // --- METHODS ---
 
-const sortBy = (column) => {
+const sortBy = (column: SortableColumn) => {
     if (sortColumn.value === column) {
         sortAscending.value = !sortAscending.value;
     } else {
@@ -47,38 +82,52 @@ const sortBy = (column) => {
 // Open Modal to ADD a new user
 const openAddModal = () => {
     isEditing.value = false;
-    formUser.value = { id: null, name: '', email: '', username: '', password: '', role: 'User', status: 'Active' };
+    formUser.value = createEmptyFormUser();
     showModal.value = true;
 };
 
 // Open Modal to EDIT an existing user
-const openEditModal = (user) => {
+const openEditModal = (user: User) => {
     isEditing.value = true;
     // Spread operator (...) creates a copy so we don't edit the table directly until "Save" is clicked.
-    // We intentionally leave password blank. 
-    formUser.value = { ...user, password: '' }; 
+    // We intentionally leave password blank.
+    formUser.value = { ...user, password: '' };
     showModal.value = true;
 };
 
 // Save User (Handles both Add and Update)
 const saveUser = () => {
     if (isEditing.value) {
+        if (formUser.value.id === null) {
+            return;
+        }
+
         // Find user and update their data
         const index = users.value.findIndex(u => u.id === formUser.value.id);
         if (index !== -1) {
+            const updatedData: Partial<User> = {
+                name: formUser.value.name,
+                email: formUser.value.email,
+                username: formUser.value.username,
+                role: formUser.value.role,
+                status: formUser.value.status,
+            };
+
             // We only update the password in our mock data if they typed a new one
-            const updatedData = { ...formUser.value };
-            if (!updatedData.password) {
-                delete updatedData.password; // Don't overwrite with a blank password
+            if (formUser.value.password) {
+                updatedData.password = formUser.value.password;
             }
+
             // Merge updated data into existing user
             users.value[index] = { ...users.value[index], ...updatedData };
         }
     } else {
+        const { id: _unusedId, ...newUserData } = formUser.value;
+
         // Add new user
         users.value.push({
             id: Date.now(),
-            ...formUser.value,
+            ...newUserData,
             joined: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
             lastActive: 'Just now',
             avatar: `https://ui-avatars.com/api/?name=${formUser.value.name.replace(' ', '+')}&background=random`
@@ -88,8 +137,8 @@ const saveUser = () => {
 };
 
 // Delete a user
-const deleteUser = (id) => {
-    if (confirm("Are you sure you want to delete this user?")) {
+const deleteUser = (id: number) => {
+    if (confirm('Are you sure you want to delete this user?')) {
         users.value = users.value.filter(user => user.id !== id);
     }
 };
@@ -106,9 +155,8 @@ const filteredAndSortedUsers = computed(() => {
     });
 
     result.sort((a, b) => {
-        // Handle sorting if the field might be undefined (like our mock passwords)
-        let valA = (a[sortColumn.value] || '').toLowerCase();
-        let valB = (b[sortColumn.value] || '').toLowerCase();
+        const valA = a[sortColumn.value].toLowerCase();
+        const valB = b[sortColumn.value].toLowerCase();
 
         if (valA < valB) return sortAscending.value ? -1 : 1;
         if (valA > valB) return sortAscending.value ? 1 : -1;

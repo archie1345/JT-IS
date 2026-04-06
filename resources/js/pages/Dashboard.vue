@@ -354,7 +354,7 @@ onBeforeUnmount(() => {
                 No widgets are visible. Turn one back on from the filter above.
             </div>
 
-            <div v-else ref="dashboardList" class="flex flex-col gap-4">
+            <div v-else ref="dashboardList" class="grid grid-cols-1 gap-4 xl:grid-cols-2">
                 <section
                     v-for="widget in visibleWidgets"
                     :key="widget.id"
@@ -418,3 +418,4 @@ onBeforeUnmount(() => {
     opacity: 0.35;
 }
 </style>
+

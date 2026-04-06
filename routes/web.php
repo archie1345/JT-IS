@@ -18,6 +18,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 Route::inertia('/prototype', 'Prototype')->name('prototype');
 // Route::inertia('/prototype/login', 'Login')->name('prototype.login');
-Route::inertia('/dashboard', 'Dashboard')->name('dashboard');
 
 require __DIR__.'/settings.php';

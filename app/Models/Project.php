@@ -89,4 +89,9 @@ class Project extends Model
     {
         return $this->hasMany(FundRequest::class);
     }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(ProjectDocument::class);
+    }
 }

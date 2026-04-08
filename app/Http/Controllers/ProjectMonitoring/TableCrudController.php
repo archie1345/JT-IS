@@ -3,51 +3,139 @@
 namespace App\Http\Controllers\ProjectMonitoring;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controllers\HasMiddleware;
-use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
+use Inertia\Response;
 
 abstract class TableCrudController extends Controller
 {
-    protected string $model;
-    protected string $inertiaView;
+    protected string $table;
 
-    public static function middleware(): array {
-        return [];
+    public function index(Request $request): Response|JsonResponse
+    {
+        $records = $this->query()
+            ->orderByDesc('id')
+            ->paginate(15);
+
+        $view = $this->inertiaView();
+
+        if ($view !== null) {
+            return Inertia::render($view, [
+                'data' => $records,
+            ]);
+        }
+
+        return response()->json($records);
     }
 
-    public function index(Request $request)
+    public function store(Request $request): JsonResponse
     {
-        // MENGGUNAKAN ELOQUENT, BUKAN DB::table()
-        $records = $this->model::latest()->paginate(15);
+        $validated = $request->validate($this->storeRules());
+        $now = now();
 
-        // KEMBALIKAN HALAMAN INERTIA VUE, BUKAN JSON
-        return Inertia::render($this->inertiaView, [
-            'data' => $records
+        if ($this->hasTimestamps()) {
+            $validated['created_at'] = $validated['created_at'] ?? $now;
+            $validated['updated_at'] = $now;
+        }
+
+        $id = DB::table($this->table)->insertGetId($validated);
+
+        return response()->json(
+            $this->query()->where('id', $id)->first(),
+            201
+        );
+    }
+
+    public function show(int $id): JsonResponse
+    {
+        $record = $this->query()->where('id', $id)->first();
+
+        abort_if(! $record, 404);
+
+        return response()->json($record);
+    }
+
+    public function update(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate($this->updateRules($id));
+        $query = $this->query()->where('id', $id);
+
+        abort_if(! $query->exists(), 404);
+
+        if ($this->hasTimestamps()) {
+            $validated['updated_at'] = now();
+        }
+
+        $query->update($validated);
+
+        return response()->json($this->query()->where('id', $id)->first());
+    }
+
+    public function destroy(int $id): JsonResponse
+    {
+        $query = $this->query()->where('id', $id);
+
+        abort_if(! $query->exists(), 404);
+
+        if ($this->hasSoftDeletes()) {
+            $query->update([
+                'deleted_at' => now(),
+                ...($this->hasTimestamps() ? ['updated_at' => now()] : []),
+            ]);
+        } else {
+            $query->delete();
+        }
+
+        return response()->json([
+            'message' => 'Deleted successfully.',
         ]);
     }
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate($this->storeRules());
-
-        // MENGGUNAKAN ELOQUENT
-        $record = $this->model::create($validated);
-
-        // Beri "Hook" / fungsi pancingan agar anak class bisa melakukan sesuatu setelah data dibuat
-        // (Misalnya: Menyematkan Role Spatie)
-        $this->afterStore($record, $request);
-
-        return redirect()->back()->with('success', 'Data berhasil ditambahkan.');
-    }
-
-    // Fungsi kosong yang bisa di-override oleh controller turunannya (seperti UsersController)
-    protected function afterStore($record, Request $request): void
-    {
-        // Defaultnya kosong.
-    }
-
     abstract protected function storeRules(): array;
+
     abstract protected function updateRules(int $id): array;
+
+    protected function inertiaView(): ?string
+    {
+        return match ($this->table) {
+            'clients' => 'Clients',
+            'projects' => 'Projects',
+            'raps', 'rabs', 'rap_items', 'rab_items' => 'RabRap',
+            default => null,
+        };
+    }
+
+    protected function hasTimestamps(): bool
+    {
+        return in_array($this->table, [
+            'clients',
+            'projects',
+            'tenders',
+            'rabs',
+            'raps',
+            'progress_reports',
+            'invoices',
+            'fund_requests',
+            'users',
+        ], true);
+    }
+
+    protected function hasSoftDeletes(): bool
+    {
+        return Schema::hasColumn($this->table, 'deleted_at');
+    }
+
+    protected function query()
+    {
+        $query = DB::table($this->table);
+
+        if ($this->hasSoftDeletes()) {
+            $query->whereNull('deleted_at');
+        }
+
+        return $query;
+    }
 }

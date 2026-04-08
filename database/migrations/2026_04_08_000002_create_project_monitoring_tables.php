@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name', 150)->nullable();
             $table->string('contact', 150)->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('projects', function (Blueprint $table) {
@@ -29,6 +30,7 @@ return new class extends Migration
             $table->text('location')->nullable();
             $table->enum('status', ['planning', 'ongoing', 'completed'])->default('planning');
             $table->timestamps();
+            $table->softDeletes();
             $table->index('status', 'idx_project_status');
         });
 
@@ -37,6 +39,7 @@ return new class extends Migration
             $table->foreignId('project_id')->constrained('projects')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->enum('role', ['manager', 'finance', 'field', 'director', 'client']);
+            $table->softDeletes();
         });
 
         Schema::create('tenders', function (Blueprint $table) {
@@ -45,6 +48,7 @@ return new class extends Migration
             $table->decimal('value', 15, 2)->nullable();
             $table->enum('status', ['open', 'submitted', 'won', 'lost'])->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('rabs', function (Blueprint $table) {
@@ -52,6 +56,7 @@ return new class extends Migration
             $table->foreignId('project_id')->constrained('projects')->cascadeOnDelete();
             $table->decimal('total_budget', 15, 2)->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('rab_items', function (Blueprint $table) {
@@ -61,6 +66,7 @@ return new class extends Migration
             $table->decimal('quantity', 10, 2)->nullable();
             $table->decimal('unit_price', 15, 2)->nullable();
             $table->decimal('total_price', 15, 2)->nullable();
+            $table->softDeletes();
         });
 
         Schema::create('raps', function (Blueprint $table) {
@@ -68,6 +74,7 @@ return new class extends Migration
             $table->foreignId('project_id')->constrained('projects')->cascadeOnDelete();
             $table->decimal('total_budget', 15, 2)->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('rap_items', function (Blueprint $table) {
@@ -80,6 +87,7 @@ return new class extends Migration
             $table->string('spec_brand', 100)->nullable();
             $table->string('spec_size', 100)->nullable();
             $table->string('spec_strength', 100)->nullable();
+            $table->softDeletes();
         });
 
         Schema::create('progress_reports', function (Blueprint $table) {
@@ -89,6 +97,7 @@ return new class extends Migration
             $table->date('report_date')->nullable();
             $table->text('description')->nullable();
             $table->timestamps();
+            $table->softDeletes();
             $table->index('project_id', 'idx_progress_project');
         });
 
@@ -97,6 +106,7 @@ return new class extends Migration
             $table->foreignId('progress_report_id')->constrained('progress_reports')->cascadeOnDelete();
             $table->boolean('approved_by_client')->default(false);
             $table->boolean('approved_by_internal')->default(false);
+            $table->softDeletes();
         });
 
         Schema::create('project_costs', function (Blueprint $table) {
@@ -105,6 +115,7 @@ return new class extends Migration
             $table->string('category', 100)->nullable();
             $table->decimal('amount', 15, 2)->nullable();
             $table->date('date')->nullable();
+            $table->softDeletes();
         });
 
         Schema::create('invoices', function (Blueprint $table) {
@@ -114,6 +125,7 @@ return new class extends Migration
             $table->date('invoice_date')->nullable();
             $table->enum('status', ['pending', 'paid', 'overdue'])->nullable();
             $table->timestamps();
+            $table->softDeletes();
             $table->index('status', 'idx_invoice_status');
         });
 
@@ -122,6 +134,7 @@ return new class extends Migration
             $table->foreignId('invoice_id')->constrained('invoices')->cascadeOnDelete();
             $table->decimal('amount', 15, 2)->nullable();
             $table->date('payment_date')->nullable();
+            $table->softDeletes();
         });
 
         Schema::create('fund_requests', function (Blueprint $table) {
@@ -131,6 +144,7 @@ return new class extends Migration
             $table->decimal('amount', 15, 2)->nullable();
             $table->enum('status', ['pending', 'approved_manager', 'approved_finance', 'rejected'])->default('pending');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

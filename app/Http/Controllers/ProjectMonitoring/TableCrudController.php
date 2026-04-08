@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\ProjectMonitoring;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 abstract class TableCrudController extends Controller
 {
@@ -17,7 +17,7 @@ abstract class TableCrudController extends Controller
         $perPage = max(1, min((int) $request->integer('per_page', 15), 100));
 
         return response()->json(
-            DB::table($this->table)
+            $this->baseQuery()
                 ->orderByDesc('id')
                 ->paginate($perPage)
         );
@@ -32,14 +32,14 @@ abstract class TableCrudController extends Controller
         );
 
         return response()->json(
-            DB::table($this->table)->where('id', $id)->first(),
+            $this->baseQuery()->where('id', $id)->first(),
             201
         );
     }
 
     public function show(int $id): JsonResponse
     {
-        $record = DB::table($this->table)->where('id', $id)->first();
+        $record = $this->baseQuery()->where('id', $id)->first();
 
         if (! $record) {
             abort(404);
@@ -50,7 +50,7 @@ abstract class TableCrudController extends Controller
 
     public function update(Request $request, int $id): JsonResponse
     {
-        $query = DB::table($this->table)->where('id', $id);
+        $query = $this->baseQuery()->where('id', $id);
 
         if (! $query->exists()) {
             abort(404);
@@ -64,19 +64,29 @@ abstract class TableCrudController extends Controller
         }
 
         return response()->json(
-            DB::table($this->table)->where('id', $id)->first()
+            $this->baseQuery()->where('id', $id)->first()
         );
     }
 
     public function destroy(int $id): JsonResponse
     {
-        $query = DB::table($this->table)->where('id', $id);
+        $query = $this->baseQuery()->where('id', $id);
 
         if (! $query->exists()) {
             abort(404);
         }
 
-        $query->delete();
+        if ($this->usesSoftDeletes()) {
+            $payload = ['deleted_at' => now()];
+
+            if ($this->usesTimestamps()) {
+                $payload['updated_at'] = now();
+            }
+
+            $query->update($payload);
+        } else {
+            $query->delete();
+        }
 
         return response()->json([
             'message' => 'Deleted successfully.',
@@ -115,5 +125,21 @@ abstract class TableCrudController extends Controller
     protected function usesTimestamps(): bool
     {
         return true;
+    }
+
+    protected function usesSoftDeletes(): bool
+    {
+        return Schema::hasColumn($this->table, 'deleted_at');
+    }
+
+    protected function baseQuery()
+    {
+        $query = DB::table($this->table);
+
+        if ($this->usesSoftDeletes()) {
+            $query->whereNull('deleted_at');
+        }
+
+        return $query;
     }
 }

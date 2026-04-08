@@ -21,6 +21,8 @@ return new class extends Migration
             $table->enum('user_type', ['jte', 'client'])
                 ->default('jte')
                 ->after('password');
+
+            $table->softDeletes()->after('updated_at');
         });
     }
 
@@ -31,7 +33,10 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->dropConstrainedForeignId('client_id');
-            $table->dropColumn('user_type');
+            $table->dropColumn([
+                'user_type',
+                'deleted_at',
+            ]);
         });
     }
 };

@@ -46,7 +46,7 @@ const clampRowTarget = (value: number) => {
         return 1;
     }
 
-    return Math.min(25, Math.floor(value));
+    return Math.min(300, Math.floor(value));
 };
 
 const syncRowsToTarget = (target: number) => {

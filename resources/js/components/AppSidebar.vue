@@ -52,8 +52,8 @@ const mainNavSections: NavSection[] = [
         label: 'Marketing',
         items: [
             {
-                title: 'Pipelines',
-                href: '/pipeline',
+                title: 'Projects',
+                href: '/projects',
                 icon: icons.Network,
             },
             {
@@ -71,11 +71,11 @@ const mainNavSections: NavSection[] = [
     {
         label: 'Operational',
         items: [
-            {
-                title: 'Project Details',
-                href: '',
-                icon: icons.ReceiptText,
-            },
+            // {
+            //     title: 'Project Details',
+            //     href: '',
+            //     icon: icons.ReceiptText,
+            // },
             {
                 title: 'RAB & RAP',
                 href: '/rab-rap',

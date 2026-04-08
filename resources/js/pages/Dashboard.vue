@@ -55,8 +55,8 @@ const defaultWidgets: DashboardWidget[] = [
         heightClass: 'min-h-56',
     },
     {
-        id: 'pipeline-health',
-        title: 'Pipeline health',
+        id: 'projects-health',
+        title: 'projects health',
         description: 'Another placeholder area for a graph or metric card.',
         heightClass: 'min-h-56',
     },

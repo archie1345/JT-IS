@@ -1,100 +1,29 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
-import { Trash2, ExternalLink } from 'lucide-vue-next';
+import { Head, router } from '@inertiajs/vue3';
+import { ExternalLink } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Button } from '@/components/ui/button';
 import type { BreadcrumbItem } from '@/types';
 
-
 type ClientItem = {
     id: number;
-    ClientName: string;
-    estPrice: number;
-    email?: string;
-    phoneNumber?: string;
+    name: string | null;
+    contact: string | null;
+    projectCount: number;
+    totalProjectValue: number;
 };
+
+const props = defineProps<{
+    clients: ClientItem[];
+}>();
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Clients',
-        href: '/clients',
+        href: '/client',
     },
 ];
 
-const createItem = (id: number, overrides: Partial<ClientItem> = {}): ClientItem => ({
-    id,
-    ClientName: overrides.ClientName ?? `Client ${id}`,
-    estPrice: overrides.estPrice ?? 0,
-    email: overrides.email ?? '',
-    phoneNumber: overrides.phoneNumber ?? '',
-});
-
-const items = ref<ClientItem[]>([
-    createItem(1, {
-        ClientName: 'PT Nusantara',
-        estPrice: 425000000,
-        email: 'john.doe@nusantara.com',
-        phoneNumber: '+62 812 3456 7890',
-    }),
-    createItem(2, {
-        ClientName: 'CV Sejahtera',
-        estPrice: 180000000,
-        email: 'jane.smith@sejahtera.com',
-        phoneNumber: '+62 812 3456 7891',
-    }),
-]);
-
-const rowTarget = ref(items.value.length);
-const nextItemId = ref(items.value.length + 1);
-
-const clampRowTarget = (value: number) => {
-    if (!Number.isFinite(value) || value < 1) {
-        return 1;
-    }
-
-    return Math.min(25, Math.floor(value));
-};
-
-const syncRowsToTarget = (target: number) => {
-    const safeTarget = clampRowTarget(target);
-
-    while (items.value.length < safeTarget) {
-        items.value.push(createItem(nextItemId.value));
-        nextItemId.value += 1;
-    }
-
-    while (items.value.length > safeTarget) {
-        items.value.pop();
-    }
-
-    rowTarget.value = safeTarget;
-};
-
-watch(rowTarget, (target) => {
-    syncRowsToTarget(target);
-});
-
-const addRow = () => {
-    rowTarget.value += 1;
-};
-
-const removeLastRow = () => {
-    if (items.value.length === 1) {
-        return;
-    }
-
-    rowTarget.value -= 1;
-};
-
-const removeRow = (index: number) => {
-    if (items.value.length === 1) {
-        return;
-    }
-
-    items.value.splice(index, 1);
-    rowTarget.value = items.value.length;
-};
 const formatCurrency = (value: number) =>
     new Intl.NumberFormat('id-ID', {
         style: 'currency',
@@ -103,14 +32,14 @@ const formatCurrency = (value: number) =>
     }).format(value);
 
 const openProject = (item: ClientItem) => {
-    // Implement project opening logic here
-    console.log('Opening project:', item);
+    router.get('/projects', {
+        client: item.id,
+    });
 };
-
 </script>
 
 <template>
-    <Head title="RAB & RAP" />
+    <Head title="Clients" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
@@ -118,19 +47,10 @@ const openProject = (item: ClientItem) => {
                 <div class="overflow-hidden rounded-2xl border border-sidebar-border/70 bg-background shadow-sm">
                     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-sidebar-border/70 px-5 py-4">
                         <div>
-                            <h2 class="text-sm font-semibold text-foreground">Pipelines</h2>
+                            <h2 class="text-sm font-semibold text-foreground">Clients</h2>
                             <p class="text-sm text-muted-foreground">
-                                Add, subtract, or edit values to simulate a budgeting worksheet.
+                                Data below is loaded from the database and summarizes each client portfolio.
                             </p>
-                        </div>
-
-                        <div class="flex flex-wrap gap-2">
-                            <Button variant="outline" @click="removeLastRow">
-                                Reduce row
-                            </Button>
-                            <Button @click="addRow">
-                                Add row
-                            </Button>
                         </div>
                     </div>
 
@@ -140,14 +60,15 @@ const openProject = (item: ClientItem) => {
                                 <tr>
                                     <th class="px-4 py-3 font-medium">Id</th>
                                     <th class="px-4 py-3 font-medium">Client Name</th>
-                                    <th class="px-4 py-3 font-medium">Email</th>
-                                    <th class="px-4 py-3 font-medium">Phone Number</th>
+                                    <th class="px-4 py-3 font-medium">Contact</th>
+                                    <th class="px-4 py-3 font-medium">Projects</th>
+                                    <th class="px-4 py-3 font-medium">Total Contract Value</th>
                                     <th class="px-4 py-3" />
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr
-                                    v-for="(item, index) in items"
+                                    v-for="item in props.clients"
                                     :key="item.id"
                                     class="border-t border-sidebar-border/70 align-top"
                                 >
@@ -155,37 +76,32 @@ const openProject = (item: ClientItem) => {
                                         {{ item.id }}
                                     </td>
                                     <td class="px-4 py-3">
-                                        {{ item.ClientName }}
+                                        {{ item.name ?? '-' }}
                                     </td>
                                     <td class="px-4 py-3">
-                                        {{ item.email }}
+                                        {{ item.contact ?? '-' }}
                                     </td>
                                     <td class="px-4 py-3">
-                                        {{ item.phoneNumber }}
+                                        {{ item.projectCount }}
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        {{ formatCurrency(item.totalProjectValue) }}
                                     </td>
                                     <td class="px-4 py-3">
                                         <div class="flex justify-end">
                                             <Button
                                                 variant="ghost"
                                                 size="icon-sm"
-                                                :disabled="items.length === 1"
                                                 @click="openProject(item)"
                                             >
-                                                <external-link class="size-4" />
+                                                <ExternalLink class="size-4" />
                                             </Button>
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        <div class="flex justify-end">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon-sm"
-                                                :disabled="items.length === 1"
-                                                @click="removeRow(index)"
-                                            >
-                                                <Trash2 class="size-4" />
-                                            </Button>
-                                        </div>
+                                </tr>
+                                <tr v-if="props.clients.length === 0">
+                                    <td colspan="6" class="px-4 py-8 text-center text-muted-foreground">
+                                        No client data found yet.
                                     </td>
                                 </tr>
                             </tbody>

@@ -29,6 +29,8 @@ const fetchJson = async <T>(url: string): Promise<T> => {
     return response.json();
 };
 
+// State declared outside acts as a Global Singleton.
+// Move these inside useTwoFactorAuth() if you want fresh state per component.
 const errors = ref<string[]>([]);
 const manualSetupKey = ref<string | null>(null);
 const qrCodeSvg = ref<string | null>(null);
@@ -39,12 +41,24 @@ const hasSetupData = computed<boolean>(
 );
 
 export const useTwoFactorAuth = (): UseTwoFactorAuthReturn => {
+    const clearErrors = (): void => {
+        errors.value = [];
+    };
+
+    const clearSetupData = (): void => {
+        manualSetupKey.value = null;
+        qrCodeSvg.value = null;
+        clearErrors();
+    };
+
+    const clearTwoFactorAuthData = (): void => {
+        clearSetupData();
+        recoveryCodesList.value = [];
+    };
+
     const fetchQrCode = async (): Promise<void> => {
         try {
-            const { svg } = await fetchJson<{ svg: string; url: string }>(
-                qrCode.url(),
-            );
-
+            const { svg } = await fetchJson<{ svg: string; url: string }>(qrCode.url());
             qrCodeSvg.value = svg;
         } catch {
             errors.value.push('Failed to fetch QR code');
@@ -54,10 +68,7 @@ export const useTwoFactorAuth = (): UseTwoFactorAuthReturn => {
 
     const fetchSetupKey = async (): Promise<void> => {
         try {
-            const { secretKey: key } = await fetchJson<{ secretKey: string }>(
-                secretKey.url(),
-            );
-
+            const { secretKey: key } = await fetchJson<{ secretKey: string }>(secretKey.url());
             manualSetupKey.value = key;
         } catch {
             errors.value.push('Failed to fetch a setup key');
@@ -65,28 +76,10 @@ export const useTwoFactorAuth = (): UseTwoFactorAuthReturn => {
         }
     };
 
-    const clearSetupData = (): void => {
-        manualSetupKey.value = null;
-        qrCodeSvg.value = null;
-        clearErrors();
-    };
-
-    const clearErrors = (): void => {
-        errors.value = [];
-    };
-
-    const clearTwoFactorAuthData = (): void => {
-        clearSetupData();
-        clearErrors();
-        recoveryCodesList.value = [];
-    };
-
     const fetchRecoveryCodes = async (): Promise<void> => {
         try {
             clearErrors();
-            recoveryCodesList.value = await fetchJson<string[]>(
-                recoveryCodes.url(),
-            );
+            recoveryCodesList.value = await fetchJson<string[]>(recoveryCodes.url());
         } catch {
             errors.value.push('Failed to fetch recovery codes');
             recoveryCodesList.value = [];
@@ -94,10 +87,13 @@ export const useTwoFactorAuth = (): UseTwoFactorAuthReturn => {
     };
 
     const fetchSetupData = async (): Promise<void> => {
-        try {
-            clearErrors();
-            await Promise.all([fetchQrCode(), fetchSetupKey()]);
-        } catch {
+        clearErrors();
+        
+        // Wait for both to finish. They catch their own errors, so Promise.all won't fail.
+        await Promise.all([fetchQrCode(), fetchSetupKey()]);
+        
+        // Manual verification: if either failed to load, clear both to maintain consistent UI state.
+        if (qrCodeSvg.value === null || manualSetupKey.value === null) {
             qrCodeSvg.value = null;
             manualSetupKey.value = null;
         }

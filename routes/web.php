@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\ClientsPageController;
 use App\Http\Controllers\DashboardLayoutController;
+use App\Http\Controllers\ProjectsPageController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -14,11 +16,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('dashboard.layout.store');
     Route::inertia('billing-test', 'BillingTest')->name('billing.test');
     Route::inertia('rab-rap', 'RabRap')->name('rab-rap');
-    Route::inertia('pipeline', 'Pipeline')->name('pipeline');
+    Route::get('projects', ProjectsPageController::class)->name('projects');
     Route::inertia('settings', 'Settings')->name('settings');
     Route::inertia('settings/profile', 'SettingsProfile')->name('settings.profile');
     Route::inertia('settings/account', 'SettingsAccount')->name('settings.account');
-    Route::inertia('client', 'Clients')->name('client');
+    Route::get('client', ClientsPageController::class)->name('client');
 });
 
 Route::inertia('/prototype', 'Prototype')->name('prototype');

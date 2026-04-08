@@ -53,12 +53,12 @@ const mainNavSections: NavSection[] = [
         items: [
             {
                 title: 'Pipelines',
-                href: '',
+                href: '/pipeline',
                 icon: icons.Network,
             },
             {
                 title: 'Client',
-                href: '',
+                href: '/client',
                 icon: icons.Users,
             },
             {

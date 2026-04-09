@@ -150,6 +150,9 @@ const saveRole = (role: RolePermissionRow) => {
                 <p class="text-sm text-muted-foreground">
                     Choose which sidebar items, pages, and CRUD actions each role can use.
                 </p>
+                <p class="mt-1 text-xs text-muted-foreground">
+                    Related access is linked automatically. For example, saving a page or CRUD permission will also add the matching sidebar visibility when needed.
+                </p>
             </div>
             <Badge class="bg-amber-500/15 text-amber-700 ring-1 ring-amber-500/25">
                 {{ props.roles.length }} Roles

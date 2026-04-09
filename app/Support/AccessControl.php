@@ -170,9 +170,42 @@ class AccessControl
             $role = Role::findOrCreate($roleName, 'web');
 
             if ($role->permissions()->count() === 0) {
-                $role->syncPermissions($permissions);
+                $role->syncPermissions(self::expandPermissions($permissions));
             }
         }
+    }
+
+    /**
+     * @param list<string> $permissions
+     * @return list<string>
+     */
+    public static function expandPermissions(array $permissions): array
+    {
+        $validPermissions = array_flip(self::permissionNames());
+        $expanded = [];
+
+        foreach ($permissions as $permission) {
+            if (isset($validPermissions[$permission])) {
+                $expanded[$permission] = true;
+            }
+        }
+
+        do {
+            $changed = false;
+
+            foreach (array_keys($expanded) as $permission) {
+                foreach (self::permissionDependencies()[$permission] ?? [] as $dependency) {
+                    if (! isset($validPermissions[$dependency]) || isset($expanded[$dependency])) {
+                        continue;
+                    }
+
+                    $expanded[$dependency] = true;
+                    $changed = true;
+                }
+            }
+        } while ($changed);
+
+        return array_values(array_keys($expanded));
     }
 
     /**
@@ -186,6 +219,33 @@ class AccessControl
             'client',
             ...collect(self::employeeRoleSuggestions())->pluck('value')->all(),
         ]));
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    protected static function permissionDependencies(): array
+    {
+        return [
+            'page.dashboard.view' => ['sidebar.dashboard.view'],
+            'page.billing-test.view' => ['sidebar.footer.testing.view', 'sidebar.finance.billing.view'],
+            'page.projects.view' => ['sidebar.marketing.projects.view'],
+            'page.clients.view' => ['sidebar.marketing.clients.view'],
+            'page.rabs.view' => ['sidebar.operational.rabs.view'],
+            'page.raps.view' => ['sidebar.operational.raps.view'],
+            'page.pipeline.view' => ['sidebar.marketing.reports.view'],
+            'page.fund-requests.view' => ['sidebar.operational.progress.view'],
+            'page.invoices.view' => ['sidebar.finance.billing.view'],
+            'page.admin.accounts.view' => ['sidebar.footer.accounts.view'],
+            'action.projects.create' => ['page.projects.view', 'sidebar.marketing.projects.view'],
+            'action.projects.update' => ['page.projects.view', 'sidebar.marketing.projects.view'],
+            'action.clients.create' => ['page.clients.view', 'sidebar.marketing.clients.view'],
+            'action.clients.update' => ['page.clients.view', 'sidebar.marketing.clients.view'],
+            'action.admin.accounts.create' => ['page.admin.accounts.view', 'sidebar.footer.accounts.view'],
+            'action.admin.accounts.update' => ['page.admin.accounts.view', 'sidebar.footer.accounts.view'],
+            'action.admin.accounts.delete' => ['page.admin.accounts.view', 'sidebar.footer.accounts.view'],
+            'action.admin.roles.manage' => ['page.admin.accounts.view', 'sidebar.footer.accounts.view'],
+        ];
     }
 
     /**

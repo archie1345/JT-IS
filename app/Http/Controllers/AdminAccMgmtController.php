@@ -155,7 +155,9 @@ class AdminAccMgmtController extends Controller
             'permissions.*' => ['string', Rule::in(AccessControl::permissionNames())],
         ]);
 
-        $role->syncPermissions($validated['permissions'] ?? []);
+        $role->syncPermissions(
+            AccessControl::expandPermissions($validated['permissions'] ?? []),
+        );
 
         return to_route('admin.acc_mgmt')->with('success', sprintf('Permissions updated for %s.', Str::headline($role->name)));
     }

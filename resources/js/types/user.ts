@@ -1,7 +1,12 @@
-export type AccountRole = 'admin' | 'employee' | 'client' | 'jte';
+export type AccountRole = 'admin' | 'employee' | 'client';
 
 export type AccountRoleOption = {
     value: AccountRole;
+    label: string;
+};
+
+export type EmployeeRoleOption = {
+    value: string;
     label: string;
 };
 
@@ -12,6 +17,8 @@ export type AdminUserRow = {
     email: string;
     userType: AccountRole;
     userTypeLabel: string;
+    employeeRole: string | null;
+    employeeRoleLabel: string | null;
     clientName: string | null;
     verifiedAt: string | null;
     createdAt: string | null;
@@ -21,7 +28,6 @@ export type AdminStats = {
     total: number;
     admin: number;
     employee: number;
-    jte: number;
     client: number;
 };
 

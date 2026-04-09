@@ -31,7 +31,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('settings/profile', 'SettingsProfile')->name('settings.profile');
     Route::inertia('settings/account', 'SettingsAccount')->name('settings.account');
 
-    Route::middleware(['role:admin|employee|jte'])->group(function () {
+    Route::middleware(['role:admin|employee'])->group(function () {
         Route::inertia('billing-test', 'BillingTest')->name('billing.test');
         Route::get('rabs', RabsPageController::class)->name('rabs');
         Route::get('rabs/{rab}', [RabRapDetailsController::class, 'showRab'])->name('rabs.show');

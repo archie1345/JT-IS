@@ -8,20 +8,24 @@ return new class extends Migration
 {
     public function up(): void
     {
-        foreach (['admin', 'employee', 'client', 'jte'] as $roleName) {
+        foreach (['admin', 'employee', 'client'] as $roleName) {
             Role::findOrCreate($roleName, 'web');
         }
 
         User::query()
-            ->get(['id', 'user_type'])
+            ->get(['id', 'user_type', 'employee_role'])
             ->each(function (User $user): void {
-                $role = $user->sidebarRoleName();
+                $roles = $user->sidebarRoleNames();
 
-                if ($role === null) {
+                if ($roles === []) {
                     return;
                 }
 
-                $user->syncRoles([$role]);
+                foreach ($roles as $role) {
+                    Role::findOrCreate($role, 'web');
+                }
+
+                $user->syncRoles($roles);
             });
     }
 

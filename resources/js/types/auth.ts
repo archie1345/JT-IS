@@ -8,6 +8,7 @@ export type User = {
     name: string;
     email: string;
     user_type?: string;
+    employee_role?: string | null;
     avatar?: string;
     email_verified_at: string | null;
     created_at: string;

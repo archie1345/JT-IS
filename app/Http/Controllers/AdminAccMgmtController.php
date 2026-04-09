@@ -7,6 +7,8 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -20,7 +22,7 @@ class AdminAccMgmtController extends Controller
         $users = User::query()
             ->with('client:id,name')
             ->latest('id')
-            ->get(['id', 'client_id', 'name', 'email', 'user_type', 'email_verified_at', 'created_at'])
+            ->get(['id', 'client_id', 'name', 'email', 'user_type', 'employee_role', 'email_verified_at', 'created_at'])
             ->map(fn (User $user): array => [
                 'id' => $user->id,
                 'clientId' => $user->client_id,
@@ -31,9 +33,12 @@ class AdminAccMgmtController extends Controller
                     'admin' => 'Admin',
                     'employee' => 'Employee',
                     'client' => 'Client',
-                    'jte' => 'JTE / Internal',
                     default => ucfirst((string) $user->user_type),
                 },
+                'employeeRole' => $user->normalizedEmployeeRole(),
+                'employeeRoleLabel' => $user->normalizedEmployeeRole() !== null
+                    ? Str::headline($user->normalizedEmployeeRole())
+                    : null,
                 'clientName' => $user->client?->name,
                 'verifiedAt' => optional($user->email_verified_at)->format('Y-m-d'),
                 'createdAt' => optional($user->created_at)->format('Y-m-d'),
@@ -44,7 +49,6 @@ class AdminAccMgmtController extends Controller
             'total' => User::query()->count(),
             'admin' => User::query()->where('user_type', 'admin')->count(),
             'employee' => User::query()->where('user_type', 'employee')->count(),
-            'jte' => User::query()->where('user_type', 'jte')->count(),
             'client' => User::query()->where('user_type', 'client')->count(),
         ];
 
@@ -62,8 +66,14 @@ class AdminAccMgmtController extends Controller
             'userTypes' => [
                 ['value' => 'admin', 'label' => 'Admin'],
                 ['value' => 'employee', 'label' => 'Employee'],
-                ['value' => 'jte', 'label' => 'JTE / Internal'],
                 ['value' => 'client', 'label' => 'Client'],
+            ],
+            'employeeRoleSuggestions' => [
+                ['value' => 'marketing', 'label' => 'Marketing'],
+                ['value' => 'finance', 'label' => 'Finance'],
+                ['value' => 'operational', 'label' => 'Operational'],
+                ['value' => 'procurement', 'label' => 'Procurement'],
+                ['value' => 'hr', 'label' => 'HR'],
             ],
         ]);
     }
@@ -80,6 +90,7 @@ class AdminAccMgmtController extends Controller
             'email' => $data['email'],
             'password' => $data['password'],
             'user_type' => $data['user_type'],
+            'employee_role' => $data['user_type'] === 'employee' ? $data['employee_role'] : null,
         ]);
 
         return to_route('admin.acc_mgmt')->with('success', 'Account created successfully.');
@@ -96,6 +107,7 @@ class AdminAccMgmtController extends Controller
             'name' => $data['name'],
             'email' => $data['email'],
             'user_type' => $data['user_type'],
+            'employee_role' => $data['user_type'] === 'employee' ? $data['employee_role'] : null,
             ...(! empty($data['password']) ? ['password' => $data['password']] : []),
         ]);
 
@@ -118,7 +130,8 @@ class AdminAccMgmtController extends Controller
             'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'max:150', Rule::unique('users', 'email')->ignore($userId)],
             'password' => [$updating ? 'nullable' : 'required', 'string', 'min:8', 'max:255'],
-            'user_type' => ['required', Rule::in(['admin', 'employee', 'client', 'jte'])],
+            'user_type' => ['required', Rule::in(['admin', 'employee', 'client'])],
+            'employee_role' => ['nullable', 'string', 'max:50'],
         ];
 
         $data = $request->validate($rules);
@@ -131,11 +144,21 @@ class AdminAccMgmtController extends Controller
             ]);
         }
 
+        if (($data['user_type'] ?? null) !== 'employee') {
+            $data['employee_role'] = null;
+        } else {
+            $data['employee_role'] = $this->normalizeEmployeeRole($data['employee_role'] ?? null);
+        }
+
         return $data;
     }
 
     protected function ensureUserTypeEnum(): void
     {
+        if (! Schema::hasColumn('users', 'employee_role')) {
+            DB::statement('ALTER TABLE users ADD COLUMN employee_role VARCHAR(50) NULL AFTER user_type');
+        }
+
         $columnType = DB::table('information_schema.columns')
             ->whereRaw('table_schema = DATABASE()')
             ->where('table_name', 'users')
@@ -146,13 +169,22 @@ class AdminAccMgmtController extends Controller
             return;
         }
 
-        if (
-            str_contains($columnType, "'admin'") &&
-            str_contains($columnType, "'employee'")
-        ) {
+        if (str_contains($columnType, "'admin'") && str_contains($columnType, "'employee'") && ! str_contains($columnType, "'jte'")) {
             return;
         }
 
-        DB::statement("ALTER TABLE users MODIFY user_type ENUM('jte','employee','client','admin') NOT NULL DEFAULT 'jte'");
+        DB::statement("UPDATE users SET user_type = 'employee' WHERE user_type = 'jte'");
+        DB::statement("ALTER TABLE users MODIFY user_type ENUM('client','employee','admin') NOT NULL DEFAULT 'client'");
+    }
+
+    protected function normalizeEmployeeRole(null|string $role): ?string
+    {
+        $value = trim((string) $role);
+
+        if ($value === '') {
+            return null;
+        }
+
+        return Str::slug($value);
     }
 }

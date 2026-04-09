@@ -375,7 +375,8 @@ onBeforeUnmount(() => {
                 </div>
 
                 <div class="relative min-h-0 flex-1 overflow-auto">
-                    <table class="min-w-full text-sm">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm">
                         <thead class="sticky top-0 z-10 bg-muted/95 text-left text-muted-foreground backdrop-blur">
                             <tr>
                                 <th
@@ -435,6 +436,7 @@ onBeforeUnmount(() => {
                             </tr>
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         </section>

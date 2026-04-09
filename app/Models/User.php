@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasRoles;
@@ -30,7 +31,8 @@ class User extends Authenticatable
         'email',
         'password',
         'user_type',
-        'dashboard_layout', 
+        'employee_role',
+        'dashboard_layout',
     ];
 
     /**
@@ -92,21 +94,61 @@ class User extends Authenticatable
 
     public function syncSidebarRole(): void
     {
-        $role = $this->sidebarRoleName();
+        $roles = $this->sidebarRoleNames();
 
-        if ($role === null) {
+        if ($roles === []) {
             return;
         }
 
-        Role::findOrCreate($role, 'web');
-        $this->syncRoles([$role]);
+        foreach ($roles as $role) {
+            Role::findOrCreate($role, 'web');
+        }
+
+        $this->syncRoles($roles);
     }
 
     public function sidebarRoleName(): ?string
     {
-        return match ($this->user_type) {
-            'admin', 'employee', 'client', 'jte' => $this->user_type,
+        return $this->sidebarRoleNames()[0] ?? null;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function sidebarRoleNames(): array
+    {
+        $baseRole = match ($this->user_type) {
+            'admin', 'employee', 'client' => $this->user_type,
+            'jte' => 'employee',
             default => null,
         };
+
+        if ($baseRole === null) {
+            return [];
+        }
+
+        $roles = [$baseRole];
+        $employeeRole = $this->normalizedEmployeeRole();
+
+        if ($baseRole === 'employee' && $employeeRole !== null) {
+            $roles[] = $employeeRole;
+        }
+
+        return array_values(array_unique($roles));
+    }
+
+    public function normalizedEmployeeRole(): ?string
+    {
+        if (($this->user_type ?? null) !== 'employee') {
+            return null;
+        }
+
+        $value = trim((string) ($this->employee_role ?? ''));
+
+        if ($value === '') {
+            return null;
+        }
+
+        return Str::slug($value);
     }
 }

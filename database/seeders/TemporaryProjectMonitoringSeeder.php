@@ -27,7 +27,8 @@ class TemporaryProjectMonitoringSeeder extends Seeder
                     'client_id' => null,
                     'name' => 'JTE Project Manager',
                     'password' => Hash::make('password'),
-                    'user_type' => 'jte',
+                    'user_type' => 'employee',
+                    'employee_role' => 'operational',
                     'email_verified_at' => $now,
                     'remember_token' => null,
                     'created_at' => $now,
@@ -37,7 +38,8 @@ class TemporaryProjectMonitoringSeeder extends Seeder
                     'client_id' => null,
                     'name' => 'JTE Finance',
                     'password' => Hash::make('password'),
-                    'user_type' => 'jte',
+                    'user_type' => 'employee',
+                    'employee_role' => 'finance',
                     'email_verified_at' => $now,
                     'remember_token' => null,
                     'created_at' => $now,
@@ -47,7 +49,8 @@ class TemporaryProjectMonitoringSeeder extends Seeder
                     'client_id' => null,
                     'name' => 'JTE Field Supervisor',
                     'password' => Hash::make('password'),
-                    'user_type' => 'jte',
+                    'user_type' => 'employee',
+                    'employee_role' => 'operational',
                     'email_verified_at' => $now,
                     'remember_token' => null,
                     'created_at' => $now,
@@ -57,7 +60,8 @@ class TemporaryProjectMonitoringSeeder extends Seeder
                     'client_id' => null,
                     'name' => 'JTE Director',
                     'password' => Hash::make('password'),
-                    'user_type' => 'jte',
+                    'user_type' => 'employee',
+                    'employee_role' => 'management',
                     'email_verified_at' => $now,
                     'remember_token' => null,
                     'created_at' => $now,
@@ -254,6 +258,7 @@ class TemporaryProjectMonitoringSeeder extends Seeder
                     'name' => $clientSeed['client_user']['name'],
                     'password' => Hash::make('password'),
                     'user_type' => 'client',
+                    'employee_role' => null,
                     'email_verified_at' => $now,
                     'remember_token' => null,
                     'created_at' => $now,
@@ -547,21 +552,25 @@ class TemporaryProjectMonitoringSeeder extends Seeder
      */
     private function sidebarRoles(): array
     {
-        return ['admin', 'employee', 'client', 'jte'];
+        return ['admin', 'employee', 'client', 'finance', 'marketing', 'operational', 'procurement', 'hr', 'management'];
     }
 
     private function syncSeededUserRoles(): void
     {
         User::query()
-            ->get(['id', 'user_type'])
+            ->get(['id', 'user_type', 'employee_role'])
             ->each(function (User $user): void {
-                $role = $user->sidebarRoleName();
+                $roles = $user->sidebarRoleNames();
 
-                if ($role === null) {
+                if ($roles === []) {
                     return;
                 }
 
-                $user->syncRoles([$role]);
+                foreach ($roles as $role) {
+                    Role::findOrCreate($role, 'web');
+                }
+
+                $user->syncRoles($roles);
             });
     }
 }

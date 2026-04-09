@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import * as icons from 'lucide-vue-next';
+import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -35,9 +35,10 @@ type PageAuth = {
 
 const page = usePage<{ auth: PageAuth }>();
 
-const isAdmin = computed(() =>
-    page.props.auth?.user?.user_type === 'admin' ||
-    page.props.auth?.roles?.includes('admin') === true,
+const isAdmin = computed(
+    () =>
+        page.props.auth?.user?.user_type === 'admin' ||
+        page.props.auth?.roles?.includes('admin') === true,
 );
 
 const userRoles = computed(() => {
@@ -58,7 +59,9 @@ const canSee = (allowedRoles?: string[]) => {
     return allowedRoles.some((role) => userRoles.value.has(role));
 };
 
-const filterSection = (section: SidebarNavSection): SidebarNavSection | null => {
+const filterSection = (
+    section: SidebarNavSection,
+): SidebarNavSection | null => {
     const items = section.items.filter((item) => canSee(item.allowedRoles));
 
     if (items.length === 0) {
@@ -112,19 +115,19 @@ const rawMainNavSections: SidebarNavSection[] = [
                 title: 'Projects',
                 href: '/projects',
                 icon: icons.Network,
-                allowedRoles: ['admin', 'employee', 'jte'],
+                allowedRoles: ['admin', 'employee'],
             },
             {
                 title: 'Client',
                 href: '/client',
                 icon: icons.Users,
-                allowedRoles: ['admin', 'employee', 'jte'],
+                allowedRoles: ['admin', 'employee'],
             },
             {
                 title: 'Reports',
                 href: '',
                 icon: icons.FilesIcon,
-                allowedRoles: ['admin', 'employee', 'jte'],
+                allowedRoles: ['admin', 'employee'],
             },
         ],
     },
@@ -135,19 +138,19 @@ const rawMainNavSections: SidebarNavSection[] = [
                 title: 'RAB',
                 href: '/rabs',
                 icon: icons.FileText,
-                allowedRoles: ['admin', 'employee', 'jte'],
+                allowedRoles: ['admin', 'employee'],
             },
             {
                 title: 'RAP',
                 href: '/raps',
                 icon: icons.FileText,
-                allowedRoles: ['admin', 'employee', 'jte'],
+                allowedRoles: ['admin', 'employee'],
             },
             {
                 title: 'Progress Update',
                 href: '',
                 icon: icons.CopyCheck,
-                allowedRoles: ['admin', 'employee', 'jte'],
+                allowedRoles: ['admin', 'employee'],
             },
         ],
     },
@@ -164,7 +167,7 @@ const rawFooterNavItems: SidebarNavItem[] = [
         title: 'testing',
         href: '/billing-test',
         icon: icons.TestTube,
-        allowedRoles: ['admin', 'employee', 'jte'],
+        allowedRoles: ['admin', 'employee'],
     },
     {
         title: 'Account Management',
@@ -198,7 +201,10 @@ const footerNavItems = computed<SidebarNavItem[]>(() =>
         </SidebarContent>
 
         <SidebarFooter>
-            <NavFooter v-if="footerNavItems.length > 0" :items="footerNavItems" />
+            <NavFooter
+                v-if="footerNavItems.length > 0"
+                :items="footerNavItems"
+            />
             <NavUser />
         </SidebarFooter>
     </Sidebar>

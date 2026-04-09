@@ -1,18 +1,11 @@
 import type { BreadcrumbItem } from './navigation';
+import type { SpreadsheetColumn } from '@/components/ProjectDataTable.vue';
 
 export type EntityTableRow = Record<string, unknown>;
 
 export type EntityIndexPageProps = {
     rows: EntityTableRow[];
-    columns: {
-        key: string;
-        label: string;
-        accessor?: (row: EntityTableRow) => unknown;
-        visible?: boolean;
-        sortable?: boolean;
-        filterable?: boolean;
-        widthClass?: string;
-    }[];
+    columns: SpreadsheetColumn[];
     headTitle: string;
     title: string;
     breadcrumbs: BreadcrumbItem[];
@@ -23,4 +16,7 @@ export type EntityIndexPageProps = {
     emptyText?: string;
     stretchToViewport?: boolean;
     showCreateButton?: boolean;
+    introTitle?: string;
+    introDescription?: string;
+    introBadge?: string;
 };

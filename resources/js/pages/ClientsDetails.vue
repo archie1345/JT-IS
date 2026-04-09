@@ -3,6 +3,8 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { ArrowLeft, CalendarDays, FileText, FolderOpen, Save, Plus } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
+import EntityDetailHero from '@/components/entity/EntityDetailHero.vue';
+import EntityPageSection from '@/components/entity/EntityPageSection.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -123,40 +125,42 @@ const submit = () => {
 
                 <div class="grid min-h-0 flex-1 gap-4 lg:grid-cols-[1.3fr_0.95fr]">
                     <div class="flex min-h-0 flex-col gap-4">
-                        <div class="rounded-2xl border border-sidebar-border/70 bg-background p-5 shadow-sm">
-                            <div class="flex flex-wrap items-start justify-between gap-4">
-                                <div class="min-w-0">
-                                    <p class="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                                        {{ isCreateMode ? 'New Client Name' : 'Client Name' }}
-                                    </p>
-                                    <Input
-                                        v-model="form.name"
-                                        class="mt-2 max-w-2xl text-2xl font-semibold"
-                                        placeholder="Client name"
-                                    />
-                                    <InputError :message="form.errors.name" class="mt-2" />
-                                    <p class="mt-2 text-sm text-muted-foreground">
-                                        {{ form.contact || (isCreateMode ? 'Add the main contact person or email before saving.' : 'Add the main contact person or email.') }}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="mt-5">
-                                <div class="mb-2 flex items-center justify-between text-xs text-muted-foreground">
-                                    <span>Account activity</span>
-                                    <span v-if="!isCreateMode">{{ props.client.activeProjects }} active / {{ props.client.completedProjects }} completed</span>
-                                    <span v-else>New client profile</span>
-                                </div>
-                                <div class="h-3 overflow-hidden rounded-full bg-muted">
-                                    <div
-                                        class="h-full rounded-full transition-all"
-                                        :class="progressToneClass"
-                                        :style="{ width: `${progressScore}%` }"
-                                    />
-                                </div>
-                            </div>
-
-                            <div class="mt-5 grid gap-4 md:grid-cols-2">
+                        <EntityDetailHero
+                            back-label="Back to Clients"
+                            :title="isCreateMode ? 'Create Client' : 'Client Detail'"
+                            :description="isCreateMode ? 'Create a new client profile and save it to the database.' : 'Edit the client profile and review the projects connected to this account.'"
+                            :badge-text="isCreateMode ? 'New' : `${props.client.projectCount} Projects`"
+                            badge-class="bg-blue-500/15 text-blue-600 ring-1 ring-blue-500/25"
+                            :title-prefix="isCreateMode ? 'New Client Name' : 'Client Name'"
+                            metric-label="Account activity"
+                            :metric-value="`${progressScore}%`"
+                            :metric-description="progressLabel"
+                            progress-label="Account activity"
+                            :progress-value="isCreateMode ? 'New client profile' : `${props.client.activeProjects} active / ${props.client.completedProjects} completed`"
+                            :progress-bar-value="progressScore"
+                            :progress-tone-class="progressToneClass"
+                            @back="backToClients"
+                        >
+                            <template #back>
+                                <Button variant="ghost" class="mb-3 pl-0 text-muted-foreground" @click="backToClients">
+                                    <ArrowLeft class="mr-2 size-4" />
+                                    Back to Clients
+                                </Button>
+                            </template>
+                            <template #title-input>
+                                <Input
+                                    v-model="form.name"
+                                    class="mt-2 max-w-2xl text-2xl font-semibold"
+                                    placeholder="Client name"
+                                />
+                                <InputError :message="form.errors.name" class="mt-2" />
+                            </template>
+                            <template #title-meta>
+                                <p class="mt-2 text-sm text-muted-foreground">
+                                    {{ form.contact || (isCreateMode ? 'Add the main contact person or email before saving.' : 'Add the main contact person or email.') }}
+                                </p>
+                            </template>
+                            <template #summary>
                                 <div class="rounded-xl bg-muted/30 p-4">
                                     <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Primary Contact</p>
                                     <p class="mt-1 text-sm font-medium text-foreground">{{ form.contact || '-' }}</p>
@@ -176,15 +180,10 @@ const submit = () => {
                                     <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Latest Project</p>
                                     <p class="mt-1 text-sm font-medium text-foreground">{{ formatDate(props.client.lastProjectDate) }}</p>
                                 </div>
-                            </div>
-                        </div>
+                            </template>
+                        </EntityDetailHero>
 
-                        <div v-if="!isCreateMode" class="rounded-2xl border border-sidebar-border/70 bg-background p-5 shadow-sm">
-                            <div class="mb-4 flex items-center gap-2">
-                                <FolderOpen class="size-4 text-muted-foreground" />
-                                <h3 class="text-lg font-semibold text-foreground">Related Projects</h3>
-                            </div>
-
+                        <EntityPageSection v-if="!isCreateMode" title="Related Projects" :icon="FolderOpen">
                             <div class="space-y-3">
                                 <button
                                     v-for="project in props.projects"
@@ -211,16 +210,11 @@ const submit = () => {
                                     No projects linked to this client yet.
                                 </div>
                             </div>
-                        </div>
+                        </EntityPageSection>
                     </div>
 
                     <div class="flex min-h-0 flex-col gap-4">
-                        <div class="rounded-2xl border border-sidebar-border/70 bg-background p-5 shadow-sm">
-                            <div class="mb-4 flex items-center gap-2">
-                                <FileText class="size-4 text-muted-foreground" />
-                                <h3 class="text-lg font-semibold text-foreground">{{ isCreateMode ? 'Create Settings' : 'Client Settings' }}</h3>
-                            </div>
-
+                        <EntityPageSection :title="isCreateMode ? 'Create Settings' : 'Client Settings'" :icon="FileText">
                             <div class="grid gap-4">
                                 <label class="space-y-2">
                                     <span class="text-sm font-medium text-foreground">Client Name</span>
@@ -234,14 +228,9 @@ const submit = () => {
                                     <InputError :message="form.errors.contact" />
                                 </label>
                             </div>
-                        </div>
+                        </EntityPageSection>
 
-                        <div class="rounded-2xl border border-sidebar-border/70 bg-background p-5 shadow-sm">
-                            <div class="mb-4 flex items-center gap-2">
-                                <CalendarDays class="size-4 text-muted-foreground" />
-                                <h3 class="text-lg font-semibold text-foreground">Date</h3>
-                            </div>
-
+                        <EntityPageSection title="Date" :icon="CalendarDays">
                             <div class="space-y-4 text-sm">
                                 <div v-if="isCreateMode" class="rounded-xl bg-muted/30 p-4 text-muted-foreground">
                                     Dates and activity will appear after the client is saved and linked to projects.
@@ -259,14 +248,9 @@ const submit = () => {
                                     <p class="mt-1 font-medium text-foreground">{{ formatDate(props.client.lastUpdated) }}</p>
                                 </div>
                             </div>
-                        </div>
+                        </EntityPageSection>
 
-                        <div class="rounded-2xl border border-sidebar-border/70 bg-background p-5 shadow-sm">
-                            <div class="mb-4 flex items-center gap-2">
-                                <Save class="size-4 text-muted-foreground" />
-                                <h3 class="text-lg font-semibold text-foreground">{{ isCreateMode ? 'Save Client' : 'Quick Links' }}</h3>
-                            </div>
-
+                        <EntityPageSection :title="isCreateMode ? 'Save Client' : 'Quick Links'" :icon="Save">
                             <div v-if="!isCreateMode" class="space-y-3">
                                 <button
                                     v-for="link in props.quickLinks"
@@ -285,7 +269,7 @@ const submit = () => {
                             <p v-else class="text-sm text-muted-foreground">
                                 Save the client first to unlock related project and invoice links.
                             </p>
-                        </div>
+                        </EntityPageSection>
                     </div>
                 </div>
 

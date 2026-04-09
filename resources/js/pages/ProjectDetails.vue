@@ -12,6 +12,8 @@ import {
     Save,
 } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
+import EntityDetailHero from '@/components/entity/EntityDetailHero.vue';
+import EntityPageSection from '@/components/entity/EntityPageSection.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -235,43 +237,42 @@ const openDocument = (document: DocumentItem) => {
 
                 <div class="grid min-h-0 flex-1 gap-4 lg:grid-cols-[1.3fr_0.95fr]">
                     <div class="flex min-h-0 flex-col gap-4">
-                        <div class="rounded-2xl border border-sidebar-border/70 bg-background p-5 shadow-sm">
-                            <div class="flex flex-wrap items-start justify-between gap-4">
-                                <div>
-                                    <p class="text-xs uppercase tracking-[0.2em] text-muted-foreground">Project Title</p>
-                                    <Input
-                                        v-model="form.name"
-                                        class="mt-2 max-w-2xl text-2xl font-semibold"
-                                        placeholder="Project name"
-                                    />
-                                    <InputError :message="form.errors.name" class="mt-2" />
-                                    <p class="mt-2 text-sm text-muted-foreground">
-                                        {{ selectedClient?.name ?? 'Choose a client to connect this project.' }}
-                                    </p>
-                                </div>
-
-                                <div class="rounded-2xl border border-sidebar-border/70 bg-muted/30 px-4 py-3">
-                                    <p class="text-xs text-muted-foreground">Overall Progress</p>
-                                    <p class="text-3xl font-semibold text-foreground">{{ liveProgressScore }}%</p>
-                                    <p class="text-xs text-muted-foreground">{{ progressLabel }}</p>
-                                </div>
-                            </div>
-
-                            <div class="mt-5">
-                                <div class="mb-2 flex items-center justify-between text-xs text-muted-foreground">
-                                    <span>Progress snapshot</span>
-                                    <span>{{ form.progress_percent }}% report progress</span>
-                                </div>
-                                <div class="h-3 overflow-hidden rounded-full bg-muted">
-                                    <div
-                                        class="h-full rounded-full transition-all"
-                                        :class="progressToneClass"
-                                        :style="{ width: `${liveProgressScore}%` }"
-                                    />
-                                </div>
-                            </div>
-
-                            <div class="mt-5 grid gap-4 md:grid-cols-2">
+                        <EntityDetailHero
+                            back-label="Back to Projects"
+                            title="Project Detail"
+                            :description="isCreateMode ? 'Fill in the project data and save it to the database.' : 'Edit the project details and save your updates to the database.'"
+                            :badge-text="formatProjectStatus(form.status)"
+                            :badge-class="getProjectStatusClass(form.status)"
+                            title-prefix="Project Title"
+                            metric-label="Overall Progress"
+                            :metric-value="`${liveProgressScore}%`"
+                            :metric-description="progressLabel"
+                            progress-label="Progress snapshot"
+                            :progress-value="`${form.progress_percent}% report progress`"
+                            :progress-bar-value="liveProgressScore"
+                            :progress-tone-class="progressToneClass"
+                            @back="backToProjects"
+                        >
+                            <template #back>
+                                <Button variant="ghost" class="mb-3 pl-0 text-muted-foreground" @click="backToProjects">
+                                    <ArrowLeft class="mr-2 size-4" />
+                                    Back to Projects
+                                </Button>
+                            </template>
+                            <template #title-input>
+                                <Input
+                                    v-model="form.name"
+                                    class="mt-2 max-w-2xl text-2xl font-semibold"
+                                    placeholder="Project name"
+                                />
+                                <InputError :message="form.errors.name" class="mt-2" />
+                            </template>
+                            <template #title-meta>
+                                <p class="mt-2 text-sm text-muted-foreground">
+                                    {{ selectedClient?.name ?? 'Choose a client to connect this project.' }}
+                                </p>
+                            </template>
+                            <template #summary>
                                 <div class="rounded-xl bg-muted/30 p-4">
                                     <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Client</p>
                                     <p class="mt-1 text-sm font-medium text-foreground">{{ selectedClient?.name ?? '-' }}</p>
@@ -292,15 +293,10 @@ const openDocument = (document: DocumentItem) => {
                                     <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Location</p>
                                     <p class="mt-1 text-sm font-medium text-foreground">{{ form.location || '-' }}</p>
                                 </div>
-                            </div>
-                        </div>
+                            </template>
+                        </EntityDetailHero>
 
-                        <div class="rounded-2xl border border-sidebar-border/70 bg-background p-5 shadow-sm">
-                            <div class="mb-4 flex items-center gap-2">
-                                <Gauge class="size-4 text-muted-foreground" />
-                                <h3 class="text-lg font-semibold text-foreground">Progress Summary</h3>
-                            </div>
-
+                        <EntityPageSection title="Progress Summary" :icon="Gauge">
                             <div class="space-y-4">
                                 <div>
                                     <div class="mb-1 flex items-center justify-between text-sm">
@@ -332,14 +328,9 @@ const openDocument = (document: DocumentItem) => {
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </EntityPageSection>
 
-                        <div class="rounded-2xl border border-sidebar-border/70 bg-background p-5 shadow-sm">
-                            <div class="mb-4 flex items-center gap-2">
-                                <CalendarDays class="size-4 text-muted-foreground" />
-                                <h3 class="text-lg font-semibold text-foreground">Recent Update</h3>
-                            </div>
-
+                        <EntityPageSection title="Recent Update" :icon="CalendarDays">
                             <div v-if="props.recentReport" class="space-y-2">
                                 <p class="text-sm font-medium text-foreground">
                                     {{ props.recentReport.date ?? '-' }}
@@ -355,16 +346,11 @@ const openDocument = (document: DocumentItem) => {
                                 <CircleAlert class="mt-0.5 size-4 shrink-0" />
                                 No progress report has been submitted yet.
                             </div>
-                        </div>
+                        </EntityPageSection>
                     </div>
 
                     <div class="flex min-h-0 flex-col gap-4">
-                        <div class="rounded-2xl border border-sidebar-border/70 bg-background p-5 shadow-sm">
-                            <div class="mb-4 flex items-center gap-2">
-                                <FileText class="size-4 text-muted-foreground" />
-                                <h3 class="text-lg font-semibold text-foreground">Settings</h3>
-                            </div>
-
+                        <EntityPageSection title="Settings" :icon="FileText">
                             <div class="grid gap-4">
                                 <label class="space-y-2">
                                     <span class="text-sm font-medium text-foreground">Client</span>
@@ -461,14 +447,9 @@ const openDocument = (document: DocumentItem) => {
                                     <InputError :message="form.errors.payment_status" />
                                 </label>
                             </div>
-                        </div>
+                        </EntityPageSection>
 
-                        <div class="rounded-2xl border border-sidebar-border/70 bg-background p-5 shadow-sm">
-                            <div class="mb-4 flex items-center gap-2">
-                                <FolderOpen class="size-4 text-muted-foreground" />
-                                <h3 class="text-lg font-semibold text-foreground">Project Documents</h3>
-                            </div>
-
+                        <EntityPageSection title="Project Documents" :icon="FolderOpen">
                             <div v-if="isCreateMode" class="rounded-xl border border-dashed border-sidebar-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
                                 Save the project first, then upload documents here.
                             </div>
@@ -549,7 +530,7 @@ const openDocument = (document: DocumentItem) => {
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </EntityPageSection>
 
                     </div>
                 </div>

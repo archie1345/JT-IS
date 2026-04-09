@@ -71,7 +71,7 @@ const defaultForm = {
     name: '',
     email: '',
     password: '',
-    user_type: 'employee' as AccountRole,
+    user_type: 'client' as AccountRole,
     employee_role: '',
 };
 

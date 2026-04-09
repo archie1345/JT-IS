@@ -3,9 +3,11 @@ import { Head, router } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { ArrowLeft, Minus, Plus, Trash2 } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import EntityDetailHero from '@/components/entity/EntityDetailHero.vue';
+import EntityMetricCard from '@/components/entity/EntityMetricCard.vue';
+import EntityPageSection from '@/components/entity/EntityPageSection.vue';
 import type { BreadcrumbItem } from '@/types';
 
 type DetailItem = {
@@ -58,8 +60,6 @@ const formatCurrency = (value: number) =>
         maximumFractionDigits: 0,
     }).format(value);
 
-const formatDate = (value: string | null) => value || '-';
-
 const backToList = () => {
     router.get(props.kind === 'rab' ? '/rabs' : '/raps');
 };
@@ -70,60 +70,32 @@ const backToList = () => {
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex min-h-[calc(100vh-8rem)] flex-1 flex-col gap-4 rounded-xl p-4">
-            <section class="rounded-2xl border border-sidebar-border/70 bg-background/80 p-5 shadow-sm">
-                <div class="flex flex-wrap items-center justify-between gap-4">
-                    <div class="space-y-2">
-                        <Button variant="ghost" class="pl-0 text-muted-foreground" @click="backToList">
-                            <ArrowLeft class="mr-2 size-4" />
-                            Back
-                        </Button>
-                        <div>
-                            <h1 class="text-3xl font-semibold tracking-tight text-foreground">
-                                {{ props.record.projectName }}
-                            </h1>
-                            <p class="mt-1 text-sm text-muted-foreground">
-                                {{ props.recordLabel }} #{{ props.record.id }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <Badge class="bg-blue-500/15 text-blue-600 ring-1 ring-blue-500/25">
-                        {{ props.recordLabel }}
-                    </Badge>
-                </div>
-            </section>
+            <EntityDetailHero
+                back-label="Back"
+                :title="props.record.projectName"
+                :description="`${props.recordLabel} #${props.record.id}`"
+                :badge-text="props.recordLabel"
+                badge-class="bg-blue-500/15 text-blue-600 ring-1 ring-blue-500/25"
+                @back="backToList"
+            >
+                <template #back>
+                    <Button variant="ghost" class="mb-3 pl-0 text-muted-foreground" @click="backToList">
+                        <ArrowLeft class="mr-2 size-4" />
+                        Back
+                    </Button>
+                </template>
+            </EntityDetailHero>
 
             <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <div class="rounded-xl border border-sidebar-border/70 bg-background p-4 shadow-sm">
-                    <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Items</p>
-                    <p class="mt-2 text-2xl font-semibold text-foreground">{{ props.summary.itemCount }}</p>
-                </div>
-                <div class="rounded-xl border border-sidebar-border/70 bg-background p-4 shadow-sm">
-                    <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Subtotal</p>
-                    <p class="mt-2 text-2xl font-semibold text-foreground">{{ formatCurrency(props.summary.subtotal) }}</p>
-                </div>
-                <div class="rounded-xl border border-sidebar-border/70 bg-background p-4 shadow-sm">
-                    <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Budget</p>
-                    <p class="mt-2 text-2xl font-semibold text-foreground">{{ formatCurrency(props.record.totalBudget) }}</p>
-                </div>
-                <div class="rounded-xl border border-sidebar-border/70 bg-background p-4 shadow-sm">
-                    <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Difference</p>
-                    <p class="mt-2 text-2xl font-semibold text-foreground">{{ formatCurrency(props.summary.difference) }}</p>
-                </div>
+                <EntityMetricCard label="Items" :value="props.summary.itemCount" />
+                <EntityMetricCard label="Subtotal" :value="formatCurrency(props.summary.subtotal)" />
+                <EntityMetricCard label="Budget" :value="formatCurrency(props.record.totalBudget)" />
+                <EntityMetricCard label="Difference" :value="formatCurrency(props.summary.difference)" />
             </section>
 
             <section class="grid gap-4">
-                <div class="overflow-hidden rounded-2xl border border-sidebar-border/70 bg-background shadow-sm">
+                <EntityPageSection title="Item Details" :description="`Detail list for ${props.record.projectName}.`">
                     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-sidebar-border/70 px-5 py-4">
-                        <div>
-                            <h2 class="text-sm font-semibold text-foreground">
-                                Item Details
-                            </h2>
-                            <p class="text-sm text-muted-foreground">
-                                Detail list for {{ props.record.projectName }}.
-                            </p>
-                        </div>
-
                         <div class="flex flex-wrap gap-2">
                             <Button variant="outline" disabled>
                                 Reduce row
@@ -186,7 +158,7 @@ const backToList = () => {
                             </tbody>
                         </table>
                     </div>
-                </div>
+                </EntityPageSection>
             </section>
         </div>
     </AppLayout>

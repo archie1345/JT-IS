@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
-import ProjectDataTable, { type SpreadsheetColumn } from '@/components/ProjectDataTable.vue';
+import { router } from '@inertiajs/vue3';
+import EntityIndexPage from '@/components/entity/EntityIndexPage.vue';
+import type { SpreadsheetColumn } from '@/components/ProjectDataTable.vue';
 import type { BreadcrumbItem } from '@/types';
 import type { RabRow } from '@/types/rab';
 
@@ -55,41 +55,23 @@ const rabColumns = [
 </script>
 
 <template>
-    <Head title="RAB" />
-
-    <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex min-h-[calc(100vh-8rem)] flex-1 flex-col gap-4 rounded-xl p-4">
-            <section class="rounded-2xl border border-sidebar-border/70 bg-background/80 p-5 shadow-sm">
-                <div class="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                        <h1 class="text-3xl font-semibold tracking-tight text-foreground">
-                            RAB
-                        </h1>
-                        <p class="text-sm text-muted-foreground">
-                            Budget plan records grouped by project.
-                        </p>
-                    </div>
-
-                    <div class="rounded-xl border border-sidebar-border/70 bg-background px-4 py-3 text-sm text-muted-foreground">
-                        {{ props.activeProjectId ? `Filtered by project ID ${props.activeProjectId}` : 'All projects' }}
-                    </div>
-                </div>
-            </section>
-
-            <ProjectDataTable
-                :rows="rows"
-                :columns="rabColumns"
-                title="RAB List"
-                description="Each row links back to the owning project."
-                row-key-field="id"
-                :stretch-to-viewport="false"
-                empty-text="No RAB records found."
-                @row-click="openProject"
-            >
-                <template #cell-totalBudget="{ value }">
-                    <span class="font-medium text-foreground">{{ formatCurrency(Number(value ?? 0)) }}</span>
-                </template>
-            </ProjectDataTable>
-        </div>
-    </AppLayout>
+    <EntityIndexPage
+        head-title="RAB"
+        title="RAB List"
+        :rows="rows"
+        :columns="rabColumns"
+        :breadcrumbs="breadcrumbs"
+        intro-title="RAB"
+        intro-description="Budget plan records grouped by project."
+        :intro-badge="props.activeProjectId ? `Filtered by project ID ${props.activeProjectId}` : 'All projects'"
+        description="Each row links back to the owning project."
+        row-key-field="id"
+        :stretch-to-viewport="false"
+        empty-text="No RAB records found."
+        @row-click="openProject"
+    >
+        <template #cell-totalBudget="{ value }">
+            <span class="font-medium text-foreground">{{ formatCurrency(Number(value ?? 0)) }}</span>
+        </template>
+    </EntityIndexPage>
 </template>

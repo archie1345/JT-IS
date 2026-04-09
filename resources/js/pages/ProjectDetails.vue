@@ -24,57 +24,17 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import type { BreadcrumbItem } from '@/types';
+import type {
+    ClientOption,
+    DocumentItem,
+    Mode,
+    PaymentStatus,
+    ProgressSnapshot,
+    ProjectDetails,
+    ProjectStatus,
+    UploadedDocument,
+} from '@/types/project';
 
-type ProjectStatus = 'planning' | 'ongoing' | 'completed';
-type PaymentStatus = 'pending' | 'partial' | 'paid' | 'overdue';
-type Mode = 'create' | 'edit';
-
-type ProjectDetails = {
-    id: number | null;
-    clientId: number | null;
-    name: string;
-    clientName: string | null;
-    clientContact: string | null;
-    contractNumber: string | null;
-    contractValue: number;
-    location: string | null;
-    startDate: string | null;
-    endDate: string | null;
-    status: ProjectStatus;
-    paymentStatus: PaymentStatus;
-    latestProgressPercent: number | null;
-    latestProgressNote: string | null;
-};
-
-type ClientOption = {
-    id: number;
-    name: string | null;
-    contact: string | null;
-};
-
-type DocumentItem = {
-    label: string;
-    detail: string;
-    status: 'available' | 'missing';
-    url?: string | null;
-};
-
-type UploadedDocument = {
-    id: number;
-    name: string;
-    originalName: string;
-    url: string;
-    mimeType: string | null;
-    size: number | null;
-    createdAt: string | null;
-};
-
-type ProgressSnapshot = {
-    reportScore: number;
-    projectStatusScore: number;
-    paymentStatusScore: number;
-    overallProgress: number;
-};
 
 const props = defineProps<{
     mode: Mode;
@@ -576,7 +536,7 @@ const openDocument = (document: DocumentItem) => {
                                                 {{ doc.originalName }}
                                             </a>
                                             <p class="text-xs text-muted-foreground">
-                                                {{ doc.createdAt ?? '-' }} · {{ doc.mimeType ?? 'unknown type' }}
+                                                {{ doc.createdAt ?? '-' }} | {{ doc.mimeType ?? 'unknown type' }}
                                             </p>
                                         </div>
                                         <Badge variant="secondary" class="shrink-0">

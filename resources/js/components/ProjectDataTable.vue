@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, type CSSProperties } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch, type CSSProperties } from 'vue';
 import {
     ArrowDownAZ,
     ArrowUpAZ,
@@ -13,191 +13,137 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
-type PaymentStatus = 'pending' | 'paid' | 'overdue' | 'partial';
-type ProjectStatus = 'planning' | 'ongoing' | 'completed';
-type SortDirection = 'asc' | 'desc';
-
-export type ProjectItem = {
-    id: number;
-    projectName: string;
-    client: string;
-    estPrice: number;
-    deadline: string;
-    paymentStatus: PaymentStatus;
-    projectStatus: ProjectStatus;
-};
-
-type SortKey =
-    | 'id'
-    | 'projectName'
-    | 'client'
-    | 'estPrice'
-    | 'deadline'
-    | 'paymentStatus'
-    | 'projectStatus';
-
-type Column = {
-    key: SortKey;
+export type SpreadsheetColumn = {
+    key: string;
     label: string;
+    accessor?: (row: any) => unknown;
+    visible?: boolean;
+    sortable?: boolean;
+    filterable?: boolean;
+    widthClass?: string;
 };
 
-const props = defineProps<{
-    projects: ProjectItem[];
-    activeClientId?: number | null;
-}>();
+type SortDirection = 'asc' | 'desc';
+type TableRow = Record<string, unknown>;
 
-const emit = defineEmits<{
-    openProject: [project: ProjectItem];
-    createProject: [];
-}>();
-
-const columns: Column[] = [
-    { key: 'id', label: 'Id' },
-    { key: 'projectName', label: 'Project Name' },
-    { key: 'client', label: 'Client' },
-    { key: 'estPrice', label: 'Est. Value' },
-    { key: 'deadline', label: 'Deadline' },
-    { key: 'paymentStatus', label: 'Payment Status' },
-    { key: 'projectStatus', label: 'Project Status' },
-];
-
-const sortKey = ref<SortKey>('id');
-const sortDirection = ref<SortDirection>('desc');
-const searchQuery = ref('');
-const showColumnPicker = ref(false);
-const activeHeaderFilter = ref<SortKey | null>(null);
-const headerFilterStyle = ref<CSSProperties>({});
-const headerFilterSearch = ref<Record<SortKey, string>>(
-    Object.fromEntries(columns.map((column) => [column.key, ''])) as Record<SortKey, string>,
-);
-const visibleColumns = ref<Record<SortKey, boolean>>({
-    id: true,
-    projectName: true,
-    client: true,
-    estPrice: true,
-    deadline: true,
-    paymentStatus: true,
-    projectStatus: true,
+const props = withDefaults(defineProps<{
+    rows: TableRow[];
+    columns: SpreadsheetColumn[];
+    title: string;
+    description?: string;
+    note?: string;
+    rowKeyField?: string;
+    searchPlaceholder?: string;
+    showCreateButton?: boolean;
+    createLabel?: string;
+    emptyText?: string;
+    stretchToViewport?: boolean;
+}>(), {
+    rowKeyField: 'id',
+    searchPlaceholder: 'Search like a spreadsheet...',
+    showCreateButton: false,
+    createLabel: 'New Item',
+    emptyText: 'No matching data found.',
+    stretchToViewport: true,
 });
 
-const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        maximumFractionDigits: 0,
-    }).format(value);
+const emit = defineEmits<{
+    rowClick: [row: TableRow];
+    create: [];
+}>();
 
-const formatPaymentStatus = (status: PaymentStatus) =>
-    ({
-        pending: 'Pending',
-        partial: 'Partial',
-        paid: 'Paid',
-        overdue: 'Overdue',
-    })[status] ?? status;
+const sortKey = ref<string>('');
+const sortDirection = ref<SortDirection>('asc');
+const searchQuery = ref('');
+const showColumnPicker = ref(false);
+const activeHeaderFilter = ref<string | null>(null);
+const headerFilterStyle = ref<CSSProperties>({});
+const headerFilterSearch = ref<Record<string, string>>({});
+const visibleColumns = ref<Record<string, boolean>>({});
+const selectedColumnValues = ref<Record<string, string[]>>({});
+const draftSelectedColumnValues = ref<Record<string, string[]>>({});
 
-const formatProjectStatus = (status: ProjectStatus) =>
-    ({
-        planning: 'Planning',
-        ongoing: 'Ongoing',
-        completed: 'Completed',
-    })[status] ?? status;
+const resolvedColumns = computed(() => props.columns.filter((column) => visibleColumns.value[column.key] !== false));
+const filterableColumns = computed(() => props.columns.filter((column) => column.filterable !== false));
 
-const getPaymentStatusClass = (status: PaymentStatus) =>
-    ({
-        pending: 'bg-amber-500/15 text-amber-500 ring-1 ring-amber-500/25',
-        partial: 'bg-sky-500/15 text-sky-500 ring-1 ring-sky-500/25',
-        paid: 'bg-emerald-500/15 text-emerald-500 ring-1 ring-emerald-500/25',
-        overdue: 'bg-rose-500/15 text-rose-500 ring-1 ring-rose-500/25',
-    })[status];
-
-const getProjectStatusClass = (status: ProjectStatus) =>
-    ({
-        planning: 'bg-slate-500/15 text-slate-500 ring-1 ring-slate-500/25',
-        ongoing: 'bg-blue-500/15 text-blue-500 ring-1 ring-blue-500/25',
-        completed: 'bg-emerald-500/15 text-emerald-500 ring-1 ring-emerald-500/25',
-    })[status];
-
-const displayCellValue = (item: ProjectItem, key: SortKey) => {
-    if (key === 'estPrice') {
-        return formatCurrency(item.estPrice);
-    }
-
-    if (key === 'deadline') {
-        return item.deadline || '-';
-    }
-
-    if (key === 'paymentStatus') {
-        return formatPaymentStatus(item.paymentStatus);
-    }
-
-    if (key === 'projectStatus') {
-        return formatProjectStatus(item.projectStatus);
-    }
-
-    return item[key];
+const columnValue = (row: TableRow, column: SpreadsheetColumn) => {
+    const value = column.accessor ? column.accessor(row) : row[column.key];
+    return value ?? '-';
 };
 
-const visibleColumnList = computed(() =>
-    columns.filter((column) => visibleColumns.value[column.key]),
-);
-
-const activeHeaderColumn = computed(() =>
-    columns.find((column) => column.key === activeHeaderFilter.value) ?? null,
-);
+const displayValue = (row: TableRow, column: SpreadsheetColumn) =>
+    String(columnValue(row, column));
 
 const uniqueColumnValues = computed(() =>
     Object.fromEntries(
-        columns.map((column) => [
+        filterableColumns.value.map((column) => [
             column.key,
-            [...new Set(props.projects.map((project) => String(displayCellValue(project, column.key) ?? '-')))]
+            [...new Set(props.rows.map((row) => displayValue(row, column)))]
                 .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })),
         ]),
-    ) as Record<SortKey, string[]>,
+    ) as Record<string, string[]>,
 );
 
-const createDefaultColumnSelections = () =>
+const createDefaultSelections = () =>
     Object.fromEntries(
-        columns.map((column) => [column.key, [...uniqueColumnValues.value[column.key]]]),
-    ) as Record<SortKey, string[]>;
+        props.columns.map((column) => [column.key, [...(uniqueColumnValues.value[column.key] ?? [])]]),
+    ) as Record<string, string[]>;
 
-const selectedColumnValues = ref<Record<SortKey, string[]>>(createDefaultColumnSelections());
-const draftSelectedColumnValues = ref<Record<SortKey, string[]>>(createDefaultColumnSelections());
+const resetState = () => {
+    const columnVisibility = Object.fromEntries(
+        props.columns.map((column) => [column.key, column.visible ?? true]),
+    ) as Record<string, boolean>;
 
-const filteredProjects = computed(() => {
+    visibleColumns.value = columnVisibility;
+    headerFilterSearch.value = Object.fromEntries(props.columns.map((column) => [column.key, ''])) as Record<string, string>;
+    selectedColumnValues.value = createDefaultSelections();
+    draftSelectedColumnValues.value = createDefaultSelections();
+
+    if (sortKey.value === '' && props.columns.length > 0) {
+        sortKey.value = props.columns[0].key;
+    }
+};
+
+watch(
+    () => [props.rows, props.columns],
+    () => {
+        resetState();
+    },
+    { immediate: true, deep: true },
+);
+
+const filteredRows = computed(() => {
     const query = searchQuery.value.trim().toLowerCase();
 
     if (!query) {
-        return props.projects;
+        return props.rows;
     }
 
-    return props.projects.filter((project) =>
-        [
-            project.id,
-            project.projectName,
-            project.client,
-            project.estPrice,
-            project.deadline,
-            formatPaymentStatus(project.paymentStatus),
-            formatProjectStatus(project.projectStatus),
-        ].some((value) => String(value ?? '').toLowerCase().includes(query)),
+    return props.rows.filter((row) =>
+        props.columns.some((column) => displayValue(row, column).toLowerCase().includes(query)),
     );
 });
 
-const columnFilteredProjects = computed(() =>
-    filteredProjects.value.filter((project) =>
-        columns.every((column) => {
-            const displayValue = String(displayCellValue(project, column.key) ?? '-');
-            return selectedColumnValues.value[column.key].includes(displayValue);
+const columnFilteredRows = computed(() =>
+    filteredRows.value.filter((row) =>
+        filterableColumns.value.every((column) => {
+            const value = displayValue(row, column);
+            return selectedColumnValues.value[column.key]?.includes(value) ?? true;
         }),
     ),
 );
 
-const sortedProjects = computed(() => {
-    const direction = sortDirection.value === 'asc' ? 1 : -1;
+const sortedRows = computed(() => {
+    if (!sortKey.value) {
+        return columnFilteredRows.value;
+    }
 
-    return [...columnFilteredProjects.value].sort((a, b) => {
-        const aValue = a[sortKey.value];
-        const bValue = b[sortKey.value];
+    const direction = sortDirection.value === 'asc' ? 1 : -1;
+    const column = props.columns.find((item) => item.key === sortKey.value);
+
+    return [...columnFilteredRows.value].sort((a, b) => {
+        const aValue = column ? columnValue(a, column) : a[sortKey.value];
+        const bValue = column ? columnValue(b, column) : b[sortKey.value];
 
         if (typeof aValue === 'number' && typeof bValue === 'number') {
             return (aValue - bValue) * direction;
@@ -210,16 +156,26 @@ const sortedProjects = computed(() => {
     });
 });
 
-const openProject = (item: ProjectItem) => emit('openProject', item);
-const createProject = () => emit('createProject');
+const activeHeaderColumn = computed(
+    () => props.columns.find((column) => column.key === activeHeaderFilter.value) ?? null,
+);
 
-const openHeaderFilter = (event: MouseEvent, key: SortKey) => {
+const openRow = (row: TableRow) => emit('rowClick', row);
+const createItem = () => emit('create');
+
+const openHeaderFilter = (event: MouseEvent, key: string) => {
+    const column = props.columns.find((item) => item.key === key);
+
+    if (column?.sortable === false && column?.filterable === false) {
+        return;
+    }
+
     if (activeHeaderFilter.value === key) {
         activeHeaderFilter.value = null;
         return;
     }
 
-    draftSelectedColumnValues.value[key] = [...selectedColumnValues.value[key]];
+    draftSelectedColumnValues.value[key] = [...(selectedColumnValues.value[key] ?? [])];
     headerFilterSearch.value[key] = '';
     activeHeaderFilter.value = key;
 
@@ -253,64 +209,66 @@ const openHeaderFilter = (event: MouseEvent, key: SortKey) => {
     };
 };
 
-const applySort = (key: SortKey, direction: SortDirection) => {
+const applySort = (key: string, direction: SortDirection) => {
+    const column = props.columns.find((item) => item.key === key);
+
+    if (column?.sortable === false) {
+        return;
+    }
+
     sortKey.value = key;
     sortDirection.value = direction;
 };
 
-const clearColumnFilter = (key: SortKey) => {
+const clearColumnFilter = (key: string) => {
     draftSelectedColumnValues.value[key] = [];
 };
 
-const toggleColumn = (key: SortKey) => {
-    const activeCount = Object.values(visibleColumns.value).filter(Boolean).length;
+const filteredColumnOptions = (key: string) => {
+    const column = props.columns.find((item) => item.key === key);
 
-    if (visibleColumns.value[key] && activeCount === 1) {
-        return;
+    if (column?.filterable === false) {
+        return [];
     }
 
-    visibleColumns.value[key] = !visibleColumns.value[key];
-};
-
-const filteredColumnOptions = (key: SortKey) => {
-    const query = headerFilterSearch.value[key].trim().toLowerCase();
+    const query = (headerFilterSearch.value[key] ?? '').trim().toLowerCase();
+    const values = uniqueColumnValues.value[key] ?? [];
 
     if (!query) {
-        return uniqueColumnValues.value[key];
+        return values;
     }
 
-    return uniqueColumnValues.value[key].filter((value) => value.toLowerCase().includes(query));
+    return values.filter((value) => value.toLowerCase().includes(query));
 };
 
-const isValueSelected = (key: SortKey, value: string) =>
-    draftSelectedColumnValues.value[key].includes(value);
+const isValueSelected = (key: string, value: string) =>
+    draftSelectedColumnValues.value[key]?.includes(value) ?? false;
 
-const toggleColumnValue = (key: SortKey, value: string) => {
+const toggleColumnValue = (key: string, value: string) => {
     if (isValueSelected(key, value)) {
-        draftSelectedColumnValues.value[key] = draftSelectedColumnValues.value[key].filter(
+        draftSelectedColumnValues.value[key] = (draftSelectedColumnValues.value[key] ?? []).filter(
             (item) => item !== value,
         );
         return;
     }
 
-    draftSelectedColumnValues.value[key] = [...draftSelectedColumnValues.value[key], value];
+    draftSelectedColumnValues.value[key] = [...(draftSelectedColumnValues.value[key] ?? []), value];
 };
 
-const selectAllColumnValues = (key: SortKey) => {
-    draftSelectedColumnValues.value[key] = [...uniqueColumnValues.value[key]];
+const selectAllColumnValues = (key: string) => {
+    draftSelectedColumnValues.value[key] = [...(uniqueColumnValues.value[key] ?? [])];
 };
 
-const activeFilterCount = (key: SortKey) =>
-    selectedColumnValues.value[key].length;
+const activeFilterCount = (key: string) => selectedColumnValues.value[key]?.length ?? 0;
 
-const cancelColumnFilter = (key: SortKey) => {
-    draftSelectedColumnValues.value[key] = [...selectedColumnValues.value[key]];
+const cancelColumnFilter = (key: string) => {
+    draftSelectedColumnValues.value[key] = [...(selectedColumnValues.value[key] ?? [])];
     headerFilterSearch.value[key] = '';
     activeHeaderFilter.value = null;
 };
 
-const confirmColumnFilter = (key: SortKey) => {
-    selectedColumnValues.value[key] = [...draftSelectedColumnValues.value[key]];
+const confirmColumnFilter = (key: string) => {
+    selectedColumnValues.value[key] = [...(draftSelectedColumnValues.value[key] ?? [])];
     headerFilterSearch.value[key] = '';
     activeHeaderFilter.value = null;
 };
@@ -327,7 +285,7 @@ const handlePointerDown = (event: PointerEvent) => {
         return;
     }
 
-    if (target.closest('[data-projects-filter-root]')) {
+    if (target.closest('[data-spreadsheet-table-root]')) {
         return;
     }
 
@@ -352,17 +310,20 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div class="flex h-[calc(100vh-8rem)] flex-1 flex-col gap-4 overflow-hidden rounded-xl p-4">
+    <div
+        class="flex flex-1 flex-col gap-4 overflow-hidden rounded-xl p-4"
+        :class="props.stretchToViewport ? 'h-[calc(100vh-8rem)]' : 'h-full min-h-0'"
+    >
         <section class="flex min-h-0 flex-1 flex-col rounded-2xl border border-sidebar-border/70 bg-background/80 p-5 shadow-sm">
             <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-sidebar-border/70 bg-background shadow-sm">
                 <div class="flex flex-wrap items-center justify-between gap-3 border-b border-sidebar-border/70 px-5 py-4">
                     <div>
-                        <h2 class="text-sm font-semibold text-foreground">Projects</h2>
-                        <p class="text-sm text-muted-foreground">
-                            Project data below is loaded from the database.
+                        <h2 class="text-sm font-semibold text-foreground">{{ props.title }}</h2>
+                        <p v-if="props.description" class="text-sm text-muted-foreground">
+                            {{ props.description }}
                         </p>
-                        <p v-if="props.activeClientId" class="text-xs text-muted-foreground">
-                            Filtered by client ID: {{ props.activeClientId }}
+                        <p v-if="props.note" class="text-xs text-muted-foreground">
+                            {{ props.note }}
                         </p>
                     </div>
 
@@ -371,19 +332,19 @@ onBeforeUnmount(() => {
                             <Search class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 v-model="searchQuery"
-                                placeholder="Search like a spreadsheet..."
+                                :placeholder="props.searchPlaceholder"
                                 class="pl-9"
                             />
                         </div>
 
-                        <div class="relative" data-projects-filter-root>
-                            <Button variant="default" @click="createProject">
+                        <div v-if="props.showCreateButton" class="relative" data-spreadsheet-table-root>
+                            <Button variant="default" @click="createItem">
                                 <Plus class="size-4" />
-                                New Project
+                                {{ props.createLabel }}
                             </Button>
                         </div>
 
-                        <div class="relative" data-projects-filter-root>
+                        <div class="relative" data-spreadsheet-table-root>
                             <Button variant="outline" @click="showColumnPicker = !showColumnPicker">
                                 <Settings2 class="size-4" />
                                 Columns
@@ -397,16 +358,15 @@ onBeforeUnmount(() => {
                                     Visible Columns
                                 </p>
                                 <label
-                                    v-for="column in columns"
+                                    v-for="column in props.columns"
                                     :key="column.key"
                                     class="flex cursor-pointer items-center justify-between gap-3 rounded-md px-2 py-1.5 text-sm hover:bg-muted/50"
                                 >
                                     <span>{{ column.label }}</span>
                                     <input
-                                        :checked="visibleColumns[column.key]"
+                                        v-model="visibleColumns[column.key]"
                                         type="checkbox"
                                         class="h-4 w-4"
-                                        @change="toggleColumn(column.key)"
                                     />
                                 </label>
                             </div>
@@ -419,10 +379,11 @@ onBeforeUnmount(() => {
                         <thead class="sticky top-0 z-10 bg-muted/95 text-left text-muted-foreground backdrop-blur">
                             <tr>
                                 <th
-                                    v-for="column in visibleColumnList"
+                                    v-for="column in resolvedColumns"
                                     :key="column.key"
                                     class="relative px-4 py-3"
-                                    data-projects-filter-root
+                                    data-spreadsheet-table-root
+                                    :class="column.widthClass"
                                 >
                                     <button
                                         type="button"
@@ -444,48 +405,32 @@ onBeforeUnmount(() => {
                         </thead>
                         <tbody>
                             <tr
-                                v-for="item in sortedProjects"
-                                :key="item.id"
+                                v-for="row in sortedRows"
+                                :key="String(row[props.rowKeyField] ?? JSON.stringify(row))"
                                 class="border-t border-sidebar-border/70 align-top"
                             >
                                 <td
-                                    v-for="column in visibleColumnList"
+                                    v-for="column in resolvedColumns"
                                     :key="column.key"
                                     class="px-4 py-3"
                                 >
-                                    <span
-                                        v-if="column.key === 'paymentStatus'"
-                                        class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
-                                        :class="getPaymentStatusClass(item.paymentStatus)"
-                                    >
-                                        {{ displayCellValue(item, column.key) }}
-                                    </span>
-                                    <span
-                                        v-else-if="column.key === 'projectStatus'"
-                                        class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
-                                        :class="getProjectStatusClass(item.projectStatus)"
-                                    >
-                                        {{ displayCellValue(item, column.key) }}
-                                    </span>
-                                    <span v-else>
-                                        {{ displayCellValue(item, column.key) }}
-                                    </span>
+                                    <slot :name="`cell-${column.key}`" :row="row" :column="column" :value="columnValue(row, column)">
+                                        {{ columnValue(row, column) }}
+                                    </slot>
                                 </td>
                                 <td class="px-4 py-3">
                                     <div class="flex justify-end">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon-sm"
-                                            @click="openProject(item)"
-                                        >
-                                            <ExternalLink class="size-4" />
-                                        </Button>
+                                        <slot name="actions" :row="row">
+                                            <Button variant="ghost" size="icon-sm" @click="openRow(row)">
+                                                <ExternalLink class="size-4" />
+                                            </Button>
+                                        </slot>
                                     </div>
                                 </td>
                             </tr>
-                            <tr v-if="sortedProjects.length === 0">
-                                <td :colspan="visibleColumnList.length + 1" class="px-4 py-8 text-center text-muted-foreground">
-                                    No matching project data found.
+                            <tr v-if="sortedRows.length === 0">
+                                <td :colspan="resolvedColumns.length + 1" class="px-4 py-8 text-center text-muted-foreground">
+                                    {{ props.emptyText }}
                                 </td>
                             </tr>
                         </tbody>
@@ -496,7 +441,7 @@ onBeforeUnmount(() => {
 
         <Teleport v-if="activeHeaderColumn" to="body">
             <div
-                data-projects-filter-root
+                data-spreadsheet-table-root
                 :style="headerFilterStyle"
                 class="rounded-xl border border-sidebar-border/70 bg-background shadow-lg"
             >

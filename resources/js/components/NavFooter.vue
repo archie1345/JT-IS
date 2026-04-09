@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import {
     SidebarGroup,
     SidebarGroupContent,
@@ -8,6 +9,9 @@ import {
 } from '@/components/ui/sidebar';
 import { toUrl } from '@/lib/utils';
 import type { NavItem } from '@/types';
+
+const isExternalHref = (href: NavItem['href']) =>
+    typeof href === 'string' && /^https?:\/\//i.test(href);
 
 type Props = {
     items: NavItem[];
@@ -28,7 +32,15 @@ defineProps<Props>();
                         class="text-neutral-600 hover:text-neutral-800 dark:text-neutral-300 dark:hover:text-neutral-100"
                         as-child
                     >
+                        <Link
+                            v-if="!isExternalHref(item.href)"
+                            :href="item.href"
+                        >
+                            <component :is="item.icon" />
+                            <span>{{ item.title }}</span>
+                        </Link>
                         <a
+                            v-else
                             :href="toUrl(item.href)"
                             target="_blank"
                             rel="noopener noreferrer"

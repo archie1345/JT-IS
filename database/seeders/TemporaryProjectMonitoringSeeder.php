@@ -2,9 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class TemporaryProjectMonitoringSeeder extends Seeder
 {
@@ -13,6 +15,10 @@ class TemporaryProjectMonitoringSeeder extends Seeder
      */
     public function run(): void
     {
+        foreach ($this->sidebarRoles() as $role) {
+            Role::findOrCreate($role, 'web');
+        }
+
         DB::transaction(function () {
             $now = now();
 
@@ -280,6 +286,8 @@ class TemporaryProjectMonitoringSeeder extends Seeder
                 }
             }
         });
+
+        $this->syncSeededUserRoles();
     }
 
     /**
@@ -532,5 +540,28 @@ class TemporaryProjectMonitoringSeeder extends Seeder
                 ]
             );
         }
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function sidebarRoles(): array
+    {
+        return ['admin', 'employee', 'client', 'jte'];
+    }
+
+    private function syncSeededUserRoles(): void
+    {
+        User::query()
+            ->get(['id', 'user_type'])
+            ->each(function (User $user): void {
+                $role = $user->sidebarRoleName();
+
+                if ($role === null) {
+                    return;
+                }
+
+                $user->syncRoles([$role]);
+            });
     }
 }

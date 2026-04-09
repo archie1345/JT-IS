@@ -7,6 +7,7 @@ export type User = {
     id: number;
     name: string;
     email: string;
+    user_type?: string;
     avatar?: string;
     email_verified_at: string | null;
     created_at: string;
@@ -17,6 +18,8 @@ export type User = {
 
 export type Auth = {
     user: User;
+    roles: string[];
+    permissions: string[];
 };
 
 export type TwoFactorConfigContent = {

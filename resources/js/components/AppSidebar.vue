@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { Link, usePage } from '@inertiajs/vue3';
 import * as icons from 'lucide-vue-next';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
@@ -15,9 +16,62 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import type { NavItem, NavSection } from '@/types';
+import type { NavItem } from '@/types';
+import type { Auth } from '@/types';
 
-const mainNavSections: NavSection[] = [
+type SidebarNavItem = NavItem & {
+    allowedRoles?: string[];
+};
+
+type SidebarNavSection = {
+    label: null | string;
+    items: SidebarNavItem[];
+};
+
+type PageAuth = {
+    roles?: string[] | null;
+    user?: Auth['user'] | null;
+};
+
+const page = usePage<{ auth: PageAuth }>();
+
+const isAdmin = computed(() =>
+    page.props.auth?.user?.user_type === 'admin' ||
+    page.props.auth?.roles?.includes('admin') === true,
+);
+
+const userRoles = computed(() => {
+    const roles = page.props.auth?.roles ?? [];
+
+    return new Set(roles);
+});
+
+const canSee = (allowedRoles?: string[]) => {
+    if (isAdmin.value) {
+        return true;
+    }
+
+    if (!allowedRoles || allowedRoles.length === 0) {
+        return true;
+    }
+
+    return allowedRoles.some((role) => userRoles.value.has(role));
+};
+
+const filterSection = (section: SidebarNavSection): SidebarNavSection | null => {
+    const items = section.items.filter((item) => canSee(item.allowedRoles));
+
+    if (items.length === 0) {
+        return null;
+    }
+
+    return {
+        ...section,
+        items,
+    };
+};
+
+const rawMainNavSections: SidebarNavSection[] = [
     {
         label: null,
         items: [
@@ -29,22 +83,25 @@ const mainNavSections: NavSection[] = [
         ],
     },
     {
-        label: 'Marketing',
-        items: [          
+        label: 'Finance',
+        items: [
             {
                 title: 'Billing',
                 href: '',
                 icon: icons.BadgeDollarSign,
+                allowedRoles: ['admin', 'employee'],
             },
             {
                 title: 'Cost Realization',
                 href: '',
                 icon: icons.FileCheckIcon,
+                allowedRoles: ['admin', 'employee'],
             },
             {
                 title: 'Profit and Loss',
                 href: '',
                 icon: icons.ChartLine,
+                allowedRoles: ['admin', 'employee'],
             },
         ],
     },
@@ -55,48 +112,71 @@ const mainNavSections: NavSection[] = [
                 title: 'Projects',
                 href: '/projects',
                 icon: icons.Network,
+                allowedRoles: ['admin', 'employee', 'jte'],
             },
             {
                 title: 'Client',
                 href: '/client',
                 icon: icons.Users,
+                allowedRoles: ['admin', 'employee', 'jte'],
             },
             {
                 title: 'Reports',
                 href: '',
                 icon: icons.FilesIcon,
+                allowedRoles: ['admin', 'employee', 'jte'],
             },
         ],
     },
     {
         label: 'Operational',
         items: [
-            // {
-            //     title: 'Project Details',
-            //     href: '',
-            //     icon: icons.ReceiptText,
-            // },
             {
-                title: 'RAB & RAP',
-                href: '/rab-rap',
+                title: 'RAB',
+                href: '/rabs',
                 icon: icons.FileText,
+                allowedRoles: ['admin', 'employee', 'jte'],
+            },
+            {
+                title: 'RAP',
+                href: '/raps',
+                icon: icons.FileText,
+                allowedRoles: ['admin', 'employee', 'jte'],
             },
             {
                 title: 'Progress Update',
                 href: '',
                 icon: icons.CopyCheck,
+                allowedRoles: ['admin', 'employee', 'jte'],
             },
         ],
     },
 ];
 
-const footerNavItems: NavItem[] = [
+const mainNavSections = computed<SidebarNavSection[]>(() =>
+    rawMainNavSections
+        .map(filterSection)
+        .filter((section): section is SidebarNavSection => section !== null),
+);
+
+const rawFooterNavItems: SidebarNavItem[] = [
     {
         title: 'testing',
         href: '/billing-test',
         icon: icons.TestTube,
+        allowedRoles: ['admin', 'employee', 'jte'],
+    },
+    {
+        title: 'Account Management',
+        href: '/Admin_acc_mgmt',
+        icon: icons.Settings,
+        allowedRoles: ['admin'],
     },
 ];
+
+const footerNavItems = computed<SidebarNavItem[]>(() =>
+    rawFooterNavItems.filter((item) => canSee(item.allowedRoles)),
+);
 </script>
 
 <template>
@@ -118,7 +198,7 @@ const footerNavItems: NavItem[] = [
         </SidebarContent>
 
         <SidebarFooter>
-            <NavFooter :items="footerNavItems" />
+            <NavFooter v-if="footerNavItems.length > 0" :items="footerNavItems" />
             <NavUser />
         </SidebarFooter>
     </Sidebar>

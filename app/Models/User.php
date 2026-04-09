@@ -11,11 +11,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
+    use HasFactory, Notifiable, SoftDeletes, TwoFactorAuthenticatable, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -60,6 +62,13 @@ class User extends Authenticatable
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::saved(function (self $user): void {
+            $user->syncSidebarRole();
+        });
+    }
+
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
@@ -79,5 +88,25 @@ class User extends Authenticatable
     public function fundRequests(): HasMany
     {
         return $this->hasMany(FundRequest::class, 'requested_by');
+    }
+
+    public function syncSidebarRole(): void
+    {
+        $role = $this->sidebarRoleName();
+
+        if ($role === null) {
+            return;
+        }
+
+        Role::findOrCreate($role, 'web');
+        $this->syncRoles([$role]);
+    }
+
+    public function sidebarRoleName(): ?string
+    {
+        return match ($this->user_type) {
+            'admin', 'employee', 'client', 'jte' => $this->user_type,
+            default => null,
+        };
     }
 }

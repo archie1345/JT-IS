@@ -103,7 +103,8 @@ abstract class TableCrudController extends Controller
         return match ($this->table) {
             'clients' => 'Clients',
             'projects' => 'Projects',
-            'raps', 'rabs', 'rap_items', 'rab_items' => 'RabRap',
+            'rabs' => 'Rabs',
+            'raps' => 'Raps',
             default => null,
         };
     }

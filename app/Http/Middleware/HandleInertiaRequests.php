@@ -42,12 +42,16 @@ class HandleInertiaRequests extends Middleware
 
         if ($user) {
             $roles = method_exists($user, 'getRoleNames')
-                ? $user->getRoleNames()
-                : collect();
+                ? $user->getRoleNames()->values()->all()
+                : [];
+
+            if (($user->user_type ?? null) === 'admin' && ! in_array('admin', $roles, true)) {
+                $roles[] = 'admin';
+            }
 
             $permissions = method_exists($user, 'getAllPermissions')
-                ? $user->getAllPermissions()->pluck('name')
-                : collect();
+                ? $user->getAllPermissions()->pluck('name')->values()->all()
+                : [];
         }
 
         return [

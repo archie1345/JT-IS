@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\AccessControl;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -37,32 +38,16 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
 
-        $roles = [];
-        $permissions = [];
-
-        if ($user) {
-            $roles = method_exists($user, 'getRoleNames')
-                ? $user->getRoleNames()->values()->all()
-                : [];
-
-            if (($user->user_type ?? null) === 'admin' && ! in_array('admin', $roles, true)) {
-                $roles[] = 'admin';
-            }
-
-            $permissions = method_exists($user, 'getAllPermissions')
-                ? $user->getAllPermissions()->pluck('name')->values()->all()
-                : [];
-        }
-
-        return [
-            ...parent::share($request),
-            'name' => config('app.name'),
+        return array_merge(parent::share($request), [
             'auth' => [
                 'user' => $user,
-                'roles' => $roles,
-                'permissions' => $permissions,
+                'roles' => $user ? $user->getRoleNames()->values()->all() : [],
+                'permissions' => $user ? $user->getAllPermissions()->pluck('name')->values()->all() : [],
             ],
-            'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
-        ];
+            'navigation' => [
+                'sidebarSections' => AccessControl::sidebarSections(),
+                'footerItems' => AccessControl::footerItems(),
+            ],
+        ]);
     }
 }

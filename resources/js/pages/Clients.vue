@@ -1,15 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
-import ProjectDataTable from '@/components/ProjectDataTable.vue';
+import { router } from '@inertiajs/vue3';
+import EntityIndexPage from '@/components/entity/EntityIndexPage.vue';
+import type { SpreadsheetColumn } from '@/components/ProjectDataTable.vue';
 import type { BreadcrumbItem } from '@/types';
-import type { ClientItem } from '@/types/client';
+import type { ClientItem, ClientsPageProps } from '@/types/client';
 
-const props = defineProps<{
-    clients?: ClientItem[];
-    data?: ClientItem[];
-}>();
+const props = defineProps<ClientsPageProps>();
 
 const rows = computed(() => props.clients ?? props.data ?? []);
 
@@ -34,24 +31,21 @@ const clientColumns = [
     { key: 'name', label: 'Client Name', accessor: (row: Record<string, unknown>) => (row as ClientItem).name ?? '-' },
     { key: 'contact', label: 'Contact', accessor: (row: Record<string, unknown>) => (row as ClientItem).contact ?? '-' },
     { key: 'projectCount', label: 'Projects', accessor: (row: Record<string, unknown>) => (row as ClientItem).projectCount },
-];
+] satisfies SpreadsheetColumn[];
 </script>
 
 <template>
-    <Head title="Clients" />
-
-    <AppLayout :breadcrumbs="breadcrumbs">
-        <ProjectDataTable
-            :rows="rows"
-            :columns="clientColumns"
-            title="Clients"
-            description="Data below is loaded from the database and summarizes each client portfolio."
-            row-key-field="id"
-            show-create-button
-            create-label="New Client"
-            @create="createClient"
-            @row-click="openClient"
-        >
-        </ProjectDataTable>
-    </AppLayout>
+    <EntityIndexPage
+        head-title="Clients"
+        title="Clients"
+        :rows="rows"
+        :columns="clientColumns"
+        :breadcrumbs="breadcrumbs"
+        description="Data below is loaded from the database and summarizes each client portfolio."
+        row-key-field="id"
+        show-create-button
+        create-label="New Client"
+        @create="createClient"
+        @row-click="openClient"
+    />
 </template>

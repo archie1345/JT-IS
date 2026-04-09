@@ -1,25 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
-import ProjectDataTable, { type SpreadsheetColumn } from '@/components/ProjectDataTable.vue';
+import { router } from '@inertiajs/vue3';
+import EntityIndexPage from '@/components/entity/EntityIndexPage.vue';
+import type { SpreadsheetColumn } from '@/components/ProjectDataTable.vue';
 import type { BreadcrumbItem } from '@/types';
+import type { ProjectItem, ProjectsPageProps } from '@/types/project';
 
-type ProjectItem = {
-    id: number;
-    projectName: string;
-    client: string;
-    estPrice: number;
-    deadline: string;
-    paymentStatus: 'pending' | 'paid' | 'overdue' | 'partial';
-    projectStatus: 'planning' | 'ongoing' | 'completed';
-};
-
-const props = defineProps<{
-    projects?: ProjectItem[];
-    data?: ProjectItem[];
-    activeClientId?: number | null;
-}>();
+const props = defineProps<ProjectsPageProps>();
 
 const rows = computed(() => props.projects ?? props.data ?? []);
 
@@ -85,30 +72,28 @@ const projectColumns = [
 </script>
 
 <template>
-    <Head title="Projects" />
-
-    <AppLayout :breadcrumbs="breadcrumbs">
-        <ProjectDataTable
-            :rows="rows"
-            :columns="projectColumns"
-            title="Projects"
-            description="Project data below is loaded from the database."
-            :note="props.activeClientId ? `Filtered by client ID: ${props.activeClientId}` : ''"
-            row-key-field="id"
-            create-label="New Project"
-            show-create-button
-            @row-click="openProject"
-            @create="createProject"
-        >
-            <template #cell-estPrice="{ value }">
-                {{
-                    new Intl.NumberFormat('id-ID', {
-                        style: 'currency',
-                        currency: 'IDR',
-                        maximumFractionDigits: 0,
-                    }).format(Number(value ?? 0))
-                }}
-            </template>
-        </ProjectDataTable>
-    </AppLayout>
+    <EntityIndexPage
+        head-title="Projects"
+        title="Projects"
+        :rows="rows"
+        :columns="projectColumns"
+        :breadcrumbs="breadcrumbs"
+        description="Project data below is loaded from the database."
+        :note="props.activeClientId ? `Filtered by client ID: ${props.activeClientId}` : ''"
+        row-key-field="id"
+        create-label="New Project"
+        show-create-button
+        @row-click="openProject"
+        @create="createProject"
+    >
+        <template #cell-estPrice="{ value }">
+            {{
+                new Intl.NumberFormat('id-ID', {
+                    style: 'currency',
+                    currency: 'IDR',
+                    maximumFractionDigits: 0,
+                }).format(Number(value ?? 0))
+            }}
+        </template>
+    </EntityIndexPage>
 </template>

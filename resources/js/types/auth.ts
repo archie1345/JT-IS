@@ -23,6 +23,23 @@ export type Auth = {
     permissions: string[];
 };
 
+export type SharedNavigationItem = {
+    title: string;
+    href: string;
+    icon: string;
+    permission: string;
+};
+
+export type SharedNavigationSection = {
+    label: null | string;
+    items: SharedNavigationItem[];
+};
+
+export type SharedNavigation = {
+    sidebarSections: SharedNavigationSection[];
+    footerItems: SharedNavigationItem[];
+};
+
 export type TwoFactorConfigContent = {
     title: string;
     description: string;

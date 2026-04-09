@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Client;
 use App\Models\User;
+use App\Support\AccessControl;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -12,12 +13,14 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Spatie\Permission\Models\Role;
 
 class AdminAccMgmtController extends Controller
 {
     public function index(): Response
     {
         $this->ensureUserTypeEnum();
+        AccessControl::sync();
 
         $users = User::query()
             ->with('client:id,name')
@@ -35,9 +38,9 @@ class AdminAccMgmtController extends Controller
                     'client' => 'Client',
                     default => ucfirst((string) $user->user_type),
                 },
-                'employeeRole' => $user->normalizedEmployeeRole(),
-                'employeeRoleLabel' => $user->normalizedEmployeeRole() !== null
-                    ? Str::headline($user->normalizedEmployeeRole())
+                'employeeRole' => $this->normalizeEmployeeRole($user->employee_role),
+                'employeeRoleLabel' => $this->normalizeEmployeeRole($user->employee_role) !== null
+                    ? Str::headline($this->normalizeEmployeeRole($user->employee_role))
                     : null,
                 'clientName' => $user->client?->name,
                 'verifiedAt' => optional($user->email_verified_at)->format('Y-m-d'),
@@ -51,6 +54,27 @@ class AdminAccMgmtController extends Controller
             'employee' => User::query()->where('user_type', 'employee')->count(),
             'client' => User::query()->where('user_type', 'client')->count(),
         ];
+
+        $roles = Role::query()
+            ->with('permissions:name')
+            ->where('guard_name', 'web')
+            ->get()
+            ->sortBy(fn (Role $role): array => [
+                $role->name === 'admin' ? 0 : 1,
+                $role->name === 'employee' ? 0 : 1,
+                $role->name === 'client' ? 0 : 1,
+                $role->name,
+            ])
+            ->values()
+            ->map(fn (Role $role): array => [
+                'id' => $role->id,
+                'name' => $role->name,
+                'label' => Str::headline($role->name),
+                'permissions' => $role->permissions->pluck('name')->sort()->values()->all(),
+                'userCount' => User::role($role->name)->count(),
+                'isLocked' => $role->name === 'admin',
+            ])
+            ->all();
 
         return Inertia::render('AdmnUsrMgmt', [
             'users' => $users,
@@ -68,13 +92,9 @@ class AdminAccMgmtController extends Controller
                 ['value' => 'employee', 'label' => 'Employee'],
                 ['value' => 'client', 'label' => 'Client'],
             ],
-            'employeeRoleSuggestions' => [
-                ['value' => 'marketing', 'label' => 'Marketing'],
-                ['value' => 'finance', 'label' => 'Finance'],
-                ['value' => 'operational', 'label' => 'Operational'],
-                ['value' => 'procurement', 'label' => 'Procurement'],
-                ['value' => 'hr', 'label' => 'HR'],
-            ],
+            'employeeRoleSuggestions' => AccessControl::employeeRoleSuggestions(),
+            'roles' => $roles,
+            'permissionGroups' => AccessControl::permissionGroups(),
         ]);
     }
 
@@ -121,6 +141,23 @@ class AdminAccMgmtController extends Controller
         $user->delete();
 
         return to_route('admin.acc_mgmt')->with('success', 'Account deleted successfully.');
+    }
+
+    public function updateRolePermissions(Request $request, Role $role): RedirectResponse
+    {
+        AccessControl::sync();
+
+        abort_if($role->guard_name !== 'web', 404);
+        abort_if($role->name === 'admin', 422, 'The admin role is managed automatically.');
+
+        $validated = $request->validate([
+            'permissions' => ['array'],
+            'permissions.*' => ['string', Rule::in(AccessControl::permissionNames())],
+        ]);
+
+        $role->syncPermissions($validated['permissions'] ?? []);
+
+        return to_route('admin.acc_mgmt')->with('success', sprintf('Permissions updated for %s.', Str::headline($role->name)));
     }
 
     protected function validatePayload(Request $request, ?int $userId = null, bool $updating = false): array

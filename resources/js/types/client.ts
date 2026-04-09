@@ -6,6 +6,11 @@ export type ClientItem = {
     totalProjectValue: number;
 };
 
+export type ClientsPageProps = {
+    clients?: ClientItem[];
+    data?: ClientItem[];
+};
+
 export type ClientMode = 'create' | 'edit';
 
 export type ClientDetail = {

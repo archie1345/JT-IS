@@ -1,35 +1,18 @@
 export type ProjectStatus = 'planning' | 'ongoing' | 'completed';
-export type PaymentStatus = 'pending' | 'partial' | 'paid' | 'overdue';
+export type PaymentStatus = 'pending' | 'paid' | 'overdue' | 'partial';
 export type Mode = 'create' | 'edit';
-
-export type ProjectDetails = {
-    id: number | null;
-    clientId: number | null;
-    name: string;
-    clientName: string | null;
-    clientContact: string | null;
-    contractNumber: string | null;
-    contractValue: number;
-    location: string | null;
-    startDate: string | null;
-    endDate: string | null;
-    status: ProjectStatus;
-    paymentStatus: PaymentStatus;
-    latestProgressPercent: number | null;
-    latestProgressNote: string | null;
-};
 
 export type ClientOption = {
     id: number;
-    name: string | null;
-    contact: string | null;
+    name: string;
+    contact: null | string;
 };
 
 export type DocumentItem = {
     label: string;
     detail: string;
     status: 'available' | 'missing';
-    url?: string | null;
+    url: null | string;
 };
 
 export type UploadedDocument = {
@@ -37,9 +20,9 @@ export type UploadedDocument = {
     name: string;
     originalName: string;
     url: string;
-    mimeType: string | null;
-    size: number | null;
-    createdAt: string | null;
+    mimeType: null | string;
+    size: null | number;
+    createdAt: null | string;
 };
 
 export type ProgressSnapshot = {
@@ -47,4 +30,37 @@ export type ProgressSnapshot = {
     projectStatusScore: number;
     paymentStatusScore: number;
     overallProgress: number;
+};
+
+export type ProjectDetails = {
+    id: null | number;
+    clientId: null | number;
+    name: string;
+    clientName: null | string;
+    clientContact: null | string;
+    contractNumber: null | string;
+    contractValue: number;
+    location: null | string;
+    startDate: null | string;
+    endDate: null | string;
+    status: ProjectStatus;
+    paymentStatus: PaymentStatus;
+    latestProgressPercent: null | number;
+    latestProgressNote: null | string;
+};
+
+export type ProjectItem = {
+    id: number;
+    projectName: string;
+    client: string;
+    estPrice: number;
+    deadline: string;
+    paymentStatus: PaymentStatus;
+    projectStatus: ProjectStatus;
+};
+
+export type ProjectsPageProps = {
+    projects?: ProjectItem[];
+    data?: ProjectItem[];
+    activeClientId?: number | null;
 };

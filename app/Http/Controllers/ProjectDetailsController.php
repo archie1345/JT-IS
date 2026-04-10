@@ -112,8 +112,10 @@ class ProjectDetailsController extends Controller
             $projectDocument->project()->exists(),
             404,
         );
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk('public');
 
-        return Storage::disk('public')->response(
+        return $disk->response(
             $projectDocument->path,
             $projectDocument->original_name,
         );
@@ -185,7 +187,7 @@ class ProjectDetailsController extends Controller
         if ($project->exists) {
             $project->load([
                 'client:id,name,contact',
-                'latestInvoice' => fn ($query) => $query->select(
+                'latestInvoice' => fn($query) => $query->select(
                     'invoices.id',
                     'invoices.project_id',
                     'invoices.status',
@@ -206,18 +208,18 @@ class ProjectDetailsController extends Controller
         $fundRequestsCount = $project->exists ? $project->fundRequests()->count() : 0;
         $uploadedDocuments = $project->exists
             ? $project->documents()
-                ->latest()
-                ->get(['id', 'name', 'original_name', 'path', 'mime_type', 'size', 'created_at'])
-                ->map(fn (ProjectDocument $document): array => [
-                    'id' => $document->id,
-                    'name' => $document->name,
-                    'originalName' => $document->original_name,
-                    'url' => route('projects.documents.show', $document),
-                    'mimeType' => $document->mime_type,
-                    'size' => $document->size,
-                    'createdAt' => optional($document->created_at)->format('Y-m-d H:i'),
-                ])
-                ->all()
+            ->latest()
+            ->get(['id', 'name', 'original_name', 'path', 'mime_type', 'size', 'created_at'])
+            ->map(fn(ProjectDocument $document): array => [
+                'id' => $document->id,
+                'name' => $document->name,
+                'originalName' => $document->original_name,
+                'url' => route('projects.documents.show', $document),
+                'mimeType' => $document->mime_type,
+                'size' => $document->size,
+                'createdAt' => optional($document->created_at)->format('Y-m-d H:i'),
+            ])
+            ->all()
             : [];
 
         $projectStatus = $project->exists ? $project->status : 'planning';
@@ -242,38 +244,38 @@ class ProjectDetailsController extends Controller
 
         $overallProgress = (int) round(
             ($reportScore * 0.55) +
-            ($projectStatusScore * 0.25) +
-            ($paymentStatusScore * 0.20)
+                ($projectStatusScore * 0.25) +
+                ($paymentStatusScore * 0.20)
         );
 
         $documents = [
             [
                 'label' => 'Contract / RAB',
-                'detail' => $rabsCount > 0 ? $rabsCount.' linked record(s)' : 'No RAB linked yet',
+                'detail' => $rabsCount > 0 ? $rabsCount . ' linked record(s)' : 'No RAB linked yet',
                 'status' => $rabsCount > 0 ? 'available' : 'missing',
                 'url' => $project->exists ? route('rabs', ['project' => $project->id]) : null,
             ],
             [
                 'label' => 'RAP',
-                'detail' => $rapsCount > 0 ? $rapsCount.' linked record(s)' : 'No RAP linked yet',
+                'detail' => $rapsCount > 0 ? $rapsCount . ' linked record(s)' : 'No RAP linked yet',
                 'status' => $rapsCount > 0 ? 'available' : 'missing',
                 'url' => $project->exists ? route('raps', ['project' => $project->id]) : null,
             ],
             [
                 'label' => 'Progress Reports',
-                'detail' => $progressReportsCount > 0 ? $progressReportsCount.' report(s)' : 'No report submitted yet',
+                'detail' => $progressReportsCount > 0 ? $progressReportsCount . ' report(s)' : 'No report submitted yet',
                 'status' => $progressReportsCount > 0 ? 'available' : 'missing',
                 'url' => $project->exists ? route('projects.show', $project) : null,
             ],
             [
                 'label' => 'Invoices',
-                'detail' => $invoicesCount > 0 ? $invoicesCount.' invoice(s)' : 'No invoice created yet',
+                'detail' => $invoicesCount > 0 ? $invoicesCount . ' invoice(s)' : 'No invoice created yet',
                 'status' => $invoicesCount > 0 ? 'available' : 'missing',
                 'url' => $project->exists ? route('invoices.index') : null,
             ],
             [
                 'label' => 'Fund Requests',
-                'detail' => $fundRequestsCount > 0 ? $fundRequestsCount.' request(s)' : 'No fund request yet',
+                'detail' => $fundRequestsCount > 0 ? $fundRequestsCount . ' request(s)' : 'No fund request yet',
                 'status' => $fundRequestsCount > 0 ? 'available' : 'missing',
                 'url' => $project->exists ? route('fund-requests.index') : null,
             ],
@@ -300,7 +302,7 @@ class ProjectDetailsController extends Controller
             'clients' => Client::query()
                 ->orderBy('name')
                 ->get(['id', 'name', 'contact'])
-                ->map(fn (Client $client): array => [
+                ->map(fn(Client $client): array => [
                     'id' => $client->id,
                     'name' => $client->name,
                     'contact' => $client->contact,

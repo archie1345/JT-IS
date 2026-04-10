@@ -4,7 +4,7 @@ namespace App\Http\Controllers\ProjectMonitoring;
 
 class ClientsController extends TableCrudController
 {
-    protected string $table = 'clients';
+    protected string $model = \App\Models\Client::class;
 
     protected function storeRules(): array
     {

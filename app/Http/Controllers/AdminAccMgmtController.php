@@ -26,7 +26,7 @@ class AdminAccMgmtController extends Controller
             ->with('client:id,name')
             ->latest('id')
             ->get(['id', 'client_id', 'name', 'email', 'user_type', 'employee_role', 'email_verified_at', 'created_at'])
-            ->map(fn (User $user): array => [
+            ->map(fn(User $user): array => [
                 'id' => $user->id,
                 'clientId' => $user->client_id,
                 'name' => $user->name,
@@ -59,14 +59,14 @@ class AdminAccMgmtController extends Controller
             ->with('permissions:name')
             ->where('guard_name', 'web')
             ->get()
-            ->sortBy(fn (Role $role): array => [
+            ->sortBy(fn(Role $role): array => [
                 $role->name === 'admin' ? 0 : 1,
                 $role->name === 'employee' ? 0 : 1,
                 $role->name === 'client' ? 0 : 1,
                 $role->name,
             ])
             ->values()
-            ->map(fn (Role $role): array => [
+            ->map(fn(Role $role): array => [
                 'id' => $role->id,
                 'name' => $role->name,
                 'label' => Str::headline($role->name),
@@ -81,7 +81,7 @@ class AdminAccMgmtController extends Controller
             'clients' => Client::query()
                 ->orderBy('name')
                 ->get(['id', 'name'])
-                ->map(fn (Client $client): array => [
+                ->map(fn(Client $client): array => [
                     'id' => $client->id,
                     'name' => $client->name,
                 ])
@@ -101,10 +101,10 @@ class AdminAccMgmtController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $this->ensureUserTypeEnum();
-
         $data = $this->validatePayload($request);
 
-        User::create([
+        // Simpan ke variabel $user
+        $user = User::create([
             'client_id' => $data['user_type'] === 'client' ? $data['client_id'] : null,
             'name' => $data['name'],
             'email' => $data['email'],
@@ -113,13 +113,19 @@ class AdminAccMgmtController extends Controller
             'employee_role' => $data['user_type'] === 'employee' ? $data['employee_role'] : null,
         ]);
 
+        // Assign Role ke User baru
+        if ($data['user_type'] === 'admin') {
+            $user->assignRole('admin');
+        } elseif ($data['user_type'] === 'employee' && !empty($data['employee_role'])) {
+            $user->assignRole($data['employee_role']);
+        }
+
         return to_route('admin.acc_mgmt')->with('success', 'Account created successfully.');
     }
 
     public function update(Request $request, User $user): RedirectResponse
     {
         $this->ensureUserTypeEnum();
-
         $data = $this->validatePayload($request, $user->id, true);
 
         $user->update([
@@ -130,6 +136,16 @@ class AdminAccMgmtController extends Controller
             'employee_role' => $data['user_type'] === 'employee' ? $data['employee_role'] : null,
             ...(! empty($data['password']) ? ['password' => $data['password']] : []),
         ]);
+
+        // Update Role
+        if ($data['user_type'] === 'admin') {
+            $user->syncRoles(['admin']);
+        } elseif ($data['user_type'] === 'employee' && !empty($data['employee_role'])) {
+            $user->syncRoles([$data['employee_role']]);
+        } else {
+            // Jika diubah jadi Client, copot semua role internal
+            $user->syncRoles([]); 
+        }
 
         return to_route('admin.acc_mgmt')->with('success', 'Account updated successfully.');
     }

@@ -4,10 +4,12 @@ namespace App\Http\Controllers\ProjectMonitoring;
 
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Hash; // Tambahkan ini untuk hashing
 
 class UsersController extends TableCrudController
 {
-    protected string $table = 'users';
+    // GANTI $table jadi $model
+    protected string $model = \App\Models\User::class;
 
     protected function storeRules(): array
     {
@@ -17,9 +19,9 @@ class UsersController extends TableCrudController
             'email' => ['required', 'email', 'max:150', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'max:255'],
             'user_type' => ['required', Rule::in(['employee', 'client', 'admin'])],
-            'employee_role' => ['nullable', 'string', 'max:50'],
-            'email_verified_at' => ['nullable', 'date'],
-            'remember_token' => ['nullable', 'string', 'max:100'],
+            
+            // Wajibkan input role dari frontend
+            'role' => ['required', 'string', 'exists:roles,name'], 
         ];
     }
 
@@ -29,11 +31,28 @@ class UsersController extends TableCrudController
             'client_id' => ['sometimes', 'nullable', 'integer', 'exists:clients,id'],
             'name' => ['sometimes', 'required', 'string', 'max:100'],
             'email' => ['sometimes', 'required', 'email', 'max:150', Rule::unique('users', 'email')->ignore($id)],
-            'password' => ['sometimes', 'required', 'string', 'min:8', 'max:255'],
+            'password' => ['nullable', 'string', 'min:8', 'max:255'], // Password dibuat opsional saat update
             'user_type' => ['sometimes', 'required', Rule::in(['employee', 'client', 'admin'])],
-            'employee_role' => ['sometimes', 'nullable', 'string', 'max:50'],
-            'email_verified_at' => ['sometimes', 'nullable', 'date'],
-            'remember_token' => ['sometimes', 'nullable', 'string', 'max:100'],
+            
+            // TAMBAHAN SPATIE
+            'role' => ['sometimes', 'required', 'string', 'exists:roles,name'],
         ];
+    }
+
+    // Eksekusi setelah user dibuat
+    protected function afterStore($record, Request $request): void
+    {
+        // $record sekarang adalah objek dari App\Models\User, jadi assignRole() bisa jalan!
+        if ($request->has('role')) {
+            $record->assignRole($request->role);
+        }
+    }
+
+    // Eksekusi setelah user diupdate
+    protected function afterUpdate($record, Request $request): void
+    {
+        if ($request->has('role')) {
+            $record->syncRoles([$request->role]);
+        }
     }
 }

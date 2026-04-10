@@ -3,22 +3,19 @@
 namespace App\Http\Controllers\ProjectMonitoring;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Inertia\Response;
 
 abstract class TableCrudController extends Controller
 {
-    protected string $table;
+    // 1. GANTI DARI $table MENJADI $model
+    protected string $model;
 
-    public function index(Request $request): Response|JsonResponse
+    public function index(Request $request): Response|\Illuminate\Http\JsonResponse
     {
-        $records = $this->query()
-            ->orderByDesc('id')
-            ->paginate(15);
+        // Gunakan Eloquent, otomatis handle SoftDeletes & Timestamps
+        $records = $this->model::orderByDesc('id')->paginate(15);
 
         $view = $this->inertiaView();
 
@@ -31,112 +28,65 @@ abstract class TableCrudController extends Controller
         return response()->json($records);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(Request $request)
     {
         $validated = $request->validate($this->storeRules());
-        $now = now();
 
-        if ($this->hasTimestamps()) {
-            $validated['created_at'] = $validated['created_at'] ?? $now;
-            $validated['updated_at'] = $now;
-        }
+        // Gunakan Eloquent Create
+        $record = $this->model::create($validated);
 
-        $id = DB::table($this->table)->insertGetId($validated);
+        $this->afterStore($record, $request);
 
-        return response()->json(
-            $this->query()->where('id', $id)->first(),
-            201
-        );
+        // Jika inertia return redirect back
+        return redirect()->back()->with('success', 'Data berhasil disimpan.');
     }
 
-    public function show(int $id): JsonResponse
+    public function show(int $id)
     {
-        $record = $this->query()->where('id', $id)->first();
-
-        abort_if(! $record, 404);
-
+        $record = $this->model::findOrFail($id);
         return response()->json($record);
     }
 
-    public function update(Request $request, int $id): JsonResponse
+    public function update(Request $request, int $id)
     {
+        $record = $this->model::findOrFail($id);
         $validated = $request->validate($this->updateRules($id));
-        $query = $this->query()->where('id', $id);
 
-        abort_if(! $query->exists(), 404);
+        $record->update($validated);
 
-        if ($this->hasTimestamps()) {
-            $validated['updated_at'] = now();
-        }
+        // Panggil fungsi pancingan (Hook) untuk Spatie
+        $this->afterUpdate($record, $request);
 
-        $query->update($validated);
-
-        return response()->json($this->query()->where('id', $id)->first());
+        return redirect()->back()->with('success', 'Data berhasil diupdate.');
     }
 
-    public function destroy(int $id): JsonResponse
+    public function destroy(int $id)
     {
-        $query = $this->query()->where('id', $id);
+        $record = $this->model::findOrFail($id);
+        
+        // Fitur SoftDeletes atau ForceDelete akan ditangani otomatis oleh Model
+        $record->delete();
 
-        abort_if(! $query->exists(), 404);
-
-        if ($this->hasSoftDeletes()) {
-            $query->update([
-                'deleted_at' => now(),
-                ...($this->hasTimestamps() ? ['updated_at' => now()] : []),
-            ]);
-        } else {
-            $query->delete();
-        }
-
-        return response()->json([
-            'message' => 'Deleted successfully.',
-        ]);
+        return redirect()->back()->with('success', 'Data berhasil dihapus.');
     }
+
+    // Fungsi kosong bawaan yang bisa di-override oleh Controller anak
+    protected function afterStore($record, Request $request): void {}
+    protected function afterUpdate($record, Request $request): void {}
 
     abstract protected function storeRules(): array;
-
     abstract protected function updateRules(int $id): array;
 
     protected function inertiaView(): ?string
     {
-        return match ($this->table) {
-            'clients' => 'Clients',
-            'projects' => 'Projects',
-            'rabs' => 'Rabs',
-            'raps' => 'Raps',
+        // menggunakan nama Model agar lebih dinamis
+        return match ($this->model) {
+            \App\Models\Client::class => 'Clients',
+            \App\Models\Project::class => 'Projects',
+            \App\Models\Rab::class => 'Rabs',
+            \App\Models\Rap::class => 'Raps',
+            \App\Models\User::class => 'Admin/Users/Index', // Tambahkan View User
             default => null,
         };
-    }
-
-    protected function hasTimestamps(): bool
-    {
-        return in_array($this->table, [
-            'clients',
-            'projects',
-            'tenders',
-            'rabs',
-            'raps',
-            'progress_reports',
-            'invoices',
-            'fund_requests',
-            'users',
-        ], true);
-    }
-
-    protected function hasSoftDeletes(): bool
-    {
-        return Schema::hasColumn($this->table, 'deleted_at');
-    }
-
-    protected function query()
-    {
-        $query = DB::table($this->table);
-
-        if ($this->hasSoftDeletes()) {
-            $query->whereNull('deleted_at');
-        }
-
-        return $query;
     }
 }

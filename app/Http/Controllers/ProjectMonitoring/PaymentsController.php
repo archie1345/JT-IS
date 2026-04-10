@@ -23,9 +23,4 @@ class PaymentsController extends TableCrudController
             'payment_date' => ['sometimes', 'nullable', 'date'],
         ];
     }
-
-    protected function usesTimestamps(): bool
-    {
-        return false;
-    }
 }

@@ -187,10 +187,10 @@ const openHeaderFilter = (event: MouseEvent, key: string) => {
     }
 
     const rect = target.getBoundingClientRect();
-    const popupWidth = 320;
     const viewportPadding = 16;
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
+    const popupWidth = Math.min(320, viewportWidth - viewportPadding * 2);
 
     const left = Math.min(
         Math.max(viewportPadding, rect.left),
@@ -311,48 +311,52 @@ onBeforeUnmount(() => {
 
 <template>
     <div
-        class="flex flex-1 flex-col gap-4 overflow-hidden rounded-xl p-4"
+        class="flex flex-1 flex-col gap-3 overflow-hidden rounded-xl p-3 sm:gap-4 sm:p-4"
         :class="props.stretchToViewport ? 'h-[calc(100vh-8rem)]' : 'h-full min-h-0'"
     >
-        <section class="flex min-h-0 flex-1 flex-col rounded-2xl border border-sidebar-border/70 bg-background/80 p-5 shadow-sm">
+        <section class="flex min-h-0 flex-1 flex-col rounded-2xl border border-sidebar-border/70 bg-background/80 p-3 shadow-sm sm:p-5">
             <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-sidebar-border/70 bg-background shadow-sm">
-                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-sidebar-border/70 px-5 py-4">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-sidebar-border/70 px-3 py-3 sm:px-5 sm:py-4">
                     <div>
-                        <h2 class="text-sm font-semibold text-foreground">{{ props.title }}</h2>
-                        <p v-if="props.description" class="text-sm text-muted-foreground">
+                        <h2 class="text-base font-semibold text-foreground sm:text-lg">{{ props.title }}</h2>
+                        <p v-if="props.description" class="text-xs text-muted-foreground sm:text-sm">
                             {{ props.description }}
                         </p>
-                        <p v-if="props.note" class="text-xs text-muted-foreground">
+                        <p v-if="props.note" class="text-[11px] text-muted-foreground sm:text-xs">
                             {{ props.note }}
                         </p>
                     </div>
 
                     <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
-                        <div class="relative min-w-64">
+                        <div class="relative w-full sm:min-w-64">
                             <Search class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 v-model="searchQuery"
                                 :placeholder="props.searchPlaceholder"
-                                class="pl-9"
+                                class="h-10 pl-9 text-sm"
                             />
                         </div>
 
-                        <div v-if="props.showCreateButton" class="relative" data-spreadsheet-table-root>
-                            <Button variant="default" @click="createItem">
+                        <div v-if="props.showCreateButton" class="relative w-full sm:w-auto" data-spreadsheet-table-root>
+                            <Button variant="default" class="w-full text-sm sm:w-auto" @click="createItem">
                                 <Plus class="size-4" />
                                 {{ props.createLabel }}
                             </Button>
                         </div>
 
-                        <div class="relative" data-spreadsheet-table-root>
-                            <Button variant="outline" @click="showColumnPicker = !showColumnPicker">
+                        <div class="relative w-full sm:w-auto" data-spreadsheet-table-root>
+                            <Button
+                                variant="outline"
+                                class="w-full text-sm sm:w-auto"
+                                @click="showColumnPicker = !showColumnPicker"
+                            >
                                 <Settings2 class="size-4" />
                                 Columns
                             </Button>
 
                             <div
                                 v-if="showColumnPicker"
-                                class="absolute top-full right-0 z-20 mt-2 w-56 rounded-xl border border-sidebar-border/70 bg-background p-3 shadow-lg"
+                                class="absolute top-full right-0 z-20 mt-2 w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-sidebar-border/70 bg-background p-3 shadow-lg sm:w-56"
                             >
                                 <p class="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                                     Visible Columns
@@ -376,23 +380,23 @@ onBeforeUnmount(() => {
 
                 <div class="relative min-h-0 flex-1 overflow-auto">
                     <div class="overflow-x-auto">
-                        <table class="min-w-full text-sm">
+                        <table class="min-w-full text-xs sm:text-sm">
                         <thead class="sticky top-0 z-10 bg-muted/95 text-left text-muted-foreground backdrop-blur">
                             <tr>
                                 <th
                                     v-for="column in resolvedColumns"
                                     :key="column.key"
-                                    class="relative px-4 py-3"
+                                    class="relative px-3 py-2.5 sm:px-4 sm:py-3"
                                     data-spreadsheet-table-root
                                     :class="column.widthClass"
                                 >
                                     <button
                                         type="button"
-                                        class="inline-flex items-center gap-2 font-medium text-muted-foreground transition hover:text-foreground"
+                                        class="inline-flex items-center gap-1.5 text-left font-medium text-muted-foreground transition hover:text-foreground sm:gap-2"
                                         @click="openHeaderFilter($event, column.key)"
                                     >
                                         {{ column.label }}
-                                        <ChevronDown class="size-5 shrink-0 text-muted-foreground/90" />
+                                        <ChevronDown class="size-4 shrink-0 text-muted-foreground/90 sm:size-5" />
                                         <span
                                             v-if="activeFilterCount(column.key) > 0"
                                             class="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary"
@@ -413,13 +417,13 @@ onBeforeUnmount(() => {
                                 <td
                                     v-for="column in resolvedColumns"
                                     :key="column.key"
-                                    class="px-4 py-3"
+                                    class="px-3 py-3 sm:px-4 sm:py-3"
                                 >
                                     <slot :name="`cell-${column.key}`" :row="row" :column="column" :value="columnValue(row, column)">
                                         {{ columnValue(row, column) }}
                                     </slot>
                                 </td>
-                                <td class="px-4 py-3">
+                                <td class="px-3 py-3 sm:px-4 sm:py-3">
                                     <div class="flex justify-end">
                                         <slot name="actions" :row="row">
                                             <Button variant="ghost" size="icon-sm" @click="openRow(row)">
@@ -430,7 +434,10 @@ onBeforeUnmount(() => {
                                 </td>
                             </tr>
                             <tr v-if="sortedRows.length === 0">
-                                <td :colspan="resolvedColumns.length + 1" class="px-4 py-8 text-center text-muted-foreground">
+                                <td
+                                    :colspan="resolvedColumns.length + 1"
+                                    class="px-4 py-8 text-center text-xs text-muted-foreground sm:text-sm"
+                                >
                                     {{ props.emptyText }}
                                 </td>
                             </tr>

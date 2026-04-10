@@ -2,8 +2,13 @@
 import { Head } from '@inertiajs/vue3';
 
 import AdminAccountManagementRbac from '@/components/admin/AdminAccountManagementRbac.vue';
+import RolePermissionMatrix from '@/components/admin/RolePermissionMatrix.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem } from '@/types';
+import type {
+    RolePermissionGroup,
+    RolePermissionRow,
+} from '@/types/admin-permissions';
 import type {
     AccountRoleOption,
     AdminStats,
@@ -18,6 +23,8 @@ const props = defineProps<{
     stats: AdminStats;
     userTypes: AccountRoleOption[];
     employeeRoleSuggestions: EmployeeRoleOption[];
+    roles: RolePermissionRow[];
+    permissionGroups: RolePermissionGroup[];
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -39,6 +46,11 @@ const breadcrumbs: BreadcrumbItem[] = [
                 :stats="props.stats"
                 :user-types="props.userTypes"
                 :employee-role-suggestions="props.employeeRoleSuggestions"
+            />
+
+            <RolePermissionMatrix
+                :roles="props.roles"
+                :permission-groups="props.permissionGroups"
             />
         </div>
     </AppLayout>

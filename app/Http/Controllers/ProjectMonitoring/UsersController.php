@@ -39,6 +39,24 @@ class UsersController extends TableCrudController
         ];
     }
 
+    protected function prepareForStore(array $validated, Request $request): array
+    {
+        unset($validated['role']);
+
+        return $validated;
+    }
+
+    protected function prepareForUpdate(array $validated, Request $request, \Illuminate\Database\Eloquent\Model $record): array
+    {
+        unset($validated['role']);
+
+        if (($validated['password'] ?? null) === null || $validated['password'] === '') {
+            unset($validated['password']);
+        }
+
+        return $validated;
+    }
+
     // Eksekusi setelah user dibuat
     protected function afterStore($record, Request $request): void
     {

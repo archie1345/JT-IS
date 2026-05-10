@@ -4,11 +4,14 @@ use App\Http\Controllers\AdminAccMgmtController;
 use App\Http\Controllers\ClientDetailsController;
 use App\Http\Controllers\ClientsPageController;
 use App\Http\Controllers\DashboardLayoutController;
+use App\Http\Controllers\ProfitLossController;
 use App\Http\Controllers\ProjectDetailsController;
 use App\Http\Controllers\ProjectsPageController;
 use App\Http\Controllers\ProjectMonitoring\ClientsController;
 use App\Http\Controllers\ProjectMonitoring\FundRequestsController;
 use App\Http\Controllers\ProjectMonitoring\InvoicesController;
+use App\Http\Controllers\ProjectMonitoring\ProgressReportsController;
+use App\Http\Controllers\ProjectMonitoring\ProjectCostsController;
 use App\Http\Controllers\ProjectMonitoring\TendersController;
 use App\Http\Controllers\RabRapDetailsController;
 use App\Http\Controllers\RabsPageController;
@@ -92,15 +95,60 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('pipeline', [TendersController::class, 'index'])
             ->middleware('permission:page.pipeline.view')
             ->name('pipeline');
+        Route::post('pipeline', [TendersController::class, 'store'])
+            ->middleware('permission:action.pipeline.create')
+            ->name('pipeline.store');
+        Route::patch('pipeline/{id}', [TendersController::class, 'update'])
+            ->middleware('permission:action.pipeline.update')
+            ->name('pipeline.update');
+        Route::delete('pipeline/{id}', [TendersController::class, 'destroy'])
+            ->middleware('permission:action.pipeline.delete')
+            ->name('pipeline.destroy');
         Route::resource('clients-data', ClientsController::class)
             ->middleware('permission:page.clients.view')
+            ->only(['index', 'store', 'show', 'update', 'destroy'])
             ->names('clients-data');
 
         Route::resource('fund-requests', FundRequestsController::class)
-            ->middleware('permission:page.fund-requests.view');
+            ->middleware('permission:page.fund-requests.view')
+            ->only(['index', 'store', 'show', 'update', 'destroy']);
 
         Route::resource('invoices', InvoicesController::class)
-            ->middleware('permission:page.invoices.view');
+            ->only(['index', 'store', 'show', 'update', 'destroy'])
+            ->middlewareFor(['index', 'show'], 'permission:page.invoices.view')
+            ->middlewareFor('store', 'permission:action.invoices.create')
+            ->middlewareFor('update', 'permission:action.invoices.update')
+            ->middlewareFor('destroy', 'permission:action.invoices.delete');
+
+        Route::get('project-costs', [ProjectCostsController::class, 'index'])
+            ->middleware('permission:sidebar.finance.cost-realization.view')
+            ->name('project-costs.index');
+        Route::post('project-costs', [ProjectCostsController::class, 'store'])
+            ->middleware('permission:action.project-costs.create')
+            ->name('project-costs.store');
+        Route::patch('project-costs/{id}', [ProjectCostsController::class, 'update'])
+            ->middleware('permission:action.project-costs.update')
+            ->name('project-costs.update');
+        Route::delete('project-costs/{id}', [ProjectCostsController::class, 'destroy'])
+            ->middleware('permission:action.project-costs.delete')
+            ->name('project-costs.destroy');
+
+        Route::get('profit-loss', ProfitLossController::class)
+            ->middleware('permission:sidebar.finance.profit-loss.view')
+            ->name('profit-loss');
+
+        Route::get('progress-updates', [ProgressReportsController::class, 'index'])
+            ->middleware('permission:sidebar.operational.progress.view')
+            ->name('progress-updates.index');
+        Route::post('progress-updates', [ProgressReportsController::class, 'store'])
+            ->middleware('permission:action.progress-updates.create')
+            ->name('progress-updates.store');
+        Route::patch('progress-updates/{id}', [ProgressReportsController::class, 'update'])
+            ->middleware('permission:action.progress-updates.update')
+            ->name('progress-updates.update');
+        Route::delete('progress-updates/{id}', [ProgressReportsController::class, 'destroy'])
+            ->middleware('permission:action.progress-updates.delete')
+            ->name('progress-updates.destroy');
     });
 
     Route::middleware(['role:admin', 'permission:page.admin.accounts.view'])->group(function () {

@@ -2,9 +2,15 @@
 
 namespace App\Http\Controllers\ProjectMonitoring;
 
+use App\Models\Project;
+use App\Models\ProjectCost;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
+
 class ProjectCostsController extends TableCrudController
 {
-    protected string $table = 'project_costs';
+    protected string $model = ProjectCost::class;
 
     protected function storeRules(): array
     {
@@ -26,8 +32,46 @@ class ProjectCostsController extends TableCrudController
         ];
     }
 
-    protected function usesTimestamps(): bool
+    protected function inertiaView(): ?string
     {
-        return false;
+        return 'ProjectCosts';
+    }
+
+    protected function indexQuery(Request $request): Builder
+    {
+        return ProjectCost::query()
+            ->with(['project:id,client_id,name', 'project.client:id,name'])
+            ->orderByDesc('date')
+            ->orderByDesc('id');
+    }
+
+    protected function transformRecord(Model $record, Request $request): array
+    {
+        /** @var ProjectCost $record */
+        return [
+            'id' => $record->id,
+            'project_id' => $record->project_id,
+            'project_name' => $record->project?->name,
+            'client_name' => $record->project?->client?->name,
+            'category' => $record->category,
+            'amount' => $record->amount !== null ? (float) $record->amount : null,
+            'date' => optional($record->date)->format('Y-m-d'),
+        ];
+    }
+
+    protected function pageProps(Request $request): array
+    {
+        return [
+            'projectOptions' => Project::query()
+                ->with('client:id,name')
+                ->orderBy('name')
+                ->get(['id', 'client_id', 'name'])
+                ->map(fn (Project $project): array => [
+                    'value' => $project->id,
+                    'label' => $project->name ?? 'Untitled project',
+                    'hint' => $project->client?->name,
+                ])
+                ->all(),
+        ];
     }
 }

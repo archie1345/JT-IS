@@ -34,7 +34,7 @@ const submit = () => {
 
                     <div class="mx-auto w-full max-w-md px-2 sm:px-0">
                         <h1 class="mb-2 text-center text-4xl font-bold tracking-tight text-slate-900">
-                            WELCOME TO JTIS
+                            WELCOME TO JTE-IS
                         </h1>
                         <p class="mb-8 text-justify text-sm leading-6 text-slate-500">
                             Untuk Menggunakan Sistem Ini harap Login Menggunakan Email dan Password Anda

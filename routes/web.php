@@ -140,6 +140,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('progress-updates', [ProgressReportsController::class, 'index'])
             ->middleware('permission:sidebar.operational.progress.view')
             ->name('progress-updates.index');
+        Route::inertia('ai-document-extraction', 'AiDocumentExtraction')
+            ->middleware('permission:sidebar.operational.progress.view')
+            ->name('ai-document-extraction');
         Route::post('progress-updates', [ProgressReportsController::class, 'store'])
             ->middleware('permission:action.progress-updates.create')
             ->name('progress-updates.store');

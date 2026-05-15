@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Models\User; // <--- WAJIB ADA INI
+use Spatie\Permission\Models\Role; // <--- WAJIB ADA INI
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -11,16 +13,8 @@ use Illuminate\Support\Str;
  */
 class UserFactory extends Factory
 {
-    /**
-     * The current password being used by the factory.
-     */
     protected static ?string $password;
 
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
@@ -35,25 +29,25 @@ class UserFactory extends Factory
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
-    public function unverified(): static
+    public function admin(): static
     {
         return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
-        ]);
+            'user_type' => 'admin',
+            'employee_role' => 'System Admin',
+        ])->afterCreating(function (User $user) { // Sekarang 'User' merujuk ke App\Models\User
+            $role = Role::findOrCreate('admin', 'web');
+            $user->assignRole($role);
+        });
     }
 
-    /**
-     * Indicate that the model has two-factor authentication configured.
-     */
-    public function withTwoFactor(): static
+    public function employee(): static
     {
         return $this->state(fn (array $attributes) => [
-            'two_factor_secret' => encrypt('secret'),
-            'two_factor_recovery_codes' => encrypt(json_encode(['recovery-code-1'])),
-            'two_factor_confirmed_at' => now(),
-        ]);
+            'user_type' => 'employee',
+            'employee_role' => fake()->randomElement(['Project Manager', 'Staff Operasional', 'Finance', 'Engineer']),
+        ])->afterCreating(function (User $user) {
+            $role = Role::findOrCreate('employee', 'web');
+            $user->assignRole($role);
+        });
     }
 }

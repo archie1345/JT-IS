@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -49,16 +48,25 @@ return new class extends Migration
         Schema::create('project_documents', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('project_id');
+
+            // Metadata "Jangkar"
+            $table->string('document_number')->nullable();
+            $table->string('document_type');               
+            $table->decimal('progress_weight', 5, 2)->nullable(); 
+            $table->json('signatories')->nullable();       
+
+            // File Data
             $table->string('name', 200);
             $table->string('original_name', 255);
             $table->string('path', 500);
             $table->string('mime_type', 150)->nullable();
             $table->unsignedBigInteger('size')->nullable();
+
             $table->timestamps();
             $table->softDeletes();
 
             $table->foreign('project_id', 'fk_project_docs_id')
-                  ->references('id')->on('projects')->onDelete('cascade');
+                ->references('id')->on('projects')->onDelete('cascade');
         });
 
         // 5. TABEL TENDER

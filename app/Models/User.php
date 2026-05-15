@@ -2,9 +2,7 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -54,7 +52,7 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'client_id' => 'integer',
+            // 'client_id' dihapus karena kolomnya sudah tidak ada di database
             'deleted_at' => 'datetime',
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
@@ -70,10 +68,7 @@ class User extends Authenticatable
         });
     }
 
-    public function client(): BelongsTo
-    {
-        return $this->belongsTo(Client::class);
-    }
+    // Relasi client() dihapus karena User tidak lagi terikat langsung ke Client
 
     public function projectAssignments(): HasMany
     {
@@ -116,9 +111,9 @@ class User extends Authenticatable
      */
     public function sidebarRoleNames(): array
     {
+        // Menyederhanakan match agar hanya memproses admin dan employee
         $baseRole = match ($this->user_type) {
-            'admin', 'employee', 'client' => $this->user_type,
-            'jte' => 'employee',
+            'admin', 'employee' => $this->user_type,
             default => null,
         };
 

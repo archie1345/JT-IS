@@ -15,7 +15,7 @@ class FundRequestsController extends TableCrudController
     {
         // Paksa 'requested_by' memakai ID user yang sedang login
         request()->merge([
-            'requested_by' => auth()->Auth::user()->id,
+            'requested_by' => Auth::id(),
             'status' => 'pending' // Paksa status awal selalu pending
         ]);
 

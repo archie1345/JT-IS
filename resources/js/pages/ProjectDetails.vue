@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted, shallowRef, nextTick } from 'vue';
 import {
     ArrowLeft,
     CalendarDays,
@@ -10,6 +10,7 @@ import {
     Gauge,
     Plus,
     Save,
+    MapPin, LocateFixed,
 } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
 import EntityDetailHero from '@/components/entity/EntityDetailHero.vue';
@@ -37,10 +38,15 @@ import type {
     UploadedDocument,
 } from '@/types/project';
 
+import { toast } from 'vue-sonner'; // Pastikan library toast Abang ter-import
+
+// Leaflet Imports
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 
 const props = defineProps<{
     mode: Mode;
-    project: ProjectDetails;
+    project: ProjectDetails & { latitude?: number | null; longitude?: number | null };
     clients: ClientOption[];
     documents: DocumentItem[];
     progress: ProgressSnapshot;
@@ -88,10 +94,65 @@ const form = useForm({
     start_date: props.project.startDate ?? '',
     end_date: props.project.endDate ?? '',
     location: props.project.location ?? '',
+    latitude: props.project.latitude ?? undefined,
+    longitude: props.project.longitude ?? undefined,
     status: props.project.status,
     payment_status: props.project.paymentStatus,
     progress_percent: props.project.latestProgressPercent ?? 0,
     progress_note: props.project.latestProgressNote ?? '',
+});
+
+// Map State
+const mapContainer = shallowRef<HTMLElement | null>(null);
+let map: L.Map;
+let marker: L.Marker;
+
+onMounted(() => {
+    // Fix untuk icon marker Leaflet yang sering hilang di Vite/Vue
+    delete (L.Icon.Default.prototype as any)._getIconUrl;
+    L.Icon.Default.mergeOptions({
+        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+    });
+
+    const initLat = form.latitude ? Number(form.latitude) : -7.954625;
+    const initLng = form.longitude ? Number(form.longitude) : 112.614619;
+
+    // Gunakan nextTick agar Vue memastikan div mapContainer sudah selesai di-render
+    nextTick(() => {
+        if (mapContainer.value) {
+            // Inisialisasi Map
+            map = L.map(mapContainer.value).setView([initLat, initLng], 13);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap'
+            }).addTo(map);
+
+            marker = L.marker([initLat, initLng], {
+                draggable: true
+            }).addTo(map);
+
+            // JURUS PAMUNGKAS: Paksa map me-render ulang ukurannya setelah 200ms
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 200);
+
+            // Event Listeners
+            marker.on('dragend', (e) => {
+                const position = e.target.getLatLng();
+                form.latitude = position.lat;
+                form.longitude = position.lng;
+            });
+
+            map.on('click', (e: L.LeafletMouseEvent) => {
+                marker.setLatLng(e.latlng);
+                form.latitude = e.latlng.lat;
+                form.longitude = e.latlng.lng;
+            });
+        }
+    });
 });
 
 const documentForm = useForm({
@@ -208,14 +269,48 @@ const openDocument = (document: DocumentItem) => {
     if (!document.url) return;
     router.visit(document.url);
 };
+
+const getCurrentLocation = () => {
+    if (navigator.geolocation) {
+        toast.info("Melacak lokasi saat ini...");
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+
+                // Update form state
+                form.latitude = lat;
+                form.longitude = lng;
+
+                // Update posisi marker dan center map di Leaflet
+                if (map && marker) {
+                    const newLatLng = new L.LatLng(lat, lng);
+                    marker.setLatLng(newLatLng);
+                    map.setView(newLatLng, 16); // Zoom lebih dekat
+                }
+
+                toast.success("Titik lokasi berhasil diperbarui!");
+            },
+            (error) => {
+                console.error(error);
+                toast.error("Gagal mendapat lokasi. Pastikan izin GPS browser aktif.");
+            }
+        );
+    } else {
+        toast.error("Browser tidak mendukung fitur geolokasi.");
+    }
+};
 </script>
 
 <template>
+
     <Head :title="isCreateMode ? 'Create Project' : `Project Detail - ${props.project.name}`" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex min-h-[calc(100vh-8rem)] flex-1 flex-col gap-4 rounded-xl p-4">
-            <section class="flex min-h-0 flex-1 flex-col gap-4 rounded-2xl border border-sidebar-border/70 bg-background/80 p-5 shadow-sm">
+            <section
+                class="flex min-h-0 flex-1 flex-col gap-4 rounded-2xl border border-sidebar-border/70 bg-background/80 p-5 shadow-sm">
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <Button variant="ghost" class="mb-3 pl-0 text-muted-foreground" @click="backToProjects">
@@ -237,22 +332,15 @@ const openDocument = (document: DocumentItem) => {
 
                 <div class="grid min-h-0 flex-1 gap-4 lg:grid-cols-[1.3fr_0.95fr]">
                     <div class="flex min-h-0 flex-col gap-4">
-                        <EntityDetailHero
-                            back-label="Back to Projects"
-                            title="Project Detail"
+                        <EntityDetailHero back-label="Back to Projects" title="Project Detail"
                             :description="isCreateMode ? 'Fill in the project data and save it to the database.' : 'Edit the project details and save your updates to the database.'"
                             :badge-text="formatProjectStatus(form.status)"
-                            :badge-class="getProjectStatusClass(form.status)"
-                            title-prefix="Project Title"
-                            metric-label="Overall Progress"
-                            :metric-value="`${liveProgressScore}%`"
-                            :metric-description="progressLabel"
-                            progress-label="Progress snapshot"
+                            :badge-class="getProjectStatusClass(form.status)" title-prefix="Project Title"
+                            metric-label="Overall Progress" :metric-value="`${liveProgressScore}%`"
+                            :metric-description="progressLabel" progress-label="Progress snapshot"
                             :progress-value="`${form.progress_percent}% report progress`"
-                            :progress-bar-value="liveProgressScore"
-                            :progress-tone-class="progressToneClass"
-                            @back="backToProjects"
-                        >
+                            :progress-bar-value="liveProgressScore" :progress-tone-class="progressToneClass"
+                            @back="backToProjects">
                             <template #back>
                                 <Button variant="ghost" class="mb-3 pl-0 text-muted-foreground" @click="backToProjects">
                                     <ArrowLeft class="mr-2 size-4" />
@@ -260,11 +348,8 @@ const openDocument = (document: DocumentItem) => {
                                 </Button>
                             </template>
                             <template #title-input>
-                                <Input
-                                    v-model="form.name"
-                                    class="mt-2 max-w-2xl text-2xl font-semibold"
-                                    placeholder="Project name"
-                                />
+                                <Input v-model="form.name" class="mt-2 max-w-2xl text-2xl font-semibold"
+                                    placeholder="Project name" />
                                 <InputError :message="form.errors.name" class="mt-2" />
                             </template>
                             <template #title-meta>
@@ -275,18 +360,22 @@ const openDocument = (document: DocumentItem) => {
                             <template #summary>
                                 <div class="rounded-xl bg-muted/30 p-4">
                                     <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Client</p>
-                                    <p class="mt-1 text-sm font-medium text-foreground">{{ selectedClient?.name ?? '-' }}</p>
+                                    <p class="mt-1 text-sm font-medium text-foreground">{{ selectedClient?.name ?? '-'
+                                        }}</p>
                                     <p class="text-xs text-muted-foreground">{{ selectedClient?.contact ?? '-' }}</p>
                                 </div>
 
                                 <div class="rounded-xl bg-muted/30 p-4">
-                                    <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Contract No.</p>
-                                    <p class="mt-1 text-sm font-medium text-foreground">{{ form.contract_number || '-' }}</p>
+                                    <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Contract No.
+                                    </p>
+                                    <p class="mt-1 text-sm font-medium text-foreground">{{ form.contract_number || '-'
+                                        }}</p>
                                 </div>
 
                                 <div class="rounded-xl bg-muted/30 p-4">
                                     <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Value</p>
-                                    <p class="mt-1 text-sm font-medium text-foreground">{{ formatCurrency(form.contract_value || 0) }}</p>
+                                    <p class="mt-1 text-sm font-medium text-foreground">{{
+                                        formatCurrency(form.contract_value || 0) }}</p>
                                 </div>
 
                                 <div class="rounded-xl bg-muted/30 p-4">
@@ -304,27 +393,32 @@ const openDocument = (document: DocumentItem) => {
                                         <span class="font-medium text-foreground">{{ form.progress_percent }}%</span>
                                     </div>
                                     <div class="h-2 rounded-full bg-muted">
-                                        <div class="h-full rounded-full bg-sky-500" :style="{ width: `${form.progress_percent}%` }" />
+                                        <div class="h-full rounded-full bg-sky-500"
+                                            :style="{ width: `${form.progress_percent}%` }" />
                                     </div>
                                 </div>
 
                                 <div>
                                     <div class="mb-1 flex items-center justify-between text-sm">
                                         <span class="text-muted-foreground">Project status score</span>
-                                        <span class="font-medium text-foreground">{{ props.progress.projectStatusScore }}%</span>
+                                        <span class="font-medium text-foreground">{{ props.progress.projectStatusScore
+                                            }}%</span>
                                     </div>
                                     <div class="h-2 rounded-full bg-muted">
-                                        <div class="h-full rounded-full bg-blue-500" :style="{ width: `${props.progress.projectStatusScore}%` }" />
+                                        <div class="h-full rounded-full bg-blue-500"
+                                            :style="{ width: `${props.progress.projectStatusScore}%` }" />
                                     </div>
                                 </div>
 
                                 <div>
                                     <div class="mb-1 flex items-center justify-between text-sm">
                                         <span class="text-muted-foreground">Payment status score</span>
-                                        <span class="font-medium text-foreground">{{ props.progress.paymentStatusScore }}%</span>
+                                        <span class="font-medium text-foreground">{{ props.progress.paymentStatusScore
+                                            }}%</span>
                                     </div>
                                     <div class="h-2 rounded-full bg-muted">
-                                        <div class="h-full rounded-full bg-emerald-500" :style="{ width: `${props.progress.paymentStatusScore}%` }" />
+                                        <div class="h-full rounded-full bg-emerald-500"
+                                            :style="{ width: `${props.progress.paymentStatusScore}%` }" />
                                     </div>
                                 </div>
                             </div>
@@ -359,11 +453,8 @@ const openDocument = (document: DocumentItem) => {
                                             <SelectValue placeholder="Choose a client" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem
-                                                v-for="client in props.clients"
-                                                :key="client.id"
-                                                :value="String(client.id)"
-                                            >
+                                            <SelectItem v-for="client in props.clients" :key="client.id"
+                                                :value="String(client.id)">
                                                 {{ client.name ?? `Client #${client.id}` }}
                                             </SelectItem>
                                         </SelectContent>
@@ -384,8 +475,8 @@ const openDocument = (document: DocumentItem) => {
                                 </label>
 
                                 <label class="space-y-2">
-                                    <span class="text-sm font-medium text-foreground">Location</span>
-                                    <Input v-model="form.location" placeholder="Project location" />
+                                    <span class="text-sm font-medium text-foreground">Location Title</span>
+                                    <Input v-model="form.location" placeholder="General project area" />
                                     <InputError :message="form.errors.location" />
                                 </label>
 
@@ -410,17 +501,14 @@ const openDocument = (document: DocumentItem) => {
                                             <SelectValue placeholder="Choose a status" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem
-                                                v-for="option in projectStatusOptions"
-                                                :key="option.value"
-                                                :value="option.value"
-                                            >
+                                            <SelectItem v-for="option in projectStatusOptions" :key="option.value"
+                                                :value="option.value">
                                                 {{ option.label }}
                                             </SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <p class="text-xs text-muted-foreground">
-                                        {{ projectStatusOptions.find((item) => item.value === form.status)?.hint }}
+                                        {{projectStatusOptions.find((item) => item.value === form.status)?.hint}}
                                     </p>
                                     <InputError :message="form.errors.status" />
                                 </label>
@@ -432,45 +520,85 @@ const openDocument = (document: DocumentItem) => {
                                             <SelectValue placeholder="Choose a payment status" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem
-                                                v-for="option in paymentStatusOptions"
-                                                :key="option.value"
-                                                :value="option.value"
-                                            >
+                                            <SelectItem v-for="option in paymentStatusOptions" :key="option.value"
+                                                :value="option.value">
                                                 {{ option.label }}
                                             </SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <p class="text-xs text-muted-foreground">
-                                        {{ paymentStatusOptions.find((item) => item.value === form.payment_status)?.hint }}
+                                        {{paymentStatusOptions.find((item) => item.value ===
+                                        form.payment_status)?.hint}}
                                     </p>
                                     <InputError :message="form.errors.payment_status" />
                                 </label>
+
+                                <div class="my-3 border-t border-sidebar-border/70"></div>
+
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium text-foreground flex items-center gap-2">
+                                            <MapPin class="size-4 text-blue-500" />
+                                            Geographic Location
+                                        </span>
+                                        <Button type="button" variant="outline" size="sm" @click="getCurrentLocation"
+                                            class="h-8 text-xs">
+                                            <LocateFixed class="mr-2 size-3 text-blue-500" />
+                                            Lokasi Saat Ini
+                                        </Button>
+                                    </div>
+
+                                    <p class="text-xs text-muted-foreground">
+                                        Geser marker atau klik pada peta untuk menetapkan titik koordinat.
+                                    </p>
+
+                                    <div ref="mapContainer"
+                                        class="h-[260px] w-full rounded-xl border border-sidebar-border/70 z-10 bg-muted/20">
+                                    </div>
+
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <label class="space-y-2">
+                                            <span
+                                                class="text-xs uppercase font-semibold text-muted-foreground">Latitude</span>
+                                            <Input v-model="form.latitude" readonly
+                                                class="bg-muted/30 font-mono text-muted-foreground cursor-not-allowed"
+                                                placeholder="Select on map" />
+                                            <InputError :message="form.errors.latitude" />
+                                        </label>
+                                        <label class="space-y-2">
+                                            <span
+                                                class="text-xs uppercase font-semibold text-muted-foreground">Longitude</span>
+                                            <Input v-model="form.longitude" readonly
+                                                class="bg-muted/30 font-mono text-muted-foreground cursor-not-allowed"
+                                                placeholder="Select on map" />
+                                            <InputError :message="form.errors.longitude" />
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
                         </EntityPageSection>
 
                         <EntityPageSection title="Project Documents" :icon="FolderOpen">
-                            <div v-if="isCreateMode" class="rounded-xl border border-dashed border-sidebar-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
+                            <div v-if="isCreateMode"
+                                class="rounded-xl border border-dashed border-sidebar-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
                                 Save the project first, then upload documents here.
                             </div>
                             <div v-else class="space-y-4">
                                 <div class="rounded-xl border border-sidebar-border/70 bg-muted/20 p-4">
                                     <label class="block space-y-2">
                                         <span class="text-sm font-medium text-foreground">Upload documents</span>
-                                        <input
-                                            ref="documentInput"
-                                            type="file"
-                                            multiple
+                                        <input ref="documentInput" type="file" multiple
                                             class="block w-full rounded-md border border-sidebar-border/70 bg-background px-3 py-2 text-sm text-foreground file:mr-3 file:rounded-md file:border-0 file:bg-muted file:px-3 file:py-1.5 file:text-sm file:font-medium"
-                                            @change="handleDocumentChange"
-                                        >
+                                            @change="handleDocumentChange">
                                     </label>
 
                                     <div class="mt-3 flex items-center justify-between gap-3">
                                         <p class="text-xs text-muted-foreground">
                                             {{ documentForm.documents.length }} file(s) selected
                                         </p>
-                                        <Button type="button" :disabled="documentForm.processing || documentForm.documents.length === 0" @click="uploadDocuments">
+                                        <Button type="button"
+                                            :disabled="documentForm.processing || documentForm.documents.length === 0"
+                                            @click="uploadDocuments">
                                             <Plus class="mr-2 size-4" />
                                             Upload
                                         </Button>
@@ -480,40 +608,32 @@ const openDocument = (document: DocumentItem) => {
                                 </div>
 
                                 <div class="space-y-3">
-                                    <button
-                                        v-for="document in props.documents"
-                                        :key="document.label"
-                                        type="button"
+                                    <button v-for="document in props.documents" :key="document.label" type="button"
                                         class="flex w-full items-start justify-between gap-4 rounded-xl border border-sidebar-border/70 bg-background px-4 py-3 text-left transition hover:bg-muted/40"
-                                        :class="{ 'opacity-60': !document.url }"
-                                        :disabled="!document.url"
-                                        @click="openDocument(document)"
-                                    >
+                                        :class="{ 'opacity-60': !document.url }" :disabled="!document.url"
+                                        @click="openDocument(document)">
                                         <div class="min-w-0">
                                             <p class="text-sm font-medium text-foreground">{{ document.label }}</p>
                                             <p class="text-xs text-muted-foreground">{{ document.detail }}</p>
                                         </div>
-                                        <Badge
-                                            :variant="document.status === 'available' ? 'default' : 'outline'"
-                                            class="shrink-0"
-                                        >
+                                        <Badge :variant="document.status === 'available' ? 'default' : 'outline'"
+                                            class="shrink-0">
                                             {{ document.status }}
                                         </Badge>
                                     </button>
 
-                                    <div v-if="props.documents.length === 0" class="rounded-xl border border-dashed border-sidebar-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
+                                    <div v-if="props.documents.length === 0"
+                                        class="rounded-xl border border-dashed border-sidebar-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
                                         No system documents linked yet.
                                     </div>
                                 </div>
 
                                 <div class="space-y-3">
-                                    <div
-                                        v-for="doc in props.uploadedDocuments"
-                                        :key="doc.id"
-                                        class="flex items-start justify-between gap-4 rounded-xl border border-sidebar-border/70 bg-background px-4 py-3"
-                                    >
+                                    <div v-for="doc in props.uploadedDocuments" :key="doc.id"
+                                        class="flex items-start justify-between gap-4 rounded-xl border border-sidebar-border/70 bg-background px-4 py-3">
                                         <div class="min-w-0">
-                                            <a :href="doc.url" target="_blank" class="block truncate text-sm font-medium text-foreground hover:underline">
+                                            <a :href="doc.url" target="_blank"
+                                                class="block truncate text-sm font-medium text-foreground hover:underline">
                                                 {{ doc.originalName }}
                                             </a>
                                             <p class="text-xs text-muted-foreground">
@@ -525,7 +645,8 @@ const openDocument = (document: DocumentItem) => {
                                         </Badge>
                                     </div>
 
-                                    <div v-if="props.uploadedDocuments.length === 0" class="rounded-xl border border-dashed border-sidebar-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
+                                    <div v-if="props.uploadedDocuments.length === 0"
+                                        class="rounded-xl border border-dashed border-sidebar-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
                                         No documents uploaded yet.
                                     </div>
                                 </div>
@@ -550,3 +671,10 @@ const openDocument = (document: DocumentItem) => {
         </div>
     </AppLayout>
 </template>
+
+<style scoped>
+/* Penting: Cegah z-index dari Leaflet menutupi dropdown Shadcn / Select */
+.leaflet-container {
+    z-index: 10 !important;
+}
+</style>

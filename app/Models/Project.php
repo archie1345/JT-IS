@@ -25,6 +25,8 @@ class Project extends Model
         'start_date',
         'end_date',
         'location',
+        'latitude',    
+        'longitude',   
         'status',
     ];
 

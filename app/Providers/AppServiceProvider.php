@@ -6,6 +6,7 @@ use App\Support\AccessControl;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -26,6 +27,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->grantAdminFullAccess();
         $this->syncAccessControl();
     }
 
@@ -58,5 +60,16 @@ class AppServiceProvider extends ServiceProvider
         }
 
         AccessControl::sync();
+    }
+
+    protected function grantAdminFullAccess(): void
+    {
+        Gate::before(function ($user): ?bool {
+            if (($user->user_type ?? null) === 'admin' || $user->hasRole('admin')) {
+                return true;
+            }
+
+            return null;
+        });
     }
 }

@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import CrudPrototypePage from '@/components/prototype/CrudPrototypePage.vue';
 import type { SpreadsheetColumn } from '@/components/ProjectDataTable.vue';
 import type { BreadcrumbItem } from '@/types';
+import type { UploadedDocument } from '@/types/project';
 
 type Option = {
     value: number;
@@ -12,6 +14,7 @@ type Option = {
 const props = defineProps<{
     records: Record<string, null | number | string>[];
     projectOptions: Option[];
+    uploadedDocuments: UploadedDocument[];
     pagination: {
         total: number;
     };
@@ -20,6 +23,17 @@ const props = defineProps<{
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Cost Realization', href: '/project-costs' },
 ];
+
+const uploadConnectionOptions = computed(() =>
+    props.records.map((record) => ({
+        value: `project_cost:${record.id}`,
+        label: `Cost #${record.id}`,
+        hint: String(record.project_name ?? record.category ?? ''),
+        componentType: 'project_cost',
+        componentId: Number(record.id),
+        projectId: Number(record.project_id),
+    })),
+);
 
 const columns = [
     { key: 'id', label: 'Id' },
@@ -31,8 +45,19 @@ const columns = [
 ] satisfies SpreadsheetColumn[];
 
 const fields = [
-    { name: 'project_id', label: 'Project', type: 'select', options: props.projectOptions, required: true },
-    { name: 'category', label: 'Category', type: 'text', placeholder: 'Material, labor, transport...' },
+    {
+        name: 'project_id',
+        label: 'Project',
+        type: 'select',
+        options: props.projectOptions,
+        required: true,
+    },
+    {
+        name: 'category',
+        label: 'Category',
+        type: 'text',
+        placeholder: 'Material, labor, transport...',
+    },
     { name: 'amount', label: 'Amount', type: 'number', min: 0, step: '0.01' },
     { name: 'date', label: 'Date', type: 'date' },
 ] as const;
@@ -50,6 +75,10 @@ const fields = [
         create-url="/project-costs"
         update-url-base="/project-costs"
         delete-url-base="/project-costs"
+        upload-component-type="project_cost"
+        :project-options="props.projectOptions"
+        :uploaded-documents="props.uploadedDocuments"
+        :upload-connection-options="uploadConnectionOptions"
         create-label="New Cost Entry"
         :note="`Showing ${props.pagination.total} realized cost record(s)`"
     >
@@ -58,10 +87,10 @@ const fields = [
                 value === null
                     ? '-'
                     : new Intl.NumberFormat('id-ID', {
-                        style: 'currency',
-                        currency: 'IDR',
-                        maximumFractionDigits: 0,
-                    }).format(Number(value))
+                          style: 'currency',
+                          currency: 'IDR',
+                          maximumFractionDigits: 0,
+                      }).format(Number(value))
             }}
         </template>
     </CrudPrototypePage>

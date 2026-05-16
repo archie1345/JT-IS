@@ -4,12 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Client;
 use App\Models\Invoice;
-use App\Models\ProjectDocument;
 use App\Models\Project;
 use App\Models\ProgressReport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -84,45 +82,6 @@ class ProjectDetailsController extends Controller
         );
 
         return to_route('projects.show', $project)->with('success', 'Project updated successfully.');
-    }
-
-    public function storeDocument(Request $request, Project $project): RedirectResponse
-    {
-        $data = $request->validate([
-            'documents' => ['required', 'array', 'min:1'],
-            'documents.*' => ['file', 'max:10240'],
-        ]);
-
-        foreach ($data['documents'] as $file) {
-            $directory = "projects/{$project->id}";
-            $storedPath = $file->store($directory, 'public');
-
-            ProjectDocument::create([
-                'project_id' => $project->id,
-                'name' => pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
-                'original_name' => $file->getClientOriginalName(),
-                'path' => $storedPath,
-                'mime_type' => $file->getClientMimeType(),
-                'size' => $file->getSize(),
-            ]);
-        }
-
-        return to_route('projects.show', $project)->with('success', 'Documents uploaded successfully.');
-    }
-
-    public function showDocument(ProjectDocument $projectDocument)
-    {
-        abort_unless(
-            $projectDocument->project()->exists(),
-            404,
-        );
-        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
-        $disk = Storage::disk('public');
-
-        return $disk->response(
-            $projectDocument->path,
-            $projectDocument->original_name,
-        );
     }
 
     protected function validatePayload(Request $request, ?int $projectId = null): array
@@ -214,17 +173,10 @@ class ProjectDetailsController extends Controller
         $fundRequestsCount = $project->exists ? $project->fundRequests()->count() : 0;
         $uploadedDocuments = $project->exists
             ? $project->documents()
+            ->with('project:id,name')
             ->latest()
-            ->get(['id', 'name', 'original_name', 'path', 'mime_type', 'size', 'created_at'])
-            ->map(fn(ProjectDocument $document): array => [
-                'id' => $document->id,
-                'name' => $document->name,
-                'originalName' => $document->original_name,
-                'url' => route('projects.documents.show', $document),
-                'mimeType' => $document->mime_type,
-                'size' => $document->size,
-                'createdAt' => optional($document->created_at)->format('Y-m-d H:i'),
-            ])
+            ->get()
+            ->map(fn ($document): array => ProjectDocumentsController::serialize($document))
             ->all()
             : [];
 
@@ -286,6 +238,73 @@ class ProjectDetailsController extends Controller
                 'url' => $project->exists ? route('fund-requests.index') : null,
             ],
         ];
+        $documentConnections = [];
+
+        if ($project->exists) {
+            $documentConnections[] = [
+                'value' => 'project:general',
+                'label' => 'Project general',
+                'hint' => $project->name,
+                'componentType' => 'project',
+                'componentId' => null,
+                'projectId' => $project->id,
+            ];
+
+            foreach ($project->rabs()->latest('id')->get(['id', 'project_id', 'total_budget']) as $rab) {
+                $documentConnections[] = [
+                    'value' => 'rab:'.$rab->id,
+                    'label' => 'RAB #'.$rab->id,
+                    'hint' => 'Budget '.number_format((float) $rab->total_budget, 0, ',', '.'),
+                    'componentType' => 'rab',
+                    'componentId' => $rab->id,
+                    'projectId' => $project->id,
+                ];
+            }
+
+            foreach ($project->raps()->latest('id')->get(['id', 'project_id', 'total_budget']) as $rap) {
+                $documentConnections[] = [
+                    'value' => 'rap:'.$rap->id,
+                    'label' => 'RAP #'.$rap->id,
+                    'hint' => 'Budget '.number_format((float) $rap->total_budget, 0, ',', '.'),
+                    'componentType' => 'rap',
+                    'componentId' => $rap->id,
+                    'projectId' => $project->id,
+                ];
+            }
+
+            foreach ($project->invoices()->latest('id')->get(['id', 'project_id', 'invoice_date', 'status']) as $invoice) {
+                $documentConnections[] = [
+                    'value' => 'invoice:'.$invoice->id,
+                    'label' => 'Invoice #'.$invoice->id,
+                    'hint' => trim(($invoice->status ?? '').' '.optional($invoice->invoice_date)->format('Y-m-d')),
+                    'componentType' => 'invoice',
+                    'componentId' => $invoice->id,
+                    'projectId' => $project->id,
+                ];
+            }
+
+            foreach ($project->projectCosts()->latest('date')->latest('id')->get(['id', 'project_id', 'category', 'date']) as $cost) {
+                $documentConnections[] = [
+                    'value' => 'project_cost:'.$cost->id,
+                    'label' => 'Cost #'.$cost->id,
+                    'hint' => trim(($cost->category ?? 'Cost').' '.optional($cost->date)->format('Y-m-d')),
+                    'componentType' => 'project_cost',
+                    'componentId' => $cost->id,
+                    'projectId' => $project->id,
+                ];
+            }
+
+            foreach ($project->progressReports()->latest('report_date')->latest('id')->get(['id', 'project_id', 'progress_percent', 'report_date']) as $report) {
+                $documentConnections[] = [
+                    'value' => 'progress_report:'.$report->id,
+                    'label' => 'Progress #'.$report->id,
+                    'hint' => trim(($report->progress_percent ?? 0).'% '.optional($report->report_date)->format('Y-m-d')),
+                    'componentType' => 'progress_report',
+                    'componentId' => $report->id,
+                    'projectId' => $project->id,
+                ];
+            }
+        }
 
         return [
             'mode' => $mode,
@@ -318,6 +337,7 @@ class ProjectDetailsController extends Controller
                 ->all(),
             'documents' => $documents,
             'uploadedDocuments' => $uploadedDocuments,
+            'documentConnections' => $documentConnections,
             'progress' => [
                 'reportScore' => $reportScore,
                 'projectStatusScore' => $projectStatusScore,

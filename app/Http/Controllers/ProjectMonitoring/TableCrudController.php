@@ -79,6 +79,7 @@ abstract class TableCrudController extends Controller
         
         // Fitur SoftDeletes atau ForceDelete akan ditangani otomatis oleh Model
         $record->delete();
+        $this->afterDestroy($record);
 
         return redirect()->back()->with('success', 'Data berhasil dihapus.');
     }
@@ -86,6 +87,7 @@ abstract class TableCrudController extends Controller
     // Fungsi kosong bawaan yang bisa di-override oleh Controller anak
     protected function afterStore($record, Request $request): void {}
     protected function afterUpdate($record, Request $request): void {}
+    protected function afterDestroy($record): void {}
     protected function prepareForStore(array $validated, Request $request): array
     {
         return $validated;

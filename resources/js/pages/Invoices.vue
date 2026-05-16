@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import CrudPrototypePage from '@/components/prototype/CrudPrototypePage.vue';
 import type { SpreadsheetColumn } from '@/components/ProjectDataTable.vue';
 import type { BreadcrumbItem } from '@/types';
+import type { UploadedDocument } from '@/types/project';
 
 type Option = {
     value: number;
@@ -12,6 +14,7 @@ type Option = {
 const props = defineProps<{
     records: Record<string, null | number | string>[];
     projectOptions: Option[];
+    uploadedDocuments: UploadedDocument[];
     pagination: {
         currentPage: number;
         lastPage: number;
@@ -20,9 +23,18 @@ const props = defineProps<{
     };
 }>();
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Billing', href: '/invoices' },
-];
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'Billing', href: '/invoices' }];
+
+const uploadConnectionOptions = computed(() =>
+    props.records.map((record) => ({
+        value: `invoice:${record.id}`,
+        label: `Invoice #${record.id}`,
+        hint: String(record.project_name ?? ''),
+        componentType: 'invoice',
+        componentId: Number(record.id),
+        projectId: Number(record.project_id),
+    })),
+);
 
 const columns = [
     { key: 'id', label: 'Id' },
@@ -34,7 +46,13 @@ const columns = [
 ] satisfies SpreadsheetColumn[];
 
 const fields = [
-    { name: 'project_id', label: 'Project', type: 'select', options: props.projectOptions, required: true },
+    {
+        name: 'project_id',
+        label: 'Project',
+        type: 'select',
+        options: props.projectOptions,
+        required: true,
+    },
     { name: 'amount', label: 'Amount', type: 'number', min: 0, step: '0.01' },
     { name: 'invoice_date', label: 'Invoice Date', type: 'date' },
     {
@@ -62,6 +80,10 @@ const fields = [
         create-url="/invoices"
         update-url-base="/invoices"
         delete-url-base="/invoices"
+        upload-component-type="invoice"
+        :project-options="props.projectOptions"
+        :uploaded-documents="props.uploadedDocuments"
+        :upload-connection-options="uploadConnectionOptions"
         create-label="New Invoice"
         :note="`Showing ${props.pagination.total} invoice record(s)`"
     >
@@ -70,10 +92,10 @@ const fields = [
                 value === null
                     ? '-'
                     : new Intl.NumberFormat('id-ID', {
-                        style: 'currency',
-                        currency: 'IDR',
-                        maximumFractionDigits: 0,
-                    }).format(Number(value))
+                          style: 'currency',
+                          currency: 'IDR',
+                          maximumFractionDigits: 0,
+                      }).format(Number(value))
             }}
         </template>
     </CrudPrototypePage>

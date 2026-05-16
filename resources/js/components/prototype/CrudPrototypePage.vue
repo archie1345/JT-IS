@@ -1,15 +1,25 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { Pencil, Trash2 } from 'lucide-vue-next';
+import { ExternalLink, Pencil, Trash2 } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
 import InputError from '@/components/InputError.vue';
-import ProjectDataTable, { type SpreadsheetColumn } from '@/components/ProjectDataTable.vue';
+import ProjectDocumentUploadPanel from '@/components/ProjectDocumentUploadPanel.vue';
+import ProjectDataTable, {
+    type SpreadsheetColumn,
+} from '@/components/ProjectDataTable.vue';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { BreadcrumbItem } from '@/types';
+import type { UploadedDocument } from '@/types/project';
 
 type Option = {
     value: number | string;
@@ -34,32 +44,51 @@ type Field = {
 type Row = Record<string, null | number | string>;
 type FormValue = number | string;
 
-const props = withDefaults(defineProps<{
-    headTitle: string;
-    title: string;
-    description: string;
-    breadcrumbs: BreadcrumbItem[];
-    rows: Row[];
-    columns: SpreadsheetColumn[];
-    fields: readonly Field[];
-    createUrl: string;
-    updateUrlBase: string;
-    deleteUrlBase: string;
-    createLabel?: string;
-    note?: string;
-}>(), {
-    createLabel: 'New Record',
-    note: '',
-});
+const props = withDefaults(
+    defineProps<{
+        headTitle: string;
+        title: string;
+        description: string;
+        breadcrumbs: BreadcrumbItem[];
+        rows: Row[];
+        columns: SpreadsheetColumn[];
+        fields: readonly Field[];
+        createUrl: string;
+        updateUrlBase: string;
+        deleteUrlBase: string;
+        detailUrlBase?: string;
+        uploadComponentType?: string;
+        uploadProjectId?: number | null;
+        uploadedDocuments?: UploadedDocument[];
+        projectOptions?: readonly Option[];
+        uploadConnectionOptions?: Array<{
+            value: string;
+            label: string;
+            hint?: null | string;
+            componentType: string;
+            componentId?: null | number;
+            projectId?: null | number;
+        }>;
+        createLabel?: string;
+        note?: string;
+    }>(),
+    {
+        createLabel: 'New Record',
+        note: '',
+        uploadComponentType: '',
+        uploadProjectId: null,
+        uploadedDocuments: () => [],
+        projectOptions: () => [],
+        uploadConnectionOptions: () => [],
+    },
+);
 
 const isOpen = ref(false);
 const editingId = ref<null | number>(null);
 const deletingId = ref<null | number>(null);
 
 const blankState = computed<Record<string, FormValue>>(() =>
-    Object.fromEntries(
-        props.fields.map((field) => [field.name, '']),
-    ),
+    Object.fromEntries(props.fields.map((field) => [field.name, ''])),
 );
 
 const form = useForm<Record<string, FormValue>>({ ...blankState.value });
@@ -82,7 +111,10 @@ const openEdit = (row: Row) => {
     editingId.value = Number(row.id);
 
     const payload = Object.fromEntries(
-        props.fields.map((field) => [field.name, row[field.name] ?? blankState.value[field.name] ?? '']),
+        props.fields.map((field) => [
+            field.name,
+            row[field.name] ?? blankState.value[field.name] ?? '',
+        ]),
     );
 
     form.defaults(payload);
@@ -130,14 +162,18 @@ const destroyRecord = (row: Row) => {
     });
 };
 
-const dialogTitle = computed(() => (editingId.value === null ? `Create ${props.title}` : `Edit ${props.title}`));
+const dialogTitle = computed(() =>
+    editingId.value === null ? `Create ${props.title}` : `Edit ${props.title}`,
+);
 </script>
 
 <template>
     <Head :title="props.headTitle" />
 
     <AppLayout :breadcrumbs="props.breadcrumbs">
-        <div class="flex min-h-[calc(100vh-8rem)] flex-1 flex-col gap-4 rounded-xl p-4">
+        <div
+            class="flex min-h-[calc(100vh-8rem)] flex-1 flex-col gap-3 rounded-xl p-2 sm:gap-4 sm:p-4"
+        >
             <ProjectDataTable
                 :rows="props.rows"
                 :columns="props.columns"
@@ -150,8 +186,24 @@ const dialogTitle = computed(() => (editingId.value === null ? `Create ${props.t
             >
                 <template #actions="{ row }">
                     <div class="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon-sm" @click="openEdit(row as Row)">
+                        <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            @click="openEdit(row as Row)"
+                        >
                             <Pencil class="size-4" />
+                        </Button>
+                        <Button
+                            v-if="props.detailUrlBase"
+                            variant="ghost"
+                            size="icon-sm"
+                            @click="
+                                router.get(
+                                    `${props.detailUrlBase}/${Number((row as Row).id)}`,
+                                )
+                            "
+                        >
+                            <ExternalLink class="size-4" />
                         </Button>
                         <Button
                             variant="ghost"
@@ -173,20 +225,42 @@ const dialogTitle = computed(() => (editingId.value === null ? `Create ${props.t
                     <slot :name="slotName" v-bind="slotProps" />
                 </template>
             </ProjectDataTable>
+
+            <section
+                v-if="props.uploadComponentType"
+                class="rounded-2xl border border-sidebar-border/70 bg-background/80 p-3 shadow-sm sm:p-5"
+            >
+                <ProjectDocumentUploadPanel
+                    :project-id="props.uploadProjectId"
+                    :project-options="props.projectOptions"
+                    :component-type="props.uploadComponentType"
+                    :connection-options="props.uploadConnectionOptions"
+                    :documents="props.uploadedDocuments"
+                    title="Page Files"
+                    description="Upload supporting files here and they will be linked to the selected project and this page."
+                />
+            </section>
         </div>
 
         <Dialog v-model:open="isOpen">
-            <DialogContent class="sm:max-w-2xl">
+            <DialogContent
+                class="max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto sm:max-w-2xl"
+            >
                 <DialogHeader>
                     <DialogTitle>{{ dialogTitle }}</DialogTitle>
                 </DialogHeader>
 
-                <form class="grid gap-4 py-2 md:grid-cols-2" @submit.prevent="submit">
+                <form
+                    class="grid gap-4 py-2 sm:grid-cols-2"
+                    @submit.prevent="submit"
+                >
                     <div
                         v-for="field in props.fields"
                         :key="field.name"
                         class="space-y-2"
-                        :class="field.type === 'textarea' ? 'md:col-span-2' : ''"
+                        :class="
+                            field.type === 'textarea' ? 'sm:col-span-2' : ''
+                        "
                     >
                         <Label :for="field.name">{{ field.label }}</Label>
 
@@ -203,7 +277,8 @@ const dialogTitle = computed(() => (editingId.value === null ? `Create ${props.t
                                 :key="String(option.value)"
                                 :value="option.value"
                             >
-                                {{ option.label }}{{ option.hint ? ` - ${option.hint}` : '' }}
+                                {{ option.label
+                                }}{{ option.hint ? ` - ${option.hint}` : '' }}
                             </option>
                         </select>
 
@@ -231,8 +306,13 @@ const dialogTitle = computed(() => (editingId.value === null ? `Create ${props.t
                         <InputError :message="form.errors[field.name]" />
                     </div>
 
-                    <DialogFooter class="md:col-span-2">
-                        <Button type="button" variant="outline" @click="closeModal">Cancel</Button>
+                    <DialogFooter class="sm:col-span-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            @click="closeModal"
+                            >Cancel</Button
+                        >
                         <Button type="submit" :disabled="form.processing">
                             {{ editingId === null ? 'Save' : 'Update' }}
                         </Button>

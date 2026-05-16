@@ -1,16 +1,9 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
+import { Check, LockKeyhole, Save } from 'lucide-vue-next';
 import { computed, reactive, ref, watch } from 'vue';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import type {
     RolePermissionGroup,
     RolePermissionRow,
@@ -43,7 +36,10 @@ const normalizedSearch = computed(() => searchTerm.value.trim().toLowerCase());
 
 const visibleGroups = computed(() =>
     props.permissionGroups.filter((group) => {
-        if (selectedGroup.value !== 'all' && group.key !== selectedGroup.value) {
+        if (
+            selectedGroup.value !== 'all' &&
+            group.key !== selectedGroup.value
+        ) {
             return false;
         }
 
@@ -97,18 +93,14 @@ const togglePermission = (
     selections[roleName] = Array.from(current).sort();
 };
 
-const handleCheckboxChange = (
-    roleName: string,
-    permissionName: string,
-    event: Event,
-) => {
-    const target = event.target;
+const toggleFromCell = (role: RolePermissionRow, permissionName: string) => {
+    if (role.isLocked) return;
 
-    if (!(target instanceof HTMLInputElement)) {
-        return;
-    }
-
-    togglePermission(roleName, permissionName, target.checked);
+    togglePermission(
+        role.name,
+        permissionName,
+        !isChecked(role.name, permissionName),
+    );
 };
 
 const isDirty = (role: RolePermissionRow) => {
@@ -118,10 +110,12 @@ const isDirty = (role: RolePermissionRow) => {
     return next !== current;
 };
 
+const dirtyRoles = computed(() =>
+    visibleRoles.value.filter((role) => isDirty(role)),
+);
+
 const saveRole = (role: RolePermissionRow) => {
-    if (role.isLocked) {
-        return;
-    }
+    if (role.isLocked) return;
 
     saving[role.name] = true;
 
@@ -141,135 +135,257 @@ const saveRole = (role: RolePermissionRow) => {
 </script>
 
 <template>
-    <section class="rounded-2xl border border-sidebar-border/70 bg-background/80 p-5 shadow-sm">
-        <div class="flex flex-wrap items-start justify-between gap-4">
+    <section
+        class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-background shadow-sm"
+    >
+        <div
+            class="flex flex-col gap-4 border-b border-sidebar-border/70 p-4 lg:flex-row lg:items-start lg:justify-between"
+        >
             <div>
-                <h2 class="text-2xl font-semibold tracking-tight text-foreground">
-                    Role Permission Matrix
-                </h2>
-                <p class="text-sm text-muted-foreground">
-                    Choose which sidebar items, pages, and CRUD actions each role can use.
+                <p class="text-xs font-medium text-muted-foreground uppercase">
+                    Access Settings
                 </p>
-                <p class="mt-1 text-xs text-muted-foreground">
-                    Related access is linked automatically. For example, saving a page or CRUD permission will also add the matching sidebar visibility when needed.
+                <h2 class="mt-1 text-xl font-semibold text-foreground">
+                    Role Permission Table
+                </h2>
+                <p class="mt-1 max-w-3xl text-sm text-muted-foreground">
+                    Set which pages, menus, and actions each role can use.
+                    Related permissions are added automatically when saved.
                 </p>
             </div>
-            <Badge class="bg-amber-500/15 text-amber-700 ring-1 ring-amber-500/25">
-                {{ props.roles.length }} Roles
-            </Badge>
+
+            <div class="grid grid-cols-3 gap-2 text-center text-xs sm:min-w-72">
+                <div class="rounded-lg border border-sidebar-border/70 p-2">
+                    <span class="block text-lg font-semibold text-foreground">
+                        {{ props.roles.length }}
+                    </span>
+                    <span class="text-muted-foreground">Roles</span>
+                </div>
+                <div class="rounded-lg border border-sidebar-border/70 p-2">
+                    <span class="block text-lg font-semibold text-foreground">
+                        {{ props.permissionGroups.length }}
+                    </span>
+                    <span class="text-muted-foreground">Groups</span>
+                </div>
+                <div class="rounded-lg border border-sidebar-border/70 p-2">
+                    <span class="block text-lg font-semibold text-foreground">
+                        {{ dirtyRoles.length }}
+                    </span>
+                    <span class="text-muted-foreground">Unsaved</span>
+                </div>
+            </div>
         </div>
 
-        <div class="mt-5 grid gap-3 rounded-xl border border-sidebar-border/60 bg-muted/20 p-3 md:grid-cols-[minmax(0,1fr)_13rem]">
+        <div
+            class="grid gap-3 border-b border-sidebar-border/70 bg-muted/20 p-3 lg:grid-cols-[minmax(0,1fr)_auto]"
+        >
             <Input
                 v-model="searchTerm"
-                placeholder="Filter roles or permissions"
+                placeholder="Search roles, permissions, descriptions"
             />
-            <Select v-model="selectedGroup">
-                <SelectTrigger class="w-full">
-                    <SelectValue placeholder="All groups" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">All groups</SelectItem>
-                    <SelectItem
-                        v-for="group in props.permissionGroups"
-                        :key="group.key"
-                        :value="group.key"
-                    >
-                        {{ group.label }}
-                    </SelectItem>
-                </SelectContent>
-            </Select>
+            <div class="flex flex-wrap gap-2">
+                <button
+                    type="button"
+                    class="rounded-md border px-3 py-2 text-sm transition"
+                    :class="
+                        selectedGroup === 'all'
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-sidebar-border/70 bg-background text-muted-foreground hover:text-foreground'
+                    "
+                    @click="selectedGroup = 'all'"
+                >
+                    All
+                </button>
+                <button
+                    v-for="group in props.permissionGroups"
+                    :key="group.key"
+                    type="button"
+                    class="rounded-md border px-3 py-2 text-sm transition"
+                    :class="
+                        selectedGroup === group.key
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-sidebar-border/70 bg-background text-muted-foreground hover:text-foreground'
+                    "
+                    @click="selectedGroup = group.key"
+                >
+                    {{ group.label }}
+                </button>
+            </div>
         </div>
 
         <div
             v-if="visibleRoles.length === 0 || visibleGroups.length === 0"
-            class="mt-4 rounded-xl border border-dashed border-sidebar-border/70 bg-muted/20 p-4 text-sm text-muted-foreground"
+            class="m-4 rounded-lg border border-dashed border-sidebar-border/70 bg-muted/20 p-4 text-sm text-muted-foreground"
         >
-            No matching roles or permission groups found for this filter.
+            No matching roles or permissions.
         </div>
 
-        <div v-else class="mt-5 grid gap-4 xl:grid-cols-2">
-            <article
-                v-for="role in visibleRoles"
-                :key="role.id"
-                class="rounded-2xl border border-sidebar-border/70 bg-background p-4 shadow-sm"
+        <div v-else>
+            <div
+                class="flex flex-col gap-3 border-b border-sidebar-border/70 p-3 lg:flex-row lg:items-center lg:justify-between"
             >
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <h3 class="text-lg font-semibold text-foreground">
-                                {{ role.label }}
-                            </h3>
-                            <Badge variant="outline">
-                                {{ role.userCount }} users
-                            </Badge>
-                            <Badge
-                                v-if="role.isLocked"
-                                class="bg-slate-500/15 text-slate-700 ring-1 ring-slate-500/25"
-                            >
-                                Locked
-                            </Badge>
-                        </div>
-                        <p class="mt-1 text-sm text-muted-foreground">
-                            <span v-if="role.isLocked">
-                                The admin role stays full-access to avoid lockout.
-                            </span>
-                            <span v-else>
-                                Toggle permissions below, then save this role.
-                            </span>
-                        </p>
-                    </div>
-
+                <p class="text-sm text-muted-foreground">
+                    Toggle cells, then save the changed role columns.
+                </p>
+                <div class="flex flex-wrap gap-2">
                     <Button
+                        v-for="role in visibleRoles"
+                        :key="`save-${role.id}`"
                         type="button"
                         size="sm"
-                        :disabled="role.isLocked || saving[role.name] || !isDirty(role)"
+                        :variant="isDirty(role) ? 'default' : 'outline'"
+                        :disabled="
+                            role.isLocked || saving[role.name] || !isDirty(role)
+                        "
                         @click="saveRole(role)"
                     >
-                        {{ saving[role.name] ? 'Saving...' : 'Save Role' }}
+                        <Save class="mr-2 size-4" />
+                        {{ saving[role.name] ? 'Saving' : role.label }}
                     </Button>
                 </div>
+            </div>
 
-                <div class="mt-4 space-y-4">
-                    <section
-                        v-for="group in visibleGroups"
-                        :key="`${role.id}-${group.key}`"
-                        class="rounded-xl border border-sidebar-border/60 bg-muted/20 p-4"
-                    >
-                        <div>
-                            <h4 class="font-medium text-foreground">{{ group.label }}</h4>
-                            <p class="text-xs text-muted-foreground">{{ group.description }}</p>
-                        </div>
-
-                        <div class="mt-3 space-y-3">
-                            <label
+            <div class="overflow-auto">
+                <table
+                    class="min-w-[76rem] border-separate border-spacing-0 text-sm"
+                >
+                    <thead>
+                        <tr>
+                            <th
+                                class="sticky top-0 left-0 z-30 w-[24rem] border-r border-b border-sidebar-border/70 bg-background px-4 py-3 text-left font-medium text-foreground"
+                            >
+                                Permission
+                            </th>
+                            <th
+                                v-for="role in visibleRoles"
+                                :key="role.id"
+                                class="sticky top-0 z-20 min-w-40 border-r border-b border-sidebar-border/70 bg-background px-3 py-3 text-center"
+                            >
+                                <div class="flex flex-col items-center gap-1">
+                                    <span class="font-medium text-foreground">
+                                        {{ role.label }}
+                                    </span>
+                                    <span class="text-xs text-muted-foreground">
+                                        {{ role.userCount }} users
+                                    </span>
+                                    <span
+                                        v-if="role.isLocked"
+                                        class="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                                    >
+                                        <LockKeyhole class="size-3" />
+                                        locked
+                                    </span>
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template
+                            v-for="group in visibleGroups"
+                            :key="group.key"
+                        >
+                            <tr>
+                                <td
+                                    :colspan="visibleRoles.length + 1"
+                                    class="border-b border-sidebar-border/70 bg-muted/30 px-4 py-3"
+                                >
+                                    <div
+                                        class="flex flex-wrap items-end justify-between gap-2"
+                                    >
+                                        <div>
+                                            <p
+                                                class="font-medium text-foreground"
+                                            >
+                                                {{ group.label }}
+                                            </p>
+                                            <p
+                                                class="text-xs text-muted-foreground"
+                                            >
+                                                {{ group.description }}
+                                            </p>
+                                        </div>
+                                        <span
+                                            class="text-xs text-muted-foreground"
+                                        >
+                                            {{
+                                                group.permissions.length
+                                            }}
+                                            permissions
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr
                                 v-for="permission in group.permissions"
                                 :key="permission.name"
-                                class="flex items-start gap-3 rounded-lg border border-transparent px-1 py-1.5 transition hover:border-sidebar-border/70"
+                                class="group"
                             >
-                                <input
-                                    type="checkbox"
-                                    class="mt-1 size-4 rounded border-sidebar-border text-primary"
-                                    :checked="isChecked(role.name, permission.name)"
-                                    :disabled="role.isLocked"
-                                    @change="handleCheckboxChange(role.name, permission.name, $event)"
-                                />
-                                <span class="min-w-0">
-                                    <span class="block text-sm font-medium text-foreground">
+                                <td
+                                    class="sticky left-0 z-10 border-r border-b border-sidebar-border/60 bg-background px-4 py-3 group-hover:bg-muted/20"
+                                >
+                                    <p class="font-medium text-foreground">
                                         {{ permission.label }}
-                                    </span>
-                                    <span class="block text-xs text-muted-foreground">
+                                    </p>
+                                    <p class="text-xs text-muted-foreground">
                                         {{ permission.description }}
-                                    </span>
-                                    <span class="block text-[11px] text-muted-foreground/80">
+                                    </p>
+                                    <p
+                                        class="mt-1 text-[11px] text-muted-foreground/70"
+                                    >
                                         {{ permission.name }}
-                                    </span>
-                                </span>
-                            </label>
-                        </div>
-                    </section>
-                </div>
-            </article>
+                                    </p>
+                                </td>
+                                <td
+                                    v-for="role in visibleRoles"
+                                    :key="`${role.id}-${permission.name}`"
+                                    class="border-r border-b border-sidebar-border/60 px-3 py-3 text-center group-hover:bg-muted/20"
+                                >
+                                    <button
+                                        type="button"
+                                        class="mx-auto inline-flex h-8 w-14 items-center justify-center rounded-full border transition"
+                                        :class="
+                                            isChecked(
+                                                role.name,
+                                                permission.name,
+                                            )
+                                                ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-700'
+                                                : 'border-sidebar-border/70 bg-muted/20 text-muted-foreground hover:bg-muted/40'
+                                        "
+                                        :disabled="role.isLocked"
+                                        :aria-pressed="
+                                            isChecked(
+                                                role.name,
+                                                permission.name,
+                                            )
+                                        "
+                                        :aria-label="`${role.label} ${permission.label}`"
+                                        @click="
+                                            toggleFromCell(
+                                                role,
+                                                permission.name,
+                                            )
+                                        "
+                                    >
+                                        <Check
+                                            v-if="
+                                                isChecked(
+                                                    role.name,
+                                                    permission.name,
+                                                )
+                                            "
+                                            class="size-4"
+                                        />
+                                        <span
+                                            v-else
+                                            class="h-0.5 w-4 rounded bg-current"
+                                        />
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </section>
 </template>

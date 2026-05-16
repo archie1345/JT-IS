@@ -4,9 +4,13 @@ import { router } from '@inertiajs/vue3';
 import EntityIndexPage from '@/components/entity/EntityIndexPage.vue';
 import type { SpreadsheetColumn } from '@/components/ProjectDataTable.vue';
 import type { BreadcrumbItem } from '@/types';
-import type { ProjectItem, ProjectsPageProps } from '@/types/project';
+import type { ProjectItem } from '@/types/project';
 
-const props = defineProps<ProjectsPageProps>();
+const props = defineProps<{
+    projects?: ProjectItem[];
+    data?: ProjectItem[];
+    activeClientId?: number | null;
+}>();
 
 const rows = computed(() => props.projects ?? props.data ?? []);
 
@@ -38,15 +42,35 @@ const getProjectStatusClass = (status: ProjectItem['projectStatus']) =>
     ({
         planning: 'bg-slate-500/15 text-slate-500 ring-1 ring-slate-500/25',
         ongoing: 'bg-blue-500/15 text-blue-500 ring-1 ring-blue-500/25',
-        completed: 'bg-emerald-500/15 text-emerald-500 ring-1 ring-emerald-500/25',
+        completed:
+            'bg-emerald-500/15 text-emerald-500 ring-1 ring-emerald-500/25',
     })[status];
 
 const projectColumns = [
     { key: 'id', label: 'Id' },
-    { key: 'projectName', label: 'Project Name', accessor: (row: Record<string, unknown>) => (row as ProjectItem).projectName },
-    { key: 'client', label: 'Client', accessor: (row: Record<string, unknown>) => (row as ProjectItem).client },
-    { key: 'estPrice', label: 'Est. Value', accessor: (row: Record<string, unknown>) => (row as ProjectItem).estPrice },
-    { key: 'deadline', label: 'Deadline', accessor: (row: Record<string, unknown>) => (row as ProjectItem).deadline },
+    {
+        key: 'projectName',
+        label: 'Project Name',
+        accessor: (row: Record<string, unknown>) =>
+            (row as ProjectItem).projectName,
+    },
+    {
+        key: 'client',
+        label: 'Client',
+        accessor: (row: Record<string, unknown>) => (row as ProjectItem).client,
+    },
+    {
+        key: 'estPrice',
+        label: 'Est. Value',
+        accessor: (row: Record<string, unknown>) =>
+            (row as ProjectItem).estPrice,
+    },
+    {
+        key: 'deadline',
+        label: 'Deadline',
+        accessor: (row: Record<string, unknown>) =>
+            (row as ProjectItem).deadline,
+    },
     {
         key: 'paymentStatus',
         label: 'Payment Status',
@@ -56,7 +80,8 @@ const projectColumns = [
                 partial: 'Partial',
                 paid: 'Paid',
                 overdue: 'Overdue',
-            })[(row as ProjectItem).paymentStatus] ?? (row as ProjectItem).paymentStatus,
+            })[(row as ProjectItem).paymentStatus] ??
+            (row as ProjectItem).paymentStatus,
     },
     {
         key: 'projectStatus',
@@ -66,7 +91,8 @@ const projectColumns = [
                 planning: 'Planning',
                 ongoing: 'Ongoing',
                 completed: 'Completed',
-        })[(row as ProjectItem).projectStatus] ?? (row as ProjectItem).projectStatus,
+            })[(row as ProjectItem).projectStatus] ??
+            (row as ProjectItem).projectStatus,
     },
 ] satisfies SpreadsheetColumn[];
 </script>
@@ -79,7 +105,11 @@ const projectColumns = [
         :columns="projectColumns"
         :breadcrumbs="breadcrumbs"
         description="Project data below is loaded from the database."
-        :note="props.activeClientId ? `Filtered by client ID: ${props.activeClientId}` : ''"
+        :note="
+            props.activeClientId
+                ? `Filtered by client ID: ${props.activeClientId}`
+                : ''
+        "
         row-key-field="id"
         create-label="New Project"
         show-create-button

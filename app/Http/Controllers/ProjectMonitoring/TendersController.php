@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\ProjectMonitoring;
 
+use App\Http\Controllers\ProjectDocumentsController;
+use App\Models\Project;
+use App\Models\ProjectDocument;
 use App\Models\Tender;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -49,6 +52,30 @@ class TendersController extends TableCrudController
             'value' => $record->value !== null ? (float) $record->value : null,
             'status' => $record->status,
             'created_at' => optional($record->created_at)->format('Y-m-d'),
+        ];
+    }
+
+    protected function pageProps(Request $request): array
+    {
+        return [
+            'projectOptions' => Project::query()
+                ->with('client:id,name')
+                ->orderBy('name')
+                ->get(['id', 'client_id', 'name'])
+                ->map(fn (Project $project): array => [
+                    'value' => $project->id,
+                    'label' => $project->name ?? 'Untitled project',
+                    'hint' => $project->client?->name,
+                ])
+                ->all(),
+            'uploadedDocuments' => ProjectDocument::query()
+                ->with('project:id,name')
+                ->where('component_type', 'pipeline')
+                ->latest()
+                ->limit(25)
+                ->get()
+                ->map(fn (ProjectDocument $document): array => ProjectDocumentsController::serialize($document))
+                ->all(),
         ];
     }
 }

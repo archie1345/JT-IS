@@ -4,9 +4,12 @@ import { router } from '@inertiajs/vue3';
 import EntityIndexPage from '@/components/entity/EntityIndexPage.vue';
 import type { SpreadsheetColumn } from '@/components/ProjectDataTable.vue';
 import type { BreadcrumbItem } from '@/types';
-import type { ClientItem, ClientsPageProps } from '@/types/client';
+import type { ClientItem } from '@/types/client';
 
-const props = defineProps<ClientsPageProps>();
+const props = defineProps<{
+    clients?: ClientItem[];
+    data?: ClientItem[];
+}>();
 
 const rows = computed(() => props.clients ?? props.data ?? []);
 
@@ -28,9 +31,24 @@ const createClient = () => {
 
 const clientColumns = [
     { key: 'id', label: 'Id' },
-    { key: 'name', label: 'Client Name', accessor: (row: Record<string, unknown>) => (row as ClientItem).name ?? '-' },
-    { key: 'contact', label: 'Contact', accessor: (row: Record<string, unknown>) => (row as ClientItem).contact ?? '-' },
-    { key: 'projectCount', label: 'Projects', accessor: (row: Record<string, unknown>) => (row as ClientItem).projectCount },
+    {
+        key: 'name',
+        label: 'Client Name',
+        accessor: (row: Record<string, unknown>) =>
+            (row as ClientItem).name ?? '-',
+    },
+    {
+        key: 'contact',
+        label: 'Contact',
+        accessor: (row: Record<string, unknown>) =>
+            (row as ClientItem).contact ?? '-',
+    },
+    {
+        key: 'projectCount',
+        label: 'Projects',
+        accessor: (row: Record<string, unknown>) =>
+            (row as ClientItem).projectCount,
+    },
 ] satisfies SpreadsheetColumn[];
 </script>
 

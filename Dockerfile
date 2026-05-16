@@ -85,6 +85,9 @@ RUN mkdir -p /var/www/.npm && chown -R www-data:www-data /var/www
 # Use production php.ini
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
+# Match PHP request limits to Laravel's 50 MiB upload validation.
+COPY docker/php/uploads.ini "$PHP_INI_DIR/conf.d/uploads.ini"
+
 # Configure Apache to serve Laravel from public directory
 RUN echo '<VirtualHost *:80>' > /etc/apache2/sites-available/000-default.conf && \
     echo '    ServerName localhost' >> /etc/apache2/sites-available/000-default.conf && \

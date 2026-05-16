@@ -2,8 +2,10 @@
 
 namespace App\Support;
 
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class AccessControl
 {
@@ -77,6 +79,12 @@ class AccessControl
                     ['name' => 'action.project-costs.create', 'label' => 'Create cost realization', 'description' => 'Allow creating realized project cost records.'],
                     ['name' => 'action.project-costs.update', 'label' => 'Update cost realization', 'description' => 'Allow editing realized project cost records.'],
                     ['name' => 'action.project-costs.delete', 'label' => 'Delete cost realization', 'description' => 'Allow deleting realized project cost records.'],
+                    ['name' => 'action.rabs.create', 'label' => 'Create RAB', 'description' => 'Allow creating RAB records.'],
+                    ['name' => 'action.rabs.update', 'label' => 'Update RAB', 'description' => 'Allow editing RAB records and line items.'],
+                    ['name' => 'action.rabs.delete', 'label' => 'Delete RAB', 'description' => 'Allow deleting RAB records.'],
+                    ['name' => 'action.raps.create', 'label' => 'Create RAP', 'description' => 'Allow creating RAP records.'],
+                    ['name' => 'action.raps.update', 'label' => 'Update RAP', 'description' => 'Allow editing RAP records and line items.'],
+                    ['name' => 'action.raps.delete', 'label' => 'Delete RAP', 'description' => 'Allow deleting RAP records.'],
                     ['name' => 'action.progress-updates.create', 'label' => 'Create progress updates', 'description' => 'Allow creating project progress reports.'],
                     ['name' => 'action.progress-updates.update', 'label' => 'Update progress updates', 'description' => 'Allow editing project progress reports.'],
                     ['name' => 'action.progress-updates.delete', 'label' => 'Delete progress updates', 'description' => 'Allow deleting project progress reports.'],
@@ -171,6 +179,8 @@ class AccessControl
 
     public static function sync(): void
     {
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
         foreach (self::permissionNames() as $permissionName) {
             Permission::findOrCreate($permissionName, 'web');
         }
@@ -182,10 +192,27 @@ class AccessControl
         foreach (self::defaultPermissionsByRole() as $roleName => $permissions) {
             $role = Role::findOrCreate($roleName, 'web');
 
-            if ($role->permissions()->count() === 0) {
+            if ($roleName === 'admin') {
+                $permissionIds = Permission::query()
+                    ->whereIn('name', self::permissionNames())
+                    ->where('guard_name', 'web')
+                    ->pluck('id')
+                    ->map(fn ($id): array => [
+                        'permission_id' => $id,
+                        'role_id' => $role->id,
+                    ])
+                    ->all();
+
+                if ($permissionIds !== []) {
+                    DB::table(config('permission.table_names.role_has_permissions'))
+                        ->insertOrIgnore($permissionIds);
+                }
+            } elseif ($role->permissions()->count() === 0) {
                 $role->syncPermissions(self::expandPermissions($permissions));
             }
         }
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
     /**
@@ -263,6 +290,12 @@ class AccessControl
             'action.project-costs.create' => ['sidebar.finance.cost-realization.view'],
             'action.project-costs.update' => ['sidebar.finance.cost-realization.view'],
             'action.project-costs.delete' => ['sidebar.finance.cost-realization.view'],
+            'action.rabs.create' => ['page.rabs.view', 'sidebar.operational.rabs.view'],
+            'action.rabs.update' => ['page.rabs.view', 'sidebar.operational.rabs.view'],
+            'action.rabs.delete' => ['page.rabs.view', 'sidebar.operational.rabs.view'],
+            'action.raps.create' => ['page.raps.view', 'sidebar.operational.raps.view'],
+            'action.raps.update' => ['page.raps.view', 'sidebar.operational.raps.view'],
+            'action.raps.delete' => ['page.raps.view', 'sidebar.operational.raps.view'],
             'action.progress-updates.create' => ['sidebar.operational.progress.view'],
             'action.progress-updates.update' => ['sidebar.operational.progress.view'],
             'action.progress-updates.delete' => ['sidebar.operational.progress.view'],
@@ -291,6 +324,12 @@ class AccessControl
                 'page.clients.view',
                 'page.rabs.view',
                 'page.raps.view',
+                'action.rabs.create',
+                'action.rabs.update',
+                'action.rabs.delete',
+                'action.raps.create',
+                'action.raps.update',
+                'action.raps.delete',
             ],
             'client' => [
                 'sidebar.dashboard.view',

@@ -73,7 +73,7 @@ class AdminAccMgmtController extends Controller
             ])
             ->all();
 
-        return Inertia::render('AdmnUsrMgmt', [
+        return Inertia::render('AdmnUsrMgmtPbac', [
             'users' => $users,
             // Clients tetap dikirim jika dibutuhkan untuk dropdown di tempat lain, 
             // tapi tidak lagi untuk dihubungkan ke User

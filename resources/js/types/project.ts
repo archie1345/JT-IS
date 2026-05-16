@@ -17,12 +17,29 @@ export type DocumentItem = {
 
 export type UploadedDocument = {
     id: number;
+    projectId?: number | null;
+    projectName?: string | null;
     name: string;
     originalName: string;
     url: string;
     mimeType: null | string;
     size: null | number;
+    documentType?: null | string;
+    componentType?: null | string;
+    componentId?: null | number;
+    ocrText?: null | string;
+    ocrEngine?: null | string;
+    ocrProcessedAt?: null | string;
     createdAt: null | string;
+};
+
+export type DocumentConnectionOption = {
+    value: string;
+    label: string;
+    hint?: null | string;
+    componentType: string;
+    componentId?: null | number;
+    projectId?: null | number;
 };
 
 export type ProgressSnapshot = {

@@ -1,18 +1,35 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { router } from '@inertiajs/vue3';
-import EntityIndexPage from '@/components/entity/EntityIndexPage.vue';
+import CrudPrototypePage from '@/components/prototype/CrudPrototypePage.vue';
 import type { SpreadsheetColumn } from '@/components/ProjectDataTable.vue';
 import type { BreadcrumbItem } from '@/types';
 import type { RabRow } from '@/types/rab';
+import type { UploadedDocument } from '@/types/project';
+
+type Option = {
+    value: number;
+    label: string;
+};
 
 const props = defineProps<{
     rabs?: RabRow[];
     data?: RabRow[];
     activeProjectId?: number | null;
+    projectOptions: Option[];
+    uploadedDocuments: UploadedDocument[];
 }>();
 
 const rows = computed(() => props.rabs ?? props.data ?? []);
+const uploadConnectionOptions = computed(() =>
+    rows.value.map((row) => ({
+        value: `rab:${row.id}`,
+        label: `RAB #${row.id}`,
+        hint: row.projectName,
+        componentType: 'rab',
+        componentId: row.id,
+        projectId: row.projectId,
+    })),
+);
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -28,14 +45,13 @@ const formatCurrency = (value: number) =>
         maximumFractionDigits: 0,
     }).format(value);
 
-const openProject = (row: Record<string, unknown>) => {
-    const item = row as RabRow;
-    router.get(`/rabs/${item.id}`);
-};
-
 const rabColumns = [
     { key: 'id', label: 'Id' },
-    { key: 'projectName', label: 'Project', accessor: (row: Record<string, unknown>) => (row as RabRow).projectName },
+    {
+        key: 'projectName',
+        label: 'Project',
+        accessor: (row: Record<string, unknown>) => (row as RabRow).projectName,
+    },
     {
         key: 'totalBudget',
         label: 'Total Budget',
@@ -49,29 +65,58 @@ const rabColumns = [
     {
         key: 'updatedAt',
         label: 'Updated',
-        accessor: (row: Record<string, unknown>) => (row as RabRow).updatedAt ?? '-',
+        accessor: (row: Record<string, unknown>) =>
+            (row as RabRow).updatedAt ?? '-',
     },
 ] satisfies SpreadsheetColumn[];
+
+const fields = [
+    {
+        name: 'project_id',
+        label: 'Project',
+        type: 'select',
+        options: props.projectOptions,
+        required: true,
+    },
+    {
+        name: 'total_budget',
+        label: 'Total Budget',
+        type: 'number',
+        min: 0,
+        step: '0.01',
+    },
+] as const;
 </script>
 
 <template>
-    <EntityIndexPage
+    <CrudPrototypePage
         head-title="RAB"
         title="RAB List"
+        description="Budget plan records grouped by project."
         :rows="rows"
         :columns="rabColumns"
+        :fields="fields"
         :breadcrumbs="breadcrumbs"
-        intro-title="RAB"
-        intro-description="Budget plan records grouped by project."
-        :intro-badge="props.activeProjectId ? `Filtered by project ID ${props.activeProjectId}` : 'All projects'"
-        description="Each row links back to the owning project."
-        row-key-field="id"
-        :stretch-to-viewport="false"
-        empty-text="No RAB records found."
-        @row-click="openProject"
+        create-url="/rabs"
+        update-url-base="/rabs"
+        delete-url-base="/rabs"
+        detail-url-base="/rabs"
+        upload-component-type="rab"
+        :upload-project-id="props.activeProjectId"
+        :project-options="props.projectOptions"
+        :uploaded-documents="props.uploadedDocuments"
+        :upload-connection-options="uploadConnectionOptions"
+        create-label="New RAB"
+        :note="
+            props.activeProjectId
+                ? `Filtered by project ID ${props.activeProjectId}`
+                : `${rows.length} RAB record(s)`
+        "
     >
         <template #cell-totalBudget="{ value }">
-            <span class="font-medium text-foreground">{{ formatCurrency(Number(value ?? 0)) }}</span>
+            <span class="font-medium text-foreground">{{
+                formatCurrency(Number(value ?? 0))
+            }}</span>
         </template>
-    </EntityIndexPage>
+    </CrudPrototypePage>
 </template>

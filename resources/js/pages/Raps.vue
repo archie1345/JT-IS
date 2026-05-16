@@ -1,18 +1,35 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { router } from '@inertiajs/vue3';
-import EntityIndexPage from '@/components/entity/EntityIndexPage.vue';
+import CrudPrototypePage from '@/components/prototype/CrudPrototypePage.vue';
 import type { SpreadsheetColumn } from '@/components/ProjectDataTable.vue';
 import type { BreadcrumbItem } from '@/types';
 import type { RapRow } from '@/types/rap';
+import type { UploadedDocument } from '@/types/project';
+
+type Option = {
+    value: number;
+    label: string;
+};
 
 const props = defineProps<{
     raps?: RapRow[];
     data?: RapRow[];
     activeProjectId?: number | null;
+    projectOptions: Option[];
+    uploadedDocuments: UploadedDocument[];
 }>();
 
 const rows = computed(() => props.raps ?? props.data ?? []);
+const uploadConnectionOptions = computed(() =>
+    rows.value.map((row) => ({
+        value: `rap:${row.id}`,
+        label: `RAP #${row.id}`,
+        hint: row.projectName,
+        componentType: 'rap',
+        componentId: row.id,
+        projectId: row.projectId,
+    })),
+);
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -28,14 +45,13 @@ const formatCurrency = (value: number) =>
         maximumFractionDigits: 0,
     }).format(value);
 
-const openProject = (row: Record<string, unknown>) => {
-    const item = row as RapRow;
-    router.get(`/raps/${item.id}`);
-};
-
 const rapColumns = [
     { key: 'id', label: 'Id' },
-    { key: 'projectName', label: 'Project', accessor: (row: Record<string, unknown>) => (row as RapRow).projectName },
+    {
+        key: 'projectName',
+        label: 'Project',
+        accessor: (row: Record<string, unknown>) => (row as RapRow).projectName,
+    },
     {
         key: 'totalBudget',
         label: 'Total Budget',
@@ -49,29 +65,58 @@ const rapColumns = [
     {
         key: 'createdAt',
         label: 'Created',
-        accessor: (row: Record<string, unknown>) => (row as RapRow).createdAt ?? '-',
+        accessor: (row: Record<string, unknown>) =>
+            (row as RapRow).createdAt ?? '-',
     },
 ] satisfies SpreadsheetColumn[];
+
+const fields = [
+    {
+        name: 'project_id',
+        label: 'Project',
+        type: 'select',
+        options: props.projectOptions,
+        required: true,
+    },
+    {
+        name: 'total_budget',
+        label: 'Total Budget',
+        type: 'number',
+        min: 0,
+        step: '0.01',
+    },
+] as const;
 </script>
 
 <template>
-    <EntityIndexPage
+    <CrudPrototypePage
         head-title="RAP"
         title="RAP List"
+        description="Plan records grouped by project."
         :rows="rows"
         :columns="rapColumns"
+        :fields="fields"
         :breadcrumbs="breadcrumbs"
-        intro-title="RAP"
-        intro-description="Plan records grouped by project."
-        :intro-badge="props.activeProjectId ? `Filtered by project ID ${props.activeProjectId}` : 'All projects'"
-        description="Each row links back to the owning project."
-        row-key-field="id"
-        :stretch-to-viewport="false"
-        empty-text="No RAP records found."
-        @row-click="openProject"
+        create-url="/raps"
+        update-url-base="/raps"
+        delete-url-base="/raps"
+        detail-url-base="/raps"
+        upload-component-type="rap"
+        :upload-project-id="props.activeProjectId"
+        :project-options="props.projectOptions"
+        :uploaded-documents="props.uploadedDocuments"
+        :upload-connection-options="uploadConnectionOptions"
+        create-label="New RAP"
+        :note="
+            props.activeProjectId
+                ? `Filtered by project ID ${props.activeProjectId}`
+                : `${rows.length} RAP record(s)`
+        "
     >
         <template #cell-totalBudget="{ value }">
-            <span class="font-medium text-foreground">{{ formatCurrency(Number(value ?? 0)) }}</span>
+            <span class="font-medium text-foreground">{{
+                formatCurrency(Number(value ?? 0))
+            }}</span>
         </template>
-    </EntityIndexPage>
+    </CrudPrototypePage>
 </template>

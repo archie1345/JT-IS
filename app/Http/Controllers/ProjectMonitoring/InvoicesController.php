@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\ProjectMonitoring;
 
+use App\Http\Controllers\ProjectDocumentsController;
 use App\Models\Invoice;
 use App\Models\Project;
+use App\Models\ProjectDocument;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -72,6 +74,14 @@ class InvoicesController extends TableCrudController
                     'label' => $project->name ?? 'Untitled project',
                     'hint' => $project->client?->name,
                 ])
+                ->all(),
+            'uploadedDocuments' => ProjectDocument::query()
+                ->with('project:id,name')
+                ->where('component_type', 'invoice')
+                ->latest()
+                ->limit(25)
+                ->get()
+                ->map(fn (ProjectDocument $document): array => ProjectDocumentsController::serialize($document))
                 ->all(),
         ];
     }

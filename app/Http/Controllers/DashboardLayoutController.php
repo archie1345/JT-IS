@@ -15,6 +15,10 @@ class DashboardLayoutController extends Controller
             'layout.order.*' => ['string'],
             'layout.visible' => ['required', 'array'],
             'layout.visible.*' => ['string'],
+            'layout.settings' => ['nullable', 'array'],
+            'layout.settings.*.chartType' => ['nullable', 'string', 'in:bar,line,donut,metric'],
+            'layout.settings.*.dataSource' => ['nullable', 'string'],
+            'layout.settings.*.valueFormat' => ['nullable', 'string', 'in:number,currency,percent'],
         ]);
 
         $request->user()->forceFill([

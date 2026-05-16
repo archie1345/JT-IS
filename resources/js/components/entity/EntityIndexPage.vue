@@ -2,15 +2,36 @@
 import { Head } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import ProjectDataTable from '@/components/ProjectDataTable.vue';
-import type { EntityIndexPageProps, EntityTableRow } from '@/types/entity';
+import type { SpreadsheetColumn } from '@/components/ProjectDataTable.vue';
+import type { BreadcrumbItem } from '@/types';
+import type { EntityTableRow } from '@/types/entity';
 
-const props = withDefaults(defineProps<EntityIndexPageProps>(), {
-    rowKeyField: 'id',
-    createLabel: 'New Item',
-    emptyText: 'No matching data found.',
-    stretchToViewport: true,
-    showCreateButton: false,
-});
+const props = withDefaults(
+    defineProps<{
+        rows: EntityTableRow[];
+        columns: SpreadsheetColumn[];
+        headTitle: string;
+        title: string;
+        breadcrumbs: BreadcrumbItem[];
+        description?: string;
+        note?: string;
+        rowKeyField?: string;
+        createLabel?: string;
+        emptyText?: string;
+        stretchToViewport?: boolean;
+        showCreateButton?: boolean;
+        introTitle?: string;
+        introDescription?: string;
+        introBadge?: string;
+    }>(),
+    {
+        rowKeyField: 'id',
+        createLabel: 'New Item',
+        emptyText: 'No matching data found.',
+        stretchToViewport: true,
+        showCreateButton: false,
+    },
+);
 
 const emit = defineEmits<{
     rowClick: [row: EntityTableRow];
@@ -22,9 +43,15 @@ const emit = defineEmits<{
     <Head :title="props.headTitle" />
 
     <AppLayout :breadcrumbs="props.breadcrumbs">
-        <div class="flex min-h-[calc(100vh-8rem)] flex-1 flex-col gap-3 rounded-xl p-3 sm:gap-4 sm:p-4">
+        <div
+            class="flex min-h-[calc(100vh-8rem)] flex-1 flex-col gap-3 rounded-xl p-3 sm:gap-4 sm:p-4"
+        >
             <section
-                v-if="props.introTitle || props.introDescription || props.introBadge"
+                v-if="
+                    props.introTitle ||
+                    props.introDescription ||
+                    props.introBadge
+                "
                 class="rounded-2xl border border-sidebar-border/70 bg-background/80 p-4 shadow-sm sm:p-5"
             >
                 <div class="flex flex-wrap items-start justify-between gap-4">
@@ -35,7 +62,10 @@ const emit = defineEmits<{
                         >
                             {{ props.introTitle }}
                         </h1>
-                        <p v-if="props.introDescription" class="text-sm text-muted-foreground">
+                        <p
+                            v-if="props.introDescription"
+                            class="text-sm text-muted-foreground"
+                        >
                             {{ props.introDescription }}
                         </p>
                     </div>

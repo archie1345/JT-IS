@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Rab;
+use App\Models\Project;
+use App\Models\ProjectDocument;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -21,6 +23,8 @@ class RabsPageController extends Controller
             ->get()
             ->map(fn (Rab $rab): array => [
                 'id' => $rab->id,
+                'project_id' => $rab->project_id,
+                'total_budget' => (float) ($rab->total_budget ?? 0),
                 'projectId' => $rab->project_id,
                 'projectName' => $rab->project?->name ?? '-',
                 'totalBudget' => (float) ($rab->total_budget ?? 0),
@@ -33,6 +37,23 @@ class RabsPageController extends Controller
         return Inertia::render('Rabs', [
             'rabs' => $rabs,
             'activeProjectId' => $projectId > 0 ? $projectId : null,
+            'projectOptions' => Project::query()
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->map(fn (Project $project): array => [
+                    'value' => $project->id,
+                    'label' => $project->name ?? 'Project #'.$project->id,
+                ])
+                ->values(),
+            'uploadedDocuments' => ProjectDocument::query()
+                ->with('project:id,name')
+                ->where('component_type', 'rab')
+                ->when($projectId > 0, fn ($query) => $query->where('project_id', $projectId))
+                ->latest()
+                ->limit(25)
+                ->get()
+                ->map(fn (ProjectDocument $document): array => ProjectDocumentsController::serialize($document))
+                ->all(),
         ]);
     }
 }

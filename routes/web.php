@@ -1,17 +1,24 @@
 <?php
 
 use App\Http\Controllers\AdminAccMgmtController;
+use App\Http\Controllers\AiDocumentExtractionController;
 use App\Http\Controllers\ClientDetailsController;
 use App\Http\Controllers\ClientsPageController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DashboardLayoutController;
 use App\Http\Controllers\ProfitLossController;
 use App\Http\Controllers\ProjectDetailsController;
+use App\Http\Controllers\ProjectDocumentsController;
 use App\Http\Controllers\ProjectsPageController;
 use App\Http\Controllers\ProjectMonitoring\ClientsController;
 use App\Http\Controllers\ProjectMonitoring\FundRequestsController;
 use App\Http\Controllers\ProjectMonitoring\InvoicesController;
 use App\Http\Controllers\ProjectMonitoring\ProgressReportsController;
 use App\Http\Controllers\ProjectMonitoring\ProjectCostsController;
+use App\Http\Controllers\ProjectMonitoring\RabItemsController;
+use App\Http\Controllers\ProjectMonitoring\RapItemsController;
+use App\Http\Controllers\ProjectMonitoring\RabsController;
+use App\Http\Controllers\ProjectMonitoring\RapsController;
 use App\Http\Controllers\ProjectMonitoring\TendersController;
 use App\Http\Controllers\RabRapDetailsController;
 use App\Http\Controllers\RabsPageController;
@@ -24,7 +31,7 @@ Route::inertia('/', 'Welcome', [
 ])->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'Dashboard')
+    Route::get('dashboard', DashboardController::class)
         ->middleware('permission:page.dashboard.view')
         ->name('dashboard');
 
@@ -43,16 +50,60 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('rabs', RabsPageController::class)
             ->middleware('permission:page.rabs.view')
             ->name('rabs');
+        Route::post('rabs', [RabsController::class, 'store'])
+            ->middleware('permission:action.rabs.create')
+            ->name('rabs.store');
         Route::get('rabs/{rab}', [RabRapDetailsController::class, 'showRab'])
             ->middleware('permission:page.rabs.view')
             ->name('rabs.show');
+        Route::patch('rabs/{id}', [RabsController::class, 'update'])
+            ->whereNumber('id')
+            ->middleware('permission:action.rabs.update')
+            ->name('rabs.update');
+        Route::delete('rabs/{id}', [RabsController::class, 'destroy'])
+            ->whereNumber('id')
+            ->middleware('permission:action.rabs.delete')
+            ->name('rabs.destroy');
+        Route::post('rabs/{rab}/items', [RabItemsController::class, 'store'])
+            ->middleware('permission:action.rabs.update')
+            ->name('rabs.items.store');
+        Route::patch('rab-items/{id}', [RabItemsController::class, 'update'])
+            ->whereNumber('id')
+            ->middleware('permission:action.rabs.update')
+            ->name('rabs.items.update');
+        Route::delete('rab-items/{id}', [RabItemsController::class, 'destroy'])
+            ->whereNumber('id')
+            ->middleware('permission:action.rabs.update')
+            ->name('rabs.items.destroy');
 
         Route::get('raps', RapsPageController::class)
             ->middleware('permission:page.raps.view')
             ->name('raps');
+        Route::post('raps', [RapsController::class, 'store'])
+            ->middleware('permission:action.raps.create')
+            ->name('raps.store');
         Route::get('raps/{rap}', [RabRapDetailsController::class, 'showRap'])
             ->middleware('permission:page.raps.view')
             ->name('raps.show');
+        Route::patch('raps/{id}', [RapsController::class, 'update'])
+            ->whereNumber('id')
+            ->middleware('permission:action.raps.update')
+            ->name('raps.update');
+        Route::delete('raps/{id}', [RapsController::class, 'destroy'])
+            ->whereNumber('id')
+            ->middleware('permission:action.raps.delete')
+            ->name('raps.destroy');
+        Route::post('raps/{rap}/items', [RapItemsController::class, 'store'])
+            ->middleware('permission:action.raps.update')
+            ->name('raps.items.store');
+        Route::patch('rap-items/{id}', [RapItemsController::class, 'update'])
+            ->whereNumber('id')
+            ->middleware('permission:action.raps.update')
+            ->name('raps.items.update');
+        Route::delete('rap-items/{id}', [RapItemsController::class, 'destroy'])
+            ->whereNumber('id')
+            ->middleware('permission:action.raps.update')
+            ->name('raps.items.destroy');
 
         Route::get('projects', ProjectsPageController::class)
             ->middleware('permission:page.projects.view')
@@ -69,12 +120,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('projects/{project}', [ProjectDetailsController::class, 'update'])
             ->middleware('permission:action.projects.update')
             ->name('projects.update');
-        Route::post('projects/{project}/documents', [ProjectDetailsController::class, 'storeDocument'])
+        Route::post('projects/{project}/documents', [ProjectDocumentsController::class, 'store'])
             ->middleware('permission:action.projects.update')
             ->name('projects.documents.store');
-        Route::get('projects/documents/{projectDocument}', [ProjectDetailsController::class, 'showDocument'])
+        Route::post('projects/documents/ocr', [ProjectDocumentsController::class, 'ocr'])
+            ->middleware('permission:action.projects.update')
+            ->name('projects.documents.ocr');
+        Route::post('projects/documents/apply-extraction', [ProjectDocumentsController::class, 'applyExtraction'])
+            ->middleware('permission:action.projects.update')
+            ->name('projects.documents.apply-extraction');
+        Route::get('projects/documents/{projectDocument}', [ProjectDocumentsController::class, 'show'])
             ->middleware('permission:page.projects.view')
             ->name('projects.documents.show');
+        Route::delete('projects/documents/{projectDocument}', [ProjectDocumentsController::class, 'destroy'])
+            ->middleware('permission:action.projects.update')
+            ->name('projects.documents.destroy');
 
         Route::get('client', ClientsPageController::class)
             ->middleware('permission:page.clients.view')
@@ -140,9 +200,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('progress-updates', [ProgressReportsController::class, 'index'])
             ->middleware('permission:sidebar.operational.progress.view')
             ->name('progress-updates.index');
-        Route::inertia('ai-document-extraction', 'AiDocumentExtraction')
+        Route::get('ai-document-extraction', [AiDocumentExtractionController::class, 'index'])
             ->middleware('permission:sidebar.operational.progress.view')
             ->name('ai-document-extraction');
+        Route::post('ai-document-extraction/ocr', [AiDocumentExtractionController::class, 'ocr'])
+            ->middleware('permission:sidebar.operational.progress.view')
+            ->name('ai-document-extraction.ocr');
+        Route::post('ai-document-extraction/budget-items', [AiDocumentExtractionController::class, 'storeBudgetItems'])
+            ->middleware('permission:action.projects.update')
+            ->name('ai-document-extraction.budget-items');
         Route::post('progress-updates', [ProgressReportsController::class, 'store'])
             ->middleware('permission:action.progress-updates.create')
             ->name('progress-updates.store');

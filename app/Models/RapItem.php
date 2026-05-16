@@ -17,7 +17,10 @@ class RapItem extends Model
 
     protected $fillable = [
         'rap_id',
+        'category',
+        'sub_category',
         'description',
+        'unit',
         'quantity',
         'unit_price',
         'total_price',

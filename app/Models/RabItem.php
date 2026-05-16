@@ -17,7 +17,10 @@ class RabItem extends Model
 
     protected $fillable = [
         'rab_id',
+        'category',
+        'sub_category',
         'description',
+        'unit',
         'quantity',
         'unit_price',
         'total_price',

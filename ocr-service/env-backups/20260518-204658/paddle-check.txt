@@ -1,0 +1,6 @@
+﻿python=F:\conda\envs\gpu-jupyter\python.exe
+paddle=3.2.2
+numpy=2.3.5
+compiled_cuda=True
+cuda_count=1
+device=gpu:0

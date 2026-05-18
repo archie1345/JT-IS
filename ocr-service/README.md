@@ -76,9 +76,8 @@ OCR_PYTHON=f:\conda\envs\gpu-jupyter\python.exe
 # CUDA/Paddle DLL folders can be added to PATH.
 OCR_ENV_ROOT=f:\conda\envs\gpu-jupyter
 
-# CPU is easiest for team testing. Use gpu:0 only on machines with working GPU
-# PaddleOCR support.
-OCR_PADDLE_DEVICE=gpu:0
+# Prefer gpu:0 when the selected Python has a CUDA Paddle runtime, otherwise use CPU.
+OCR_PADDLE_DEVICE=auto
 
 # Avoid Paddle CPU oneDNN inference crashes on some Windows environments.
 OCR_PADDLE_ENABLE_MKLDNN=0
@@ -86,7 +85,7 @@ FLAGS_use_mkldnn=0
 
 # Set to 0 only when OCR_PYTHON points to an environment that already has
 # paddlepaddle-gpu or another Paddle runtime installed.
-OCR_INSTALL_PADDLE=0
+OCR_INSTALL_PADDLE=1
 
 # Optional if Tesseract is installed somewhere non-standard.
 OCR_TESSERACT_CMD=C:\Program Files\Tesseract-OCR\tesseract.exe

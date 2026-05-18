@@ -21,13 +21,31 @@ app = FastAPI(title="JTE OCR Service")
 PDF_SCALE = 3
 os.environ.setdefault("FLAGS_use_mkldnn", "0")
 
-PADDLE_DEVICE = os.environ.get("OCR_PADDLE_DEVICE", "cpu")
+PADDLE_DEVICE_REQUESTED = os.environ.get("OCR_PADDLE_DEVICE", "auto")
 PADDLE_ENABLE_MKLDNN = os.environ.get("OCR_PADDLE_ENABLE_MKLDNN", "0") == "1"
 DEFAULT_TESSERACT_CMD = Path(r"C:\Program Files\Tesseract-OCR\tesseract.exe")
 OCR_FAST_MODE = os.environ.get("OCR_FAST_MODE", "1") == "1"
 OCR_MAX_PAGES = max(0, int(os.environ.get("OCR_MAX_PAGES", "0")))
 OCR_PREFER_PDF_TEXT = os.environ.get("OCR_PREFER_PDF_TEXT", "1") == "1"
 paddle_runtime_error = ""
+
+
+def resolve_paddle_device(requested_device: str) -> str:
+    if requested_device.lower() != "auto":
+        return requested_device
+
+    try:
+        import paddle
+
+        if paddle.device.is_compiled_with_cuda() and paddle.device.cuda.device_count() > 0:
+            return "gpu:0"
+    except Exception:
+        pass
+
+    return "cpu"
+
+
+PADDLE_DEVICE = resolve_paddle_device(PADDLE_DEVICE_REQUESTED)
 
 
 @app.on_event("startup")
@@ -441,6 +459,7 @@ def health() -> dict[str, Any]:
     return {
         "ok": True,
         "paddle": paddle_ocr is not None,
+        "paddle_device_requested": PADDLE_DEVICE_REQUESTED,
         "paddle_device": paddle_device,
         "paddle_cuda": get_paddle_cuda_info(),
         "paddle_enable_mkldnn": PADDLE_ENABLE_MKLDNN,

@@ -43,7 +43,10 @@ const props = defineProps<{
         id: number;
         projectId: number;
         projectName: string;
+        document_number: string | null;
+        document_date: string | null;
         totalBudget: number;
+        notes: string | null;
         itemCount: number;
         createdAt: string | null;
         updatedAt: string | null;
@@ -60,6 +63,14 @@ const props = defineProps<{
 const isOpen = ref(false);
 const editingItemId = ref<null | number>(null);
 const deletingItemId = ref<null | number>(null);
+
+const headerForm = useForm({
+    project_id: props.record.projectId,
+    document_number: props.record.document_number ?? '',
+    document_date: props.record.document_date ?? '',
+    total_budget: props.record.totalBudget ?? 0,
+    notes: props.record.notes ?? '',
+});
 
 const form = useForm({
     category: '',
@@ -99,6 +110,15 @@ const backToList = () => {
     router.get(props.kind === 'rab' ? '/rabs' : '/raps');
 };
 
+const refreshPage = () => {
+    router.reload({ preserveScroll: true });
+};
+
+const recordUpdateUrl = computed(() =>
+    props.kind === 'rab'
+        ? `/rabs/${props.record.id}`
+        : `/raps/${props.record.id}`,
+);
 const itemStoreUrl = computed(() =>
     props.kind === 'rab'
         ? `/rabs/${props.record.id}/items`
@@ -167,14 +187,27 @@ const submitItem = () => {
     if (editingItemId.value === null) {
         router.post(itemStoreUrl.value, payload, {
             preserveScroll: true,
-            onSuccess: closeModal,
+            onSuccess: () => {
+                closeModal();
+                refreshPage();
+            },
         });
         return;
     }
 
     router.patch(itemUpdateUrl(editingItemId.value), payload, {
         preserveScroll: true,
-        onSuccess: closeModal,
+        onSuccess: () => {
+            closeModal();
+            refreshPage();
+        },
+    });
+};
+
+const submitHeader = () => {
+    headerForm.patch(recordUpdateUrl.value, {
+        preserveScroll: true,
+        onSuccess: refreshPage,
     });
 };
 
@@ -189,6 +222,7 @@ const destroyItem = (item: DetailItem) => {
         onFinish: () => {
             deletingItemId.value = null;
         },
+        onSuccess: refreshPage,
     });
 };
 
@@ -244,6 +278,80 @@ const itemDialogTitle = computed(() =>
             </section>
 
             <section class="grid gap-4">
+                <EntityPageSection
+                    title="Record Fields"
+                    :description="`Edit the header fields captured from this ${props.recordLabel} document.`"
+                >
+                    <form
+                        class="grid gap-4 sm:grid-cols-2"
+                        @submit.prevent="submitHeader"
+                    >
+                        <div class="space-y-2">
+                            <Label for="document_number">Document Number</Label>
+                            <Input
+                                id="document_number"
+                                v-model="headerForm.document_number"
+                                placeholder="Document or contract number"
+                            />
+                            <InputError
+                                :message="headerForm.errors.document_number"
+                            />
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="document_date">Document Date</Label>
+                            <Input
+                                id="document_date"
+                                v-model="headerForm.document_date"
+                                type="date"
+                            />
+                            <InputError
+                                :message="headerForm.errors.document_date"
+                            />
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="total_budget">
+                                {{
+                                    props.kind === 'rab'
+                                        ? 'Total / Contract Value'
+                                        : 'Total Execution Budget'
+                                }}
+                            </Label>
+                            <Input
+                                id="total_budget"
+                                v-model="headerForm.total_budget"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                            />
+                            <InputError
+                                :message="headerForm.errors.total_budget"
+                            />
+                        </div>
+
+                        <div class="space-y-2 sm:col-span-2">
+                            <Label for="notes">Notes</Label>
+                            <textarea
+                                id="notes"
+                                v-model="headerForm.notes"
+                                class="flex min-h-28 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs"
+                                placeholder="Terbilang, deviation, or remarks"
+                            />
+                            <InputError :message="headerForm.errors.notes" />
+                        </div>
+
+                        <div class="flex justify-end sm:col-span-2">
+                            <Button
+                                type="submit"
+                                :disabled="headerForm.processing"
+                            >
+                                Save Record Fields
+                            </Button>
+                        </div>
+                    </form>
+                </EntityPageSection>
+
                 <EntityPageSection
                     title="Uploaded Files"
                     :description="`Files attached to this ${props.recordLabel}.`"

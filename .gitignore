@@ -28,6 +28,8 @@ Homestead.json
 .env.production
 .phpactor.json
 auth.json
+ocr-service/.env.local
+ocr-service/.venv-paddle/
 
 /.phpunit.cache
 /bootstrap/ssr

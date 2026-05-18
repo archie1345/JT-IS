@@ -14,17 +14,27 @@ class ProgressReport extends Model
 
     protected $fillable = [
         'project_id',
+        'document_number',
+        'document_type',
         'progress_percent',
+        'period_start',
+        'period_end',
         'report_date',
         'description',
+        'approved_by_client',
+        'approved_by_internal',
     ];
 
     protected function casts(): array
     {
         return [
             'project_id' => 'integer',
-            'progress_percent' => 'integer',
+            'progress_percent' => 'float',
+            'period_start' => 'date',
+            'period_end' => 'date',
             'report_date' => 'date',
+            'approved_by_client' => 'boolean',
+            'approved_by_internal' => 'boolean',
             'deleted_at' => 'datetime',
         ];
     }

@@ -1,5 +1,8 @@
 export type RabRow = {
     id: number;
+    document_number?: null | string;
+    document_date?: null | string;
+    notes?: null | string;
     projectId: number;
     projectName: string;
     totalBudget: number;

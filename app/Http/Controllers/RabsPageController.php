@@ -24,7 +24,10 @@ class RabsPageController extends Controller
             ->map(fn (Rab $rab): array => [
                 'id' => $rab->id,
                 'project_id' => $rab->project_id,
+                'document_number' => $rab->document_number,
+                'document_date' => optional($rab->document_date)->format('Y-m-d'),
                 'total_budget' => (float) ($rab->total_budget ?? 0),
+                'notes' => $rab->notes,
                 'projectId' => $rab->project_id,
                 'projectName' => $rab->project?->name ?? '-',
                 'totalBudget' => (float) ($rab->total_budget ?? 0),

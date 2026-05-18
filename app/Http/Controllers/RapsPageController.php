@@ -24,7 +24,10 @@ class RapsPageController extends Controller
             ->map(fn (Rap $rap): array => [
                 'id' => $rap->id,
                 'project_id' => $rap->project_id,
+                'document_number' => $rap->document_number,
+                'document_date' => optional($rap->document_date)->format('Y-m-d'),
                 'total_budget' => (float) ($rap->total_budget ?? 0),
+                'notes' => $rap->notes,
                 'projectId' => $rap->project_id,
                 'projectName' => $rap->project?->name ?? '-',
                 'totalBudget' => (float) ($rap->total_budget ?? 0),

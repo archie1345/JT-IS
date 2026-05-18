@@ -3,7 +3,6 @@ import { computed, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { ExternalLink, Pencil, Trash2 } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
-import InputError from '@/components/InputError.vue';
 import ProjectDocumentUploadPanel from '@/components/ProjectDocumentUploadPanel.vue';
 import ProjectDataTable, {
     type SpreadsheetColumn,
@@ -16,8 +15,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import RecordFieldInput from '@/components/prototype/RecordFieldInput.vue';
 import type { BreadcrumbItem } from '@/types';
 import type { UploadedDocument } from '@/types/project';
 
@@ -254,57 +252,13 @@ const dialogTitle = computed(() =>
                     class="grid gap-4 py-2 sm:grid-cols-2"
                     @submit.prevent="submit"
                 >
-                    <div
+                    <RecordFieldInput
                         v-for="field in props.fields"
                         :key="field.name"
-                        class="space-y-2"
-                        :class="
-                            field.type === 'textarea' ? 'sm:col-span-2' : ''
-                        "
-                    >
-                        <Label :for="field.name">{{ field.label }}</Label>
-
-                        <select
-                            v-if="field.type === 'select'"
-                            :id="field.name"
-                            v-model="form[field.name]"
-                            :required="field.required"
-                            class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs"
-                        >
-                            <option value="">Select one</option>
-                            <option
-                                v-for="option in field.options ?? []"
-                                :key="String(option.value)"
-                                :value="option.value"
-                            >
-                                {{ option.label
-                                }}{{ option.hint ? ` - ${option.hint}` : '' }}
-                            </option>
-                        </select>
-
-                        <textarea
-                            v-else-if="field.type === 'textarea'"
-                            :id="field.name"
-                            v-model="form[field.name]"
-                            :placeholder="field.placeholder"
-                            :required="field.required"
-                            class="flex min-h-28 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs"
-                        />
-
-                        <Input
-                            v-else
-                            :id="field.name"
-                            v-model="form[field.name]"
-                            :type="field.type"
-                            :placeholder="field.placeholder"
-                            :min="field.min"
-                            :max="field.max"
-                            :step="field.step"
-                            :required="field.required"
-                        />
-
-                        <InputError :message="form.errors[field.name]" />
-                    </div>
+                        v-model="form[field.name]"
+                        :field="field"
+                        :error="form.errors[field.name]"
+                    />
 
                     <DialogFooter class="sm:col-span-2">
                         <Button

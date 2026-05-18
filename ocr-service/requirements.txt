@@ -7,3 +7,6 @@ opencv-python
 numpy
 paddleocr
 pytesseract
+# The launcher installs paddlepaddle automatically when the selected Python
+# environment does not already have a Paddle runtime. Keep it out of this file so
+# GPU environments with paddlepaddle-gpu are not overwritten by the CPU package.

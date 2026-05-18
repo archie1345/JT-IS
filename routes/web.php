@@ -6,7 +6,6 @@ use App\Http\Controllers\ClientDetailsController;
 use App\Http\Controllers\ClientsPageController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DashboardLayoutController;
-use App\Http\Controllers\ProfitLossController;
 use App\Http\Controllers\ProjectDetailsController;
 use App\Http\Controllers\ProjectDocumentsController;
 use App\Http\Controllers\ProjectsPageController;
@@ -158,10 +157,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('pipeline', [TendersController::class, 'store'])
             ->middleware('permission:action.pipeline.create')
             ->name('pipeline.store');
+        Route::get('pipeline/{id}', [TendersController::class, 'show'])
+            ->whereNumber('id')
+            ->middleware('permission:page.pipeline.view')
+            ->name('pipeline.show');
         Route::patch('pipeline/{id}', [TendersController::class, 'update'])
+            ->whereNumber('id')
             ->middleware('permission:action.pipeline.update')
             ->name('pipeline.update');
         Route::delete('pipeline/{id}', [TendersController::class, 'destroy'])
+            ->whereNumber('id')
             ->middleware('permission:action.pipeline.delete')
             ->name('pipeline.destroy');
         Route::resource('clients-data', ClientsController::class)
@@ -186,20 +191,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('project-costs', [ProjectCostsController::class, 'store'])
             ->middleware('permission:action.project-costs.create')
             ->name('project-costs.store');
+        Route::get('project-costs/{id}', [ProjectCostsController::class, 'show'])
+            ->whereNumber('id')
+            ->middleware('permission:sidebar.finance.cost-realization.view')
+            ->name('project-costs.show');
         Route::patch('project-costs/{id}', [ProjectCostsController::class, 'update'])
+            ->whereNumber('id')
             ->middleware('permission:action.project-costs.update')
             ->name('project-costs.update');
         Route::delete('project-costs/{id}', [ProjectCostsController::class, 'destroy'])
+            ->whereNumber('id')
             ->middleware('permission:action.project-costs.delete')
             ->name('project-costs.destroy');
-
-        Route::get('profit-loss', ProfitLossController::class)
-            ->middleware('permission:sidebar.finance.profit-loss.view')
-            ->name('profit-loss');
 
         Route::get('progress-updates', [ProgressReportsController::class, 'index'])
             ->middleware('permission:sidebar.operational.progress.view')
             ->name('progress-updates.index');
+        Route::get('progress-updates/{id}', [ProgressReportsController::class, 'show'])
+            ->whereNumber('id')
+            ->middleware('permission:sidebar.operational.progress.view')
+            ->name('progress-updates.show');
         Route::get('ai-document-extraction', [AiDocumentExtractionController::class, 'index'])
             ->middleware('permission:sidebar.operational.progress.view')
             ->name('ai-document-extraction');
@@ -213,9 +224,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('permission:action.progress-updates.create')
             ->name('progress-updates.store');
         Route::patch('progress-updates/{id}', [ProgressReportsController::class, 'update'])
+            ->whereNumber('id')
             ->middleware('permission:action.progress-updates.update')
             ->name('progress-updates.update');
         Route::delete('progress-updates/{id}', [ProgressReportsController::class, 'destroy'])
+            ->whereNumber('id')
             ->middleware('permission:action.progress-updates.delete')
             ->name('progress-updates.destroy');
     });

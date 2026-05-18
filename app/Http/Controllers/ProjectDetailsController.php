@@ -98,7 +98,7 @@ class ProjectDetailsController extends Controller
             'longitude' => ['nullable', 'numeric'],  // <-- Ditambahkan
             'status' => ['required', Rule::in(['planning', 'ongoing', 'completed'])],
             'payment_status' => ['required', Rule::in(['pending', 'partial', 'paid', 'overdue'])],
-            'progress_percent' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'progress_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'progress_note' => ['nullable', 'string'],
         ]);
     }
@@ -124,7 +124,7 @@ class ProjectDetailsController extends Controller
         $project->invoices()->create($payload);
     }
 
-    protected function syncProgressReport(Project $project, ?int $progressPercent, ?string $progressNote): void
+    protected function syncProgressReport(Project $project, int|float|null $progressPercent, ?string $progressNote): void
     {
         if ($progressPercent === null && blank($progressNote)) {
             return;
@@ -185,7 +185,7 @@ class ProjectDetailsController extends Controller
             ? ($project->latestInvoice?->status ?? 'pending')
             : 'pending';
 
-        $reportScore = (int) ($latestProgressReport?->progress_percent ?? 0);
+        $reportScore = (float) ($latestProgressReport?->progress_percent ?? 0);
         $projectStatusScore = match ($projectStatus) {
             'planning' => 25,
             'ongoing' => 65,

@@ -52,6 +52,8 @@ const rapColumns = [
         label: 'Project',
         accessor: (row: Record<string, unknown>) => (row as RapRow).projectName,
     },
+    { key: 'document_number', label: 'Document No.' },
+    { key: 'document_date', label: 'Document Date' },
     {
         key: 'totalBudget',
         label: 'Total Budget',
@@ -79,11 +81,28 @@ const fields = [
         required: true,
     },
     {
+        name: 'document_number',
+        label: 'Document Number',
+        type: 'text',
+        placeholder: 'RAP or execution document number',
+    },
+    {
+        name: 'document_date',
+        label: 'Document Date',
+        type: 'date',
+    },
+    {
         name: 'total_budget',
-        label: 'Total Budget',
+        label: 'Total Execution Budget',
         type: 'number',
         min: 0,
         step: '0.01',
+    },
+    {
+        name: 'notes',
+        label: 'Notes',
+        type: 'textarea',
+        placeholder: 'Rekapitulasi, deviasi, or document remarks',
     },
 ] as const;
 </script>

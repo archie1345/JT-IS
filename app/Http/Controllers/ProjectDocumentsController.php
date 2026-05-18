@@ -143,7 +143,7 @@ class ProjectDocumentsController extends Controller
             'items.*.quantity' => ['nullable', 'numeric', 'min:0'],
             'items.*.unit_price' => ['nullable', 'numeric', 'min:0'],
             'items.*.total_price' => ['nullable', 'numeric', 'min:0'],
-            'progress_percent' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'progress_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'amount' => ['nullable', 'numeric', 'min:0'],
         ]);
 

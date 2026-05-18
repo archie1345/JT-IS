@@ -33,7 +33,6 @@ class AccessControl
                     ['name' => 'sidebar.dashboard.view', 'label' => 'Dashboard menu', 'description' => 'Show the dashboard link in the sidebar.'],
                     ['name' => 'sidebar.finance.billing.view', 'label' => 'Billing menu', 'description' => 'Show the billing shortcut in the finance section.'],
                     ['name' => 'sidebar.finance.cost-realization.view', 'label' => 'Cost realization menu', 'description' => 'Show the cost realization shortcut in the finance section.'],
-                    ['name' => 'sidebar.finance.profit-loss.view', 'label' => 'Profit and loss menu', 'description' => 'Show the profit and loss shortcut in the finance section.'],
                     ['name' => 'sidebar.marketing.projects.view', 'label' => 'Projects menu', 'description' => 'Show the projects page in the marketing section.'],
                     ['name' => 'sidebar.marketing.clients.view', 'label' => 'Clients menu', 'description' => 'Show the client page in the marketing section.'],
                     ['name' => 'sidebar.marketing.reports.view', 'label' => 'Reports menu', 'description' => 'Show the reports or pipeline shortcut in the marketing section.'],
@@ -143,7 +142,6 @@ class AccessControl
                 'items' => [
                     ['title' => 'Billing', 'href' => route('invoices.index'), 'icon' => 'BadgeDollarSign', 'permission' => 'sidebar.finance.billing.view'],
                     ['title' => 'Cost Realization', 'href' => route('project-costs.index'), 'icon' => 'FileCheck', 'permission' => 'sidebar.finance.cost-realization.view'],
-                    ['title' => 'Profit and Loss', 'href' => route('profit-loss'), 'icon' => 'ChartLine', 'permission' => 'sidebar.finance.profit-loss.view'],
                 ],
             ],
             [
@@ -356,7 +354,6 @@ class AccessControl
                 'sidebar.dashboard.view',
                 'sidebar.finance.billing.view',
                 'sidebar.finance.cost-realization.view',
-                'sidebar.finance.profit-loss.view',
                 'sidebar.footer.testing.view',
                 'page.dashboard.view',
                 'page.billing-test.view',

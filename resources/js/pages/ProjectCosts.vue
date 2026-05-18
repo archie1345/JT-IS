@@ -39,7 +39,9 @@ const columns = [
     { key: 'id', label: 'Id' },
     { key: 'project_name', label: 'Project' },
     { key: 'client_name', label: 'Client' },
+    { key: 'reference_number', label: 'Reference No.' },
     { key: 'category', label: 'Category' },
+    { key: 'vendor', label: 'Vendor' },
     { key: 'amount', label: 'Amount' },
     { key: 'date', label: 'Date' },
 ] satisfies SpreadsheetColumn[];
@@ -53,13 +55,31 @@ const fields = [
         required: true,
     },
     {
+        name: 'reference_number',
+        label: 'Reference Number',
+        type: 'text',
+        placeholder: 'Receipt, PO, or vendor document number',
+    },
+    {
         name: 'category',
         label: 'Category',
         type: 'text',
         placeholder: 'Material, labor, transport...',
     },
+    {
+        name: 'vendor',
+        label: 'Vendor / Payee',
+        type: 'text',
+        placeholder: 'Example: CV. Solusi Mandiri',
+    },
     { name: 'amount', label: 'Amount', type: 'number', min: 0, step: '0.01' },
     { name: 'date', label: 'Date', type: 'date' },
+    {
+        name: 'description',
+        label: 'Description',
+        type: 'textarea',
+        placeholder: 'Cost detail or supporting note',
+    },
 ] as const;
 </script>
 
@@ -75,6 +95,7 @@ const fields = [
         create-url="/project-costs"
         update-url-base="/project-costs"
         delete-url-base="/project-costs"
+        detail-url-base="/project-costs"
         upload-component-type="project_cost"
         :project-options="props.projectOptions"
         :uploaded-documents="props.uploadedDocuments"

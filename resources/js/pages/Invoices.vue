@@ -40,8 +40,11 @@ const columns = [
     { key: 'id', label: 'Id' },
     { key: 'project_name', label: 'Project' },
     { key: 'client_name', label: 'Client' },
+    { key: 'invoice_number', label: 'Invoice No.' },
     { key: 'amount', label: 'Amount' },
+    { key: 'tax_amount', label: 'Tax' },
     { key: 'invoice_date', label: 'Invoice Date' },
+    { key: 'due_date', label: 'Due Date' },
     { key: 'status', label: 'Status' },
 ] satisfies SpreadsheetColumn[];
 
@@ -53,8 +56,22 @@ const fields = [
         options: props.projectOptions,
         required: true,
     },
+    {
+        name: 'invoice_number',
+        label: 'Invoice Number',
+        type: 'text',
+        placeholder: 'Invoice or billing reference number',
+    },
     { name: 'amount', label: 'Amount', type: 'number', min: 0, step: '0.01' },
+    {
+        name: 'tax_amount',
+        label: 'Tax Amount',
+        type: 'number',
+        min: 0,
+        step: '0.01',
+    },
     { name: 'invoice_date', label: 'Invoice Date', type: 'date' },
+    { name: 'due_date', label: 'Due Date', type: 'date' },
     {
         name: 'status',
         label: 'Status',
@@ -64,6 +81,12 @@ const fields = [
             { value: 'paid', label: 'Paid' },
             { value: 'overdue', label: 'Overdue' },
         ],
+    },
+    {
+        name: 'description',
+        label: 'Description',
+        type: 'textarea',
+        placeholder: 'Billing notes or scope',
     },
 ] as const;
 </script>
@@ -80,6 +103,7 @@ const fields = [
         create-url="/invoices"
         update-url-base="/invoices"
         delete-url-base="/invoices"
+        detail-url-base="/invoices"
         upload-component-type="invoice"
         :project-options="props.projectOptions"
         :uploaded-documents="props.uploadedDocuments"
@@ -88,6 +112,17 @@ const fields = [
         :note="`Showing ${props.pagination.total} invoice record(s)`"
     >
         <template #cell-amount="{ value }">
+            {{
+                value === null
+                    ? '-'
+                    : new Intl.NumberFormat('id-ID', {
+                          style: 'currency',
+                          currency: 'IDR',
+                          maximumFractionDigits: 0,
+                      }).format(Number(value))
+            }}
+        </template>
+        <template #cell-tax_amount="{ value }">
             {{
                 value === null
                     ? '-'

@@ -14,14 +14,22 @@ class Rab extends Model
 
     protected $fillable = [
         'project_id',
+        'document_number',
+        'document_date',
         'total_budget',
+        'dpp_amount',
+        'tax_amount',
+        'notes',
     ];
 
     protected function casts(): array
     {
         return [
             'project_id' => 'integer',
+            'document_date' => 'date',
             'total_budget' => 'decimal:2',
+            'dpp_amount' => 'decimal:2',
+            'tax_amount' => 'decimal:2',
             'deleted_at' => 'datetime',
         ];
     }

@@ -14,9 +14,13 @@ class Invoice extends Model
 
     protected $fillable = [
         'project_id',
+        'invoice_number',
         'amount',
+        'tax_amount',
         'invoice_date',
+        'due_date',
         'status',
+        'description',
     ];
 
     protected function casts(): array
@@ -24,7 +28,9 @@ class Invoice extends Model
         return [
             'project_id' => 'integer',
             'amount' => 'decimal:2',
+            'tax_amount' => 'decimal:2',
             'invoice_date' => 'date',
+            'due_date' => 'date',
             'deleted_at' => 'datetime',
         ];
     }

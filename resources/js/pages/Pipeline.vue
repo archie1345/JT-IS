@@ -26,31 +26,66 @@ const uploadConnectionOptions = computed(() =>
     props.records.map((record) => ({
         value: `pipeline:${record.id}`,
         label: `Pipeline #${record.id}`,
-        hint: String(record.title ?? ''),
+        hint: String(record.document_number ?? record.title ?? ''),
         componentType: 'pipeline',
         componentId: Number(record.id),
-        projectId: null,
+        projectId:
+            record.project_id === null || record.project_id === undefined
+                ? null
+                : Number(record.project_id),
     })),
 );
 
 const columns = [
     { key: 'id', label: 'Id' },
+    { key: 'project_name', label: 'Project' },
+    { key: 'document_number', label: 'Document No.' },
+    { key: 'document_date', label: 'Document Date' },
     { key: 'title', label: 'Tender / Report' },
+    { key: 'owner', label: 'Owner' },
     { key: 'value', label: 'Estimated Value' },
     { key: 'status', label: 'Status' },
-    { key: 'created_at', label: 'Created' },
 ] satisfies SpreadsheetColumn[];
 
 const fields = [
     {
-        name: 'title',
-        label: 'Tender / Report Title',
+        name: 'project_id',
+        label: 'Project',
+        type: 'select',
+        options: props.projectOptions,
+    },
+    {
+        name: 'document_number',
+        label: 'Document Number',
         type: 'text',
-        placeholder: 'Example: Bid package A',
+        placeholder: 'Example: 001/SPH/JTE/II/2026',
+    },
+    {
+        name: 'document_date',
+        label: 'Document Date',
+        type: 'date',
+    },
+    {
+        name: 'title',
+        label: 'Work / Package Title',
+        type: 'text',
+        placeholder: 'Example: Konsolidasi pembangunan perkuatan tanggul',
+    },
+    {
+        name: 'owner',
+        label: 'Owner / Client',
+        type: 'text',
+        placeholder: 'Example: Perum Jasa Tirta I',
+    },
+    {
+        name: 'location',
+        label: 'Location',
+        type: 'textarea',
+        placeholder: 'Project location from the document',
     },
     {
         name: 'value',
-        label: 'Estimated Value',
+        label: 'Offer / Contract Value',
         type: 'number',
         min: 0,
         step: '0.01',
@@ -65,6 +100,12 @@ const fields = [
             { value: 'won', label: 'Won' },
             { value: 'lost', label: 'Lost' },
         ],
+    },
+    {
+        name: 'notes',
+        label: 'Notes',
+        type: 'textarea',
+        placeholder: 'Scope, addendum notes, or document remarks',
     },
 ] as const;
 </script>
@@ -81,6 +122,7 @@ const fields = [
         create-url="/pipeline"
         update-url-base="/pipeline"
         delete-url-base="/pipeline"
+        detail-url-base="/pipeline"
         upload-component-type="pipeline"
         :project-options="props.projectOptions"
         :uploaded-documents="props.uploadedDocuments"

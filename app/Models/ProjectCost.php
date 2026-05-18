@@ -15,9 +15,12 @@ class ProjectCost extends Model
 
     protected $fillable = [
         'project_id',
+        'reference_number',
         'category',
+        'vendor',
         'amount',
         'date',
+        'description',
     ];
 
     protected function casts(): array

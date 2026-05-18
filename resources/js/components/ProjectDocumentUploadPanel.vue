@@ -11,6 +11,14 @@ import {
 } from 'lucide-vue-next';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import OptionSelect from '@/components/prototype/OptionSelect.vue';
 import { extractImportantDocumentData } from '@/lib/documentExtraction';
 import type { UploadedDocument } from '@/types/project';
 
@@ -63,14 +71,35 @@ const uploadError = ref<null | string>(null);
 const applyStatus = ref<null | string>(null);
 const applyError = ref<null | string>(null);
 const isApplying = ref(false);
+const isPreviewOpen = ref(false);
 const ocrText = ref('');
 const ocrEngine = ref<null | string>(null);
+const previewProjectUpdates = ref<Record<string, number | string>>({});
+const previewProgressPercent = ref<number | string>('');
+const previewAmount = ref<number | string>('');
+const previewBudgetItems = ref<
+    {
+        category: string;
+        sub_category: string;
+        description: string;
+        unit: null | string;
+        quantity: null | number | string;
+        unit_price: null | number | string;
+        total_price: null | number | string;
+    }[]
+>([]);
 const selectedProjectId = ref<null | number>(
     props.projectId ?? props.projectOptions[0]?.value ?? null,
 );
 const selectedConnectionValue = ref(
     `${props.componentType}:${props.componentId ?? 'general'}`,
 );
+const selectedProjectValue = computed({
+    get: () => (selectedProjectId.value ? String(selectedProjectId.value) : ''),
+    set: (value: string) => {
+        selectedProjectId.value = value ? Number(value) : null;
+    },
+});
 
 watch(
     () => props.projectId,
@@ -182,6 +211,24 @@ const projectUpdates = computed(() => {
         location: truncateText(metadata.location, 1000),
     };
 });
+const projectUpdateLabels: Record<string, string> = {
+    name: 'Project Name',
+    contract_number: 'Contract Number',
+    contract_value: 'Contract Value',
+    location: 'Location',
+};
+const projectUpdatePreview = computed(() =>
+    Object.entries(previewProjectUpdates.value)
+        .filter(
+            ([, value]) =>
+                value !== null && value !== undefined && value !== '',
+        )
+        .map(([key, value]) => ({
+            key,
+            label: projectUpdateLabels[key] ?? key,
+            value,
+        })),
+);
 const budgetItems = computed(() =>
     (extractedData.value?.grouping_results ?? []).flatMap((category) =>
         category.sub_categories.flatMap((subCategory) =>
@@ -197,6 +244,29 @@ const budgetItems = computed(() =>
         ),
     ),
 );
+const metadataPreview = computed(() => {
+    const rows = [
+        {
+            label: 'Progress',
+            value:
+                effectiveComponentType.value === 'progress_report' &&
+                previewProgressPercent.value !== ''
+                    ? previewProgressPercent.value
+                    : null,
+        },
+        {
+            label: 'Amount',
+            value:
+                (effectiveComponentType.value === 'invoice' ||
+                    effectiveComponentType.value === 'project_cost') &&
+                previewAmount.value !== ''
+                    ? previewAmount.value
+                    : null,
+        },
+    ];
+
+    return rows.filter((row) => row.value !== null && row.value !== '');
+});
 const extractedAmount = computed(
     () =>
         extractedData.value?.metadata.contract_value ??
@@ -226,6 +296,35 @@ const canApplyExtraction = computed(
             effectiveComponentType.value === 'project_cost' ||
             effectiveComponentType.value === 'progress_report'),
 );
+
+const openExtractionPreview = () => {
+    if (!canApplyExtraction.value) {
+        return;
+    }
+
+    applyError.value = null;
+    previewProjectUpdates.value = Object.fromEntries(
+        Object.entries(projectUpdates.value).filter(
+            ([, value]) =>
+                value !== null && value !== undefined && value !== '',
+        ),
+    ) as Record<string, number | string>;
+    previewProgressPercent.value =
+        effectiveComponentType.value === 'progress_report'
+            ? (extractedData.value?.metadata.progress_percent ?? '')
+            : '';
+    previewAmount.value =
+        effectiveComponentType.value === 'invoice' ||
+        effectiveComponentType.value === 'project_cost'
+            ? (extractedAmount.value ?? '')
+            : '';
+    previewBudgetItems.value = budgetItems.value.map((item) => ({ ...item }));
+    isPreviewOpen.value = true;
+};
+
+const removePreviewBudgetItem = (index: number) => {
+    previewBudgetItems.value.splice(index, 1);
+};
 
 const csrfToken = () =>
     document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
@@ -353,20 +452,20 @@ const applyExtraction = async () => {
                 project_id: selectedProjectId.value,
                 component_type: effectiveComponentType.value,
                 component_id: effectiveComponentId.value,
-                project_updates: projectUpdates.value,
+                project_updates: previewProjectUpdates.value,
                 items:
                     effectiveComponentType.value === 'rab' ||
                     effectiveComponentType.value === 'rap'
-                        ? budgetItems.value
+                        ? previewBudgetItems.value
                         : [],
                 progress_percent:
                     effectiveComponentType.value === 'progress_report'
-                        ? extractedData.value?.metadata.progress_percent
+                        ? previewProgressPercent.value || null
                         : null,
                 amount:
                     effectiveComponentType.value === 'invoice' ||
                     effectiveComponentType.value === 'project_cost'
-                        ? extractedAmount.value
+                        ? previewAmount.value || null
                         : null,
             }),
         });
@@ -385,6 +484,7 @@ const applyExtraction = async () => {
             typeof payload.message === 'string'
                 ? payload.message
                 : 'Extracted data applied.';
+        isPreviewOpen.value = false;
         router.reload({ preserveScroll: true });
     } catch (error) {
         applyError.value =
@@ -445,6 +545,7 @@ const upload = () => {
             if (input.value) {
                 input.value.value = '';
             }
+            router.reload({ preserveScroll: true });
         },
     });
 };
@@ -474,40 +575,22 @@ const removeDocument = (document: UploadedDocument) => {
                 <span class="text-xs font-medium text-muted-foreground"
                     >Project</span
                 >
-                <select
-                    v-model.number="selectedProjectId"
-                    class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                >
-                    <option
-                        v-for="project in props.projectOptions"
-                        :key="project.value"
-                        :value="project.value"
-                    >
-                        {{ project.label }}
-                    </option>
-                </select>
+                <OptionSelect
+                    v-model="selectedProjectValue"
+                    :options="props.projectOptions"
+                    placeholder="Select project"
+                />
             </label>
 
             <label v-if="canChooseConnection" class="mt-4 block space-y-1.5">
                 <span class="text-xs font-medium text-muted-foreground"
                     >Connect to</span
                 >
-                <select
+                <OptionSelect
                     v-model="selectedConnectionValue"
-                    class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                >
-                    <option
-                        v-for="connection in connectionSelectOptions"
-                        :key="connection.value"
-                        :value="connection.value"
-                    >
-                        {{
-                            connection.hint
-                                ? `${connection.label} - ${connection.hint}`
-                                : connection.label
-                        }}
-                    </option>
-                </select>
+                    :options="connectionSelectOptions"
+                    placeholder="Select connection"
+                />
             </label>
 
             <label
@@ -623,14 +706,10 @@ const removeDocument = (document: UploadedDocument) => {
                             type="button"
                             size="sm"
                             :disabled="!canApplyExtraction || isApplying"
-                            @click="applyExtraction"
+                            @click="openExtractionPreview"
                         >
-                            <LoaderCircle
-                                v-if="isApplying"
-                                class="mr-2 size-4 animate-spin"
-                            />
-                            <ScanText v-else class="mr-2 size-4" />
-                            Apply to selected fields
+                            <ScanText class="mr-2 size-4" />
+                            Preview extracted data
                         </Button>
                         <span
                             v-if="applyStatus"
@@ -735,5 +814,213 @@ const removeDocument = (document: UploadedDocument) => {
                 </div>
             </div>
         </div>
+
+        <Dialog v-model:open="isPreviewOpen">
+            <DialogContent
+                class="max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto sm:max-w-4xl"
+            >
+                <DialogHeader>
+                    <DialogTitle>Preview OCR Data</DialogTitle>
+                </DialogHeader>
+
+                <div class="space-y-5">
+                    <section
+                        v-if="projectUpdatePreview.length > 0"
+                        class="space-y-3"
+                    >
+                        <h4 class="text-sm font-medium">Project fields</h4>
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <label
+                                v-for="field in projectUpdatePreview"
+                                :key="field.label"
+                                class="space-y-1.5"
+                            >
+                                <span
+                                    class="text-xs font-medium text-muted-foreground"
+                                    >{{ field.label }}</span
+                                >
+                                <textarea
+                                    v-if="field.label === 'Location'"
+                                    v-model="previewProjectUpdates[field.key]"
+                                    class="min-h-24 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs"
+                                />
+                                <input
+                                    v-else
+                                    v-model="previewProjectUpdates[field.key]"
+                                    class="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+                                />
+                            </label>
+                        </div>
+                    </section>
+
+                    <section
+                        v-if="metadataPreview.length > 0"
+                        class="grid gap-3 sm:grid-cols-2"
+                    >
+                        <label
+                            v-if="effectiveComponentType === 'progress_report'"
+                            class="space-y-1.5"
+                        >
+                            <span
+                                class="text-xs font-medium text-muted-foreground"
+                                >Progress Percent</span
+                            >
+                            <input
+                                v-model="previewProgressPercent"
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.01"
+                                class="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+                            />
+                        </label>
+
+                        <label
+                            v-if="
+                                effectiveComponentType === 'invoice' ||
+                                effectiveComponentType === 'project_cost'
+                            "
+                            class="space-y-1.5"
+                        >
+                            <span
+                                class="text-xs font-medium text-muted-foreground"
+                                >Amount</span
+                            >
+                            <input
+                                v-model="previewAmount"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                class="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+                            />
+                        </label>
+                    </section>
+
+                    <section
+                        v-if="
+                            (effectiveComponentType === 'rab' ||
+                                effectiveComponentType === 'rap') &&
+                            previewBudgetItems.length > 0
+                        "
+                        class="space-y-3"
+                    >
+                        <h4 class="text-sm font-medium">Budget rows</h4>
+                        <div class="overflow-x-auto rounded-md border">
+                            <table class="min-w-[54rem] text-sm">
+                                <thead class="bg-muted/50 text-left text-xs">
+                                    <tr>
+                                        <th class="px-3 py-2">Description</th>
+                                        <th class="px-3 py-2">Section</th>
+                                        <th class="px-3 py-2">Qty</th>
+                                        <th class="px-3 py-2">Unit</th>
+                                        <th class="px-3 py-2">Unit Price</th>
+                                        <th class="px-3 py-2">Total</th>
+                                        <th class="px-3 py-2"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr
+                                        v-for="(
+                                            item, index
+                                        ) in previewBudgetItems"
+                                        :key="`${item.description}-${index}`"
+                                        class="border-t align-top"
+                                    >
+                                        <td class="px-3 py-2">
+                                            <textarea
+                                                v-model="item.description"
+                                                class="min-h-16 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm"
+                                            />
+                                        </td>
+                                        <td class="px-3 py-2">
+                                            <input
+                                                v-model="item.sub_category"
+                                                class="h-9 w-36 rounded-md border border-input bg-transparent px-2 text-sm"
+                                            />
+                                        </td>
+                                        <td class="px-3 py-2">
+                                            <input
+                                                v-model="item.quantity"
+                                                type="number"
+                                                step="0.01"
+                                                class="h-9 w-24 rounded-md border border-input bg-transparent px-2 text-sm"
+                                            />
+                                        </td>
+                                        <td class="px-3 py-2">
+                                            <input
+                                                v-model="item.unit"
+                                                class="h-9 w-20 rounded-md border border-input bg-transparent px-2 text-sm"
+                                            />
+                                        </td>
+                                        <td class="px-3 py-2">
+                                            <input
+                                                v-model="item.unit_price"
+                                                type="number"
+                                                step="0.01"
+                                                class="h-9 w-32 rounded-md border border-input bg-transparent px-2 text-sm"
+                                            />
+                                        </td>
+                                        <td class="px-3 py-2">
+                                            <input
+                                                v-model="item.total_price"
+                                                type="number"
+                                                step="0.01"
+                                                class="h-9 w-32 rounded-md border border-input bg-transparent px-2 text-sm"
+                                            />
+                                        </td>
+                                        <td class="px-3 py-2">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                @click="
+                                                    removePreviewBudgetItem(
+                                                        index,
+                                                    )
+                                                "
+                                            >
+                                                Remove
+                                            </Button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <p
+                        v-if="
+                            projectUpdatePreview.length === 0 &&
+                            metadataPreview.length === 0 &&
+                            previewBudgetItems.length === 0
+                        "
+                        class="rounded-md border border-dashed p-4 text-sm text-muted-foreground"
+                    >
+                        No fields or rows were detected from this OCR result.
+                    </p>
+                </div>
+
+                <DialogFooter>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="isPreviewOpen = false"
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        type="button"
+                        :disabled="isApplying"
+                        @click="applyExtraction"
+                    >
+                        <LoaderCircle
+                            v-if="isApplying"
+                            class="mr-2 size-4 animate-spin"
+                        />
+                        Apply Edited Data
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
 </template>

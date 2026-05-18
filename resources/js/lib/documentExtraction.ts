@@ -132,6 +132,27 @@ const firstMatch = (text: string, patterns: RegExp[]): null | string => {
     return null;
 };
 
+const fieldBoundaryPattern =
+    /\s+(?:No\.?\s*(?:Kontrak|Pekerjaan)|Tanggal|Jangka\s+Waktu|Nilai\s+(?:Proyek|Kontrak)|Lokasi(?:\s+Pekerjaan)?|Tahun|Sistem\s+Pelaksanaan|Waktu\s+Pelaksanaan|Bobot\s+Pelaksanaan|Realisasi\s+Biaya|Sisa\s+Biaya|Pemilik|SATUAN|VOLUME|HARGA|BAB\s+[IVX]+|\d+\.\s+[A-Z])/i;
+
+const cleanExtractedField = (
+    value: null | string,
+    maxLength: number,
+): null | string => {
+    if (!value) {
+        return null;
+    }
+
+    const boundary = value.search(fieldBoundaryPattern);
+    const bounded = boundary >= 0 ? value.slice(0, boundary) : value;
+    const cleaned = bounded
+        .replace(/\s+/g, ' ')
+        .replace(/^[\s:.-]+|[\s:.;,-]+$/g, '')
+        .trim();
+
+    return cleaned.length > 0 ? cleaned.slice(0, maxLength).trim() : null;
+};
+
 const uniqueValues = <T extends number | string>(values: (null | T)[]): T[] => {
     const seen = new Set<string>();
     const results: T[] = [];
@@ -255,12 +276,9 @@ const extractProjectName = (text: string): null | string => {
         /(?:pekerjaan|perihal|tentang)\s*[:.-]\s*([^\n]+)/i,
     ]);
 
-    return (
-        value
-            ?.replace(/^Penawaran\s+Harga\s+/i, '')
-            ?.replace(/\s+/g, ' ')
-            .replace(/[.;,\sr]+$/g, '')
-            .trim() || null
+    return cleanExtractedField(
+        value?.replace(/^Penawaran\s+Harga\s+/i, '') ?? null,
+        200,
     );
 };
 
@@ -274,10 +292,7 @@ const extractProjectLocation = (
     ]);
 
     if (explicitLocation) {
-        return explicitLocation
-            .replace(/\s+/g, ' ')
-            .replace(/[.;,]\s*$/g, '')
-            .trim();
+        return cleanExtractedField(explicitLocation, 300);
     }
 
     const locationFromName = projectName?.split(':').slice(1).join(':').trim();

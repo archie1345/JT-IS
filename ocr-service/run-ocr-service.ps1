@@ -138,8 +138,11 @@ Import-LocalEnv (Join-Path $PSScriptRoot ".env.local")
 
 if (-not $env:OCR_STUB_MODELSCOPE) { $env:OCR_STUB_MODELSCOPE = "1" }
 if (-not $env:OCR_FAST_MODE) { $env:OCR_FAST_MODE = "1" }
-if (-not $env:OCR_MAX_PAGES) { $env:OCR_MAX_PAGES = "5" }
-if (-not $env:OCR_PREFER_PDF_TEXT) { $env:OCR_PREFER_PDF_TEXT = "0" }
+if (-not $env:OCR_MAX_PAGES) { $env:OCR_MAX_PAGES = "0" }
+if (-not $env:OCR_PREFER_PDF_TEXT) { $env:OCR_PREFER_PDF_TEXT = "1" }
+if (-not $env:OCR_PADDLE_DEVICE) { $env:OCR_PADDLE_DEVICE = "auto" }
+if (-not $env:OCR_PADDLE_ENABLE_MKLDNN) { $env:OCR_PADDLE_ENABLE_MKLDNN = "0" }
+if (-not $env:FLAGS_use_mkldnn) { $env:FLAGS_use_mkldnn = "0" }
 if (-not $env:PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK) { $env:PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK = "True" }
 
 $defaultTesseract = "C:\Program Files\Tesseract-OCR\tesseract.exe"

@@ -11,9 +11,11 @@ use App\Http\Controllers\ProjectDocumentsController;
 use App\Http\Controllers\ProjectsPageController;
 use App\Http\Controllers\ProjectMonitoring\ClientsController;
 use App\Http\Controllers\ProjectMonitoring\FundRequestsController;
+use App\Http\Controllers\ProjectMonitoring\InvoiceItemsController;
 use App\Http\Controllers\ProjectMonitoring\InvoicesController;
 use App\Http\Controllers\ProjectMonitoring\ProgressReportsController;
 use App\Http\Controllers\ProjectMonitoring\ProjectCostsController;
+use App\Http\Controllers\ProjectMonitoring\ProjectCostItemsController;
 use App\Http\Controllers\ProjectMonitoring\RabItemsController;
 use App\Http\Controllers\ProjectMonitoring\RapItemsController;
 use App\Http\Controllers\ProjectMonitoring\RabsController;
@@ -184,6 +186,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middlewareFor('store', 'permission:action.invoices.create')
             ->middlewareFor('update', 'permission:action.invoices.update')
             ->middlewareFor('destroy', 'permission:action.invoices.delete');
+        Route::post('invoices/{invoice}/items', [InvoiceItemsController::class, 'store'])
+            ->middleware('permission:action.invoices.update')
+            ->name('invoices.items.store');
+        Route::patch('invoice-items/{id}', [InvoiceItemsController::class, 'update'])
+            ->whereNumber('id')
+            ->middleware('permission:action.invoices.update')
+            ->name('invoices.items.update');
+        Route::delete('invoice-items/{id}', [InvoiceItemsController::class, 'destroy'])
+            ->whereNumber('id')
+            ->middleware('permission:action.invoices.update')
+            ->name('invoices.items.destroy');
 
         Route::get('project-costs', [ProjectCostsController::class, 'index'])
             ->middleware('permission:sidebar.finance.cost-realization.view')
@@ -203,6 +216,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->whereNumber('id')
             ->middleware('permission:action.project-costs.delete')
             ->name('project-costs.destroy');
+        Route::post('project-costs/{projectCost}/items', [ProjectCostItemsController::class, 'store'])
+            ->middleware('permission:action.project-costs.update')
+            ->name('project-costs.items.store');
+        Route::patch('project-cost-items/{id}', [ProjectCostItemsController::class, 'update'])
+            ->whereNumber('id')
+            ->middleware('permission:action.project-costs.update')
+            ->name('project-costs.items.update');
+        Route::delete('project-cost-items/{id}', [ProjectCostItemsController::class, 'destroy'])
+            ->whereNumber('id')
+            ->middleware('permission:action.project-costs.update')
+            ->name('project-costs.items.destroy');
 
         Route::get('progress-updates', [ProgressReportsController::class, 'index'])
             ->middleware('permission:sidebar.operational.progress.view')

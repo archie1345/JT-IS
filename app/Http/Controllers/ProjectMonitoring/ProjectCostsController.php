@@ -6,6 +6,8 @@ use App\Http\Controllers\ProjectDocumentsController;
 use App\Models\Project;
 use App\Models\ProjectCost;
 use App\Models\ProjectDocument;
+use App\Models\Rab;
+use App\Models\Rap;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -99,20 +101,47 @@ class ProjectCostsController extends TableCrudController
     public function show(int $id): Response
     {
         $record = ProjectCost::query()
-            ->with(['project:id,client_id,name', 'project.client:id,name'])
+            ->with(['items', 'project:id,client_id,name', 'project.client:id,name'])
             ->findOrFail($id);
 
-        return Inertia::render('PrototypeRecordDetails', [
+        return Inertia::render('FinancialDocumentDetails', [
+            'kind' => 'cost',
             'title' => 'Cost Realization Detail',
-            'subtitle' => $record->category,
+            'recordLabel' => 'Cost Realization',
             'indexUrl' => route('project-costs.index'),
             'updateUrl' => route('project-costs.update', $record->id),
+            'itemStoreUrl' => route('project-costs.items.store', $record->id),
+            'itemUpdateUrlBase' => url('project-cost-items'),
             'breadcrumbs' => [
                 ['title' => 'Cost Realization', 'href' => route('project-costs.index')],
                 ['title' => 'Cost #'.$record->id, 'href' => route('project-costs.show', $record->id)],
             ],
             'record' => $this->transformRecord($record, request()),
             'fields' => $this->detailFields(),
+            'items' => $record->items()
+                ->orderBy('id')
+                ->get()
+                ->map(fn ($item): array => [
+                    'id' => $item->id,
+                    'sourceType' => $item->source_type,
+                    'sourceItemId' => $item->source_item_id,
+                    'category' => $item->category,
+                    'description' => $item->description,
+                    'unit' => $item->unit,
+                    'quantity' => (float) ($item->quantity ?? 0),
+                    'unitPrice' => (float) ($item->unit_price ?? 0),
+                    'totalPrice' => (float) ($item->total_price ?? 0),
+                    'vendor' => $item->vendor,
+                    'notes' => $item->notes,
+                ])
+                ->all(),
+            'budgetItemOptions' => $this->budgetItemOptions($record->project_id),
+            'summary' => [
+                'subtotal' => (float) $record->items()->sum('total_price'),
+                'tax' => 0,
+                'total' => (float) $record->items()->sum('total_price'),
+                'itemCount' => $record->items()->count(),
+            ],
             'upload' => [
                 'componentType' => 'project_cost',
                 'componentId' => $record->id,
@@ -127,6 +156,49 @@ class ProjectCostsController extends TableCrudController
                     ->all(),
             ],
         ]);
+    }
+
+    protected function budgetItemOptions(int $projectId): array
+    {
+        $rabItems = Rab::query()
+            ->where('project_id', $projectId)
+            ->with('items')
+            ->latest('id')
+            ->get()
+            ->flatMap(fn (Rab $rab) => $rab->items->map(fn ($item): array => [
+                'value' => 'rab:'.$item->id,
+                'sourceType' => 'rab',
+                'sourceItemId' => $item->id,
+                'label' => $item->description ?? 'RAB item #'.$item->id,
+                'hint' => trim(implode(' / ', array_filter([$item->category, $item->sub_category]))),
+                'category' => $item->category,
+                'description' => $item->description,
+                'unit' => $item->unit,
+                'quantity' => (float) ($item->quantity ?? 0),
+                'unitPrice' => (float) ($item->unit_price ?? 0),
+                'totalPrice' => (float) ($item->total_price ?? 0),
+            ]));
+
+        $rapItems = Rap::query()
+            ->where('project_id', $projectId)
+            ->with('items')
+            ->latest('id')
+            ->get()
+            ->flatMap(fn (Rap $rap) => $rap->items->map(fn ($item): array => [
+                'value' => 'rap:'.$item->id,
+                'sourceType' => 'rap',
+                'sourceItemId' => $item->id,
+                'label' => $item->description ?? 'RAP item #'.$item->id,
+                'hint' => trim(implode(' / ', array_filter([$item->category, $item->sub_category]))),
+                'category' => $item->category,
+                'description' => $item->description,
+                'unit' => $item->unit,
+                'quantity' => (float) ($item->quantity ?? 0),
+                'unitPrice' => (float) ($item->unit_price ?? 0),
+                'totalPrice' => (float) ($item->total_price ?? 0),
+            ]));
+
+        return $rabItems->concat($rapItems)->values()->all();
     }
 
     protected function detailFields(): array

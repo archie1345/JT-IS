@@ -8,7 +8,7 @@ import sys
 import tempfile
 import types
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 import cv2
 import fitz
@@ -19,11 +19,33 @@ from PIL import Image
 app = FastAPI(title="JTE OCR Service")
 
 PDF_SCALE = 3
-PADDLE_DEVICE = os.environ.get("OCR_PADDLE_DEVICE", "gpu:0")
+os.environ.setdefault("FLAGS_use_mkldnn", "0")
+
+PADDLE_DEVICE_REQUESTED = os.environ.get("OCR_PADDLE_DEVICE", "auto")
+PADDLE_ENABLE_MKLDNN = os.environ.get("OCR_PADDLE_ENABLE_MKLDNN", "0") == "1"
 DEFAULT_TESSERACT_CMD = Path(r"C:\Program Files\Tesseract-OCR\tesseract.exe")
 OCR_FAST_MODE = os.environ.get("OCR_FAST_MODE", "1") == "1"
-OCR_MAX_PAGES = max(0, int(os.environ.get("OCR_MAX_PAGES", "5")))
+OCR_MAX_PAGES = max(0, int(os.environ.get("OCR_MAX_PAGES", "0")))
 OCR_PREFER_PDF_TEXT = os.environ.get("OCR_PREFER_PDF_TEXT", "1") == "1"
+paddle_runtime_error = ""
+
+
+def resolve_paddle_device(requested_device: str) -> str:
+    if requested_device.lower() != "auto":
+        return requested_device
+
+    try:
+        import paddle
+
+        if paddle.device.is_compiled_with_cuda() and paddle.device.cuda.device_count() > 0:
+            return "gpu:0"
+    except Exception:
+        pass
+
+    return "cpu"
+
+
+PADDLE_DEVICE = resolve_paddle_device(PADDLE_DEVICE_REQUESTED)
 
 
 @app.on_event("startup")
@@ -59,10 +81,10 @@ try:
     from paddleocr import PaddleOCR
 
     try:
-        paddle_ocr = PaddleOCR(lang="en", device=PADDLE_DEVICE)
+        paddle_ocr = PaddleOCR(lang="en", device=PADDLE_DEVICE, enable_mkldnn=PADDLE_ENABLE_MKLDNN)
         paddle_device = PADDLE_DEVICE
     except Exception:
-        paddle_ocr = PaddleOCR(lang="en", device="cpu")
+        paddle_ocr = PaddleOCR(lang="en", device="cpu", enable_mkldnn=PADDLE_ENABLE_MKLDNN)
         paddle_device = "cpu"
 except Exception as paddle_error:
     paddle_ocr = None
@@ -104,6 +126,27 @@ def is_tesseract_available() -> bool:
 tesseract_available = is_tesseract_available()
 
 
+def get_paddle_cuda_info() -> dict[str, Any]:
+    try:
+        import paddle
+
+        compiled_cuda = bool(paddle.device.is_compiled_with_cuda())
+        cuda_count = int(paddle.device.cuda.device_count()) if compiled_cuda else 0
+
+        return {
+            "compiled_cuda": compiled_cuda,
+            "cuda_device_count": cuda_count,
+            "active_device": paddle.device.get_device(),
+        }
+    except Exception as exc:
+        return {
+            "compiled_cuda": False,
+            "cuda_device_count": 0,
+            "active_device": "",
+            "error": str(exc),
+        }
+
+
 def get_tesseract_lang() -> str:
     if pytesseract is None or not tesseract_available:
         return ""
@@ -129,7 +172,10 @@ tesseract_lang = get_tesseract_lang()
 
 def extract_pdf_text(content: bytes) -> str:
     document = fitz.open(stream=content, filetype="pdf")
-    text = "\n\n".join(page.get_text("text") for page in document)
+    try:
+        text = "\n\n".join(page.get_text("text") for page in document)
+    finally:
+        document.close()
 
     return normalize_text(text)
 
@@ -138,19 +184,19 @@ def has_useful_text(text: str) -> bool:
     return len(re.findall(r"[A-Za-z0-9]", text)) >= 80
 
 
-def render_pdf_pages(content: bytes) -> list[tuple[int, np.ndarray]]:
+def render_pdf_pages(content: bytes) -> Iterator[tuple[int, np.ndarray]]:
     document = fitz.open(stream=content, filetype="pdf")
-    pages: list[tuple[int, np.ndarray]] = []
 
-    for page_index, page in enumerate(document):
-        if OCR_MAX_PAGES > 0 and page_index >= OCR_MAX_PAGES:
-            break
+    try:
+        for page_index, page in enumerate(document):
+            if OCR_MAX_PAGES > 0 and page_index >= OCR_MAX_PAGES:
+                break
 
-        pixmap = page.get_pixmap(matrix=fitz.Matrix(PDF_SCALE, PDF_SCALE), alpha=False)
-        image = Image.open(io.BytesIO(pixmap.tobytes("png"))).convert("RGB")
-        pages.append((page_index + 1, np.array(image)))
-
-    return pages
+            pixmap = page.get_pixmap(matrix=fitz.Matrix(PDF_SCALE, PDF_SCALE), alpha=False)
+            image = Image.open(io.BytesIO(pixmap.tobytes("png"))).convert("RGB")
+            yield page_index + 1, np.array(image)
+    finally:
+        document.close()
 
 
 def load_image(content: bytes) -> list[tuple[int, np.ndarray]]:
@@ -242,10 +288,19 @@ def correct_document_ocr_errors(text: str) -> str:
 
 
 def paddle_ocr_image(image: np.ndarray) -> tuple[str, float, list[dict[str, Any]]]:
+    global paddle_ocr
+    global paddle_runtime_error
+
     if paddle_ocr is None:
         return "", 0.0, []
 
-    result = paddle_ocr.predict(image) if hasattr(paddle_ocr, "predict") else paddle_ocr.ocr(image)
+    try:
+        result = paddle_ocr.predict(image) if hasattr(paddle_ocr, "predict") else paddle_ocr.ocr(image)
+    except Exception as exc:
+        paddle_runtime_error = str(exc)
+        paddle_ocr = None
+        return "", 0.0, []
+
     lines: list[dict[str, Any]] = []
 
     for block in result or []:
@@ -404,8 +459,12 @@ def health() -> dict[str, Any]:
     return {
         "ok": True,
         "paddle": paddle_ocr is not None,
+        "paddle_device_requested": PADDLE_DEVICE_REQUESTED,
         "paddle_device": paddle_device,
+        "paddle_cuda": get_paddle_cuda_info(),
+        "paddle_enable_mkldnn": PADDLE_ENABLE_MKLDNN,
         "paddle_init_error": paddle_init_error,
+        "paddle_runtime_error": paddle_runtime_error,
         "ocr_fast_mode": OCR_FAST_MODE,
         "ocr_max_pages": OCR_MAX_PAGES,
         "ocr_prefer_pdf_text": OCR_PREFER_PDF_TEXT,

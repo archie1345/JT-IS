@@ -66,3 +66,5 @@ yarn-error.log
 /.vscode
 /.zed
 /resources/js/*_original_templates/
+
+/ocr-service/__pycache__/

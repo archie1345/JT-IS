@@ -5,42 +5,41 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class ProjectCost extends Model
+class InvoiceItem extends Model
 {
     use HasFactory, SoftDeletes;
 
     public $timestamps = false;
 
     protected $fillable = [
-        'project_id',
-        'reference_number',
+        'invoice_id',
+        'source_type',
+        'source_item_id',
         'category',
-        'vendor',
-        'amount',
-        'date',
         'description',
+        'unit',
+        'quantity',
+        'unit_price',
+        'total_price',
+        'notes',
     ];
 
     protected function casts(): array
     {
         return [
-            'project_id' => 'integer',
-            'amount' => 'decimal:2',
-            'date' => 'date',
+            'invoice_id' => 'integer',
+            'source_item_id' => 'integer',
+            'quantity' => 'decimal:2',
+            'unit_price' => 'decimal:2',
+            'total_price' => 'decimal:2',
             'deleted_at' => 'datetime',
         ];
     }
 
-    public function project(): BelongsTo
+    public function invoice(): BelongsTo
     {
-        return $this->belongsTo(Project::class);
-    }
-
-    public function items(): HasMany
-    {
-        return $this->hasMany(ProjectCostItem::class);
+        return $this->belongsTo(Invoice::class);
     }
 }

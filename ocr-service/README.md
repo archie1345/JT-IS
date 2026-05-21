@@ -46,7 +46,7 @@ Laravel forwards uploads to:
 
 ```env
 OCR_SERVICE_URL=http://127.0.0.1:8001
-OCR_SERVICE_TIMEOUT=180
+OCR_SERVICE_TIMEOUT=900
 ```
 
 When Laravel runs in Docker and the OCR service runs on Windows, use:
@@ -58,12 +58,12 @@ OCR_SERVICE_URL=http://host.docker.internal:8001
 RAB PDFs can be slow if they are scanned table documents. The startup scripts use these defaults:
 
 ```env
-OCR_PREFER_PDF_TEXT=0
+OCR_PREFER_PDF_TEXT=1
 OCR_FAST_MODE=1
-OCR_MAX_PAGES=5
+OCR_MAX_PAGES=0
 ```
 
-`OCR_PREFER_PDF_TEXT=0` uses real OCR for PDFs by default. This is slower, but safer for RAB/contract PDFs that contain broken embedded text layers. Set `OCR_PREFER_PDF_TEXT=1` only for clean digital PDFs where selectable text copies correctly. Increase `OCR_MAX_PAGES` only when you need more pages from scanned PDFs. Set `OCR_MAX_PAGES=0` for no page limit, but large scanned PDFs may exceed Laravel's OCR timeout.
+`OCR_PREFER_PDF_TEXT=1` tries embedded PDF text first, then falls back to real OCR when the PDF does not contain enough usable text. `OCR_MAX_PAGES=0` means no page limit, but large scanned PDFs may still need a longer Laravel OCR timeout.
 
 Useful local settings:
 
@@ -76,9 +76,12 @@ OCR_PYTHON=f:\conda\envs\gpu-jupyter\python.exe
 # CUDA/Paddle DLL folders can be added to PATH.
 OCR_ENV_ROOT=f:\conda\envs\gpu-jupyter
 
-# CPU is easiest for team testing. Use gpu:0 only on machines with working GPU
-# PaddleOCR support.
-OCR_PADDLE_DEVICE=gpu:0
+# Prefer gpu:0 when the selected Python has a CUDA Paddle runtime, otherwise use CPU.
+OCR_PADDLE_DEVICE=auto
+
+# Avoid Paddle CPU oneDNN inference crashes on some Windows environments.
+OCR_PADDLE_ENABLE_MKLDNN=0
+FLAGS_use_mkldnn=0
 
 # Set to 0 only when OCR_PYTHON points to an environment that already has
 # paddlepaddle-gpu or another Paddle runtime installed.

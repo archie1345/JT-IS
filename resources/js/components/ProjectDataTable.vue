@@ -467,12 +467,16 @@ onBeforeUnmount(() => {
                                 </label>
                             </div>
                         </div>
+
+                        <slot name="toolbar-actions" />
                     </div>
                 </div>
 
-                <div class="relative min-h-80 flex-1 overflow-auto sm:min-h-0">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full text-xs sm:text-sm">
+                <div
+                    class="relative min-h-80 min-w-0 flex-1 overflow-x-hidden overflow-y-auto sm:min-h-0"
+                >
+                    <div class="table-scrollbar w-full overflow-x-scroll pb-2">
+                        <table class="w-max min-w-full text-xs sm:text-sm">
                             <thead
                                 class="sticky top-0 z-10 bg-muted/95 text-left text-muted-foreground backdrop-blur"
                             >

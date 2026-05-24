@@ -16,6 +16,11 @@ const props = defineProps<{
     projectOptions: Option[];
     uploadedDocuments: UploadedDocument[];
     pagination: {
+        currentPage: number;
+        lastPage: number;
+        maxPerPage?: number;
+        perPage: number;
+        perPageOptions?: number[];
         total: number;
     };
 }>();
@@ -130,6 +135,7 @@ const fields = [
         :project-options="props.projectOptions"
         :uploaded-documents="props.uploadedDocuments"
         :upload-connection-options="uploadConnectionOptions"
+        :pagination="props.pagination"
         create-label="New Progress Update"
         :note="`Showing ${props.pagination.total} progress report(s)`"
     >

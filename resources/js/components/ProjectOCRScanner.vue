@@ -1,10 +1,18 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Upload, LoaderCircle, CheckCircle, FileText } from 'lucide-vue-next';
-import { Button } from '@/components/ui/button';
+import { Upload, LoaderCircle, CheckCircle } from 'lucide-vue-next';
 import { toast } from 'vue-sonner';
+import { extractWithLaravelOcr } from '@/lib/ocr';
 
 const emit = defineEmits(['data-extracted']);
+const props = withDefaults(
+    defineProps<{
+        endpoint?: string;
+    }>(),
+    {
+        endpoint: '/projects/documents/ocr',
+    },
+);
 const isReading = ref(false);
 const fileName = ref<string | null>(null);
 
@@ -17,19 +25,15 @@ const handleFile = async (event: Event) => {
     isReading.value = true;
 
     try {
-        const formData = new FormData();
-        formData.append('file', file);
-        
-        const response = await fetch('/ai-document-extraction/ocr', {
-            method: 'POST',
-            body: formData,
-            headers: { 'Accept': 'application/json' }
+        const result = await extractWithLaravelOcr(file, {
+            endpoint: props.endpoint,
         });
 
-        const result = await response.json();
         if (result.text) {
             emit('data-extracted', result.text);
             toast.success("Dokumen berhasil diproses!");
+        } else {
+            toast.error("Tidak ada teks yang bisa dibaca dari dokumen.");
         }
     } catch {
         toast.error("Gagal memproses dokumen.");

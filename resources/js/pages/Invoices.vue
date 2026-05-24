@@ -30,7 +30,9 @@ const props = defineProps<{
     pagination: {
         currentPage: number;
         lastPage: number;
+        maxPerPage?: number;
         perPage: number;
+        perPageOptions?: number[];
         total: number;
     };
 }>();
@@ -181,6 +183,7 @@ const printInvoice = () => {
         :project-options="props.projectOptions"
         :uploaded-documents="props.uploadedDocuments"
         :upload-connection-options="uploadConnectionOptions"
+        :pagination="props.pagination"
         create-label="New Invoice"
         :note="`Showing ${props.pagination.total} invoice record(s)`"
     >

@@ -15,12 +15,15 @@ class RabsPageController extends Controller
     {
         $projectId = $request->integer('project');
 
-        $rabs = Rab::query()
+        $paginator = Rab::query()
             ->when($projectId > 0, fn ($query) => $query->where('project_id', $projectId))
             ->with('project:id,name')
             ->withCount('items')
             ->latest('id')
-            ->get()
+            ->paginate($this->perPageFromRequest($request))
+            ->withQueryString();
+
+        $rabs = $paginator->getCollection()
             ->map(fn (Rab $rab): array => [
                 'id' => $rab->id,
                 'project_id' => $rab->project_id,
@@ -39,6 +42,7 @@ class RabsPageController extends Controller
 
         return Inertia::render('Rabs', [
             'rabs' => $rabs,
+            'pagination' => $this->paginationMeta($paginator),
             'activeProjectId' => $projectId > 0 ? $projectId : null,
             'projectOptions' => Project::query()
                 ->orderBy('name')

@@ -11,10 +11,20 @@ type Option = {
     label: string;
 };
 
+type Pagination = {
+    currentPage: number;
+    lastPage: number;
+    maxPerPage?: number;
+    perPage: number;
+    perPageOptions?: number[];
+    total: number;
+};
+
 const props = defineProps<{
     rabs?: RabRow[];
     data?: RabRow[];
     activeProjectId?: number | null;
+    pagination?: Pagination;
     projectOptions: Option[];
     uploadedDocuments: UploadedDocument[];
 }>();
@@ -125,11 +135,12 @@ const fields = [
         :project-options="props.projectOptions"
         :uploaded-documents="props.uploadedDocuments"
         :upload-connection-options="uploadConnectionOptions"
+        :pagination="props.pagination"
         create-label="New RAB"
         :note="
             props.activeProjectId
                 ? `Filtered by project ID ${props.activeProjectId}`
-                : `${rows.length} RAB record(s)`
+                : `Showing ${props.pagination?.total ?? rows.length} RAB record(s)`
         "
     >
         <template #cell-totalBudget="{ value }">

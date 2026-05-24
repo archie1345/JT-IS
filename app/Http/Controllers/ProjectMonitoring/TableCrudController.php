@@ -18,7 +18,7 @@ abstract class TableCrudController extends Controller
     public function index(Request $request): Response|\Illuminate\Http\JsonResponse
     {
         $paginator = $this->indexQuery($request)
-            ->paginate($this->perPage())
+            ->paginate($this->perPageFromRequest($request))
             ->withQueryString();
 
         $view = $this->inertiaView();
@@ -29,12 +29,7 @@ abstract class TableCrudController extends Controller
                     ->map(fn (Model $record): array => $this->transformRecord($record, $request))
                     ->values()
                     ->all(),
-                'pagination' => [
-                    'currentPage' => $paginator->currentPage(),
-                    'lastPage' => $paginator->lastPage(),
-                    'perPage' => $paginator->perPage(),
-                    'total' => $paginator->total(),
-                ],
+                'pagination' => $this->paginationMeta($paginator),
             ], $this->pageProps($request)));
         }
 
@@ -114,11 +109,6 @@ abstract class TableCrudController extends Controller
     protected function pageProps(Request $request): array
     {
         return [];
-    }
-
-    protected function perPage(): int
-    {
-        return 15;
     }
 
     protected function inertiaView(): ?string

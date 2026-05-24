@@ -15,12 +15,15 @@ class RapsPageController extends Controller
     {
         $projectId = $request->integer('project');
 
-        $raps = Rap::query()
+        $paginator = Rap::query()
             ->when($projectId > 0, fn ($query) => $query->where('project_id', $projectId))
             ->with('project:id,name')
             ->withCount('items')
             ->latest('id')
-            ->get()
+            ->paginate($this->perPageFromRequest($request))
+            ->withQueryString();
+
+        $raps = $paginator->getCollection()
             ->map(fn (Rap $rap): array => [
                 'id' => $rap->id,
                 'project_id' => $rap->project_id,
@@ -39,6 +42,7 @@ class RapsPageController extends Controller
 
         return Inertia::render('Raps', [
             'raps' => $raps,
+            'pagination' => $this->paginationMeta($paginator),
             'activeProjectId' => $projectId > 0 ? $projectId : null,
             'projectOptions' => Project::query()
                 ->orderBy('name')

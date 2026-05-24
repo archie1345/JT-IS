@@ -152,7 +152,7 @@ const itemTotal = computed(
 );
 
 const backToList = () => router.get(props.indexUrl);
-const refreshPage = () => router.reload({ preserveScroll: true });
+const refreshPage = () => router.reload();
 
 const submitHeader = () => {
     headerForm.patch(props.updateUrl, {

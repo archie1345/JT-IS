@@ -12,6 +12,7 @@ import { computed, ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { extractImportantDocumentData } from '@/lib/documentExtraction';
+import { csrfToken, extractWithLaravelOcr } from '@/lib/ocr';
 import type {
     ExtractedDocumentItem,
     ExtractedDocumentMetadata,
@@ -27,18 +28,6 @@ type ProjectOption = {
 type ClientOption = {
     id: number;
     name: string;
-};
-
-type BackendOcrResponse = {
-    engine?: string;
-    pages?: {
-        angle?: number;
-        confidence?: number;
-        mode?: string;
-        page?: number;
-        text?: string;
-    }[];
-    text?: string;
 };
 
 type BudgetPreviewItem = ExtractedDocumentItem & {
@@ -197,84 +186,6 @@ const clearText = () => {
     saveError.value = null;
 };
 
-const csrfToken = () =>
-    document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
-        ?.content ?? '';
-
-const cookieValue = (name: string) =>
-    document.cookie
-        .split('; ')
-        .find((cookie) => cookie.startsWith(`${name}=`))
-        ?.split('=')
-        .slice(1)
-        .join('=');
-
-const buildOcrRequest = (file: File) => {
-    const xsrfToken = cookieValue('XSRF-TOKEN');
-    const fallbackToken = csrfToken();
-    const formData = new FormData();
-    formData.append('file', file);
-
-    if (!xsrfToken && fallbackToken) {
-        formData.append('_token', fallbackToken);
-    }
-
-    return {
-        body: formData,
-        headers: {
-            Accept: 'application/json',
-            ...(xsrfToken
-                ? { 'X-XSRF-TOKEN': decodeURIComponent(xsrfToken) }
-                : { 'X-CSRF-TOKEN': fallbackToken }),
-        },
-    };
-};
-
-const postLaravelOcr = (file: File) => {
-    const request = buildOcrRequest(file);
-
-    return fetch('/ai-document-extraction/ocr', {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: request.headers,
-        body: request.body,
-    });
-};
-
-const extractWithLaravelOcr = async (
-    file: File,
-): Promise<BackendOcrResponse> => {
-    let response = await postLaravelOcr(file);
-
-    if (response.status === 419) {
-        await fetch('/sanctum/csrf-cookie', {
-            credentials: 'same-origin',
-            headers: {
-                Accept: 'application/json',
-            },
-        });
-
-        response = await postLaravelOcr(file);
-    }
-
-    const payload = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-        const detail =
-            typeof payload.detail === 'string' ? payload.detail : null;
-        const message =
-            typeof payload.message === 'string'
-                ? detail
-                    ? `${payload.message} ${detail}`
-                    : payload.message
-                : 'Laravel OCR request failed.';
-
-        throw new Error(message);
-    }
-
-    return payload as BackendOcrResponse;
-};
-
 const budgetItemPayload = (item: BudgetPreviewItem) => ({
     category: item.category.slice(0, 150),
     sub_category: item.subCategory.slice(0, 150),
@@ -392,7 +303,9 @@ const readDocumentFile = async (file: File) => {
     ocrProgress.value = 10;
 
     try {
-        const backendResult = await extractWithLaravelOcr(file);
+        const backendResult = await extractWithLaravelOcr(file, {
+            endpoint: '/ai-document-extraction/ocr',
+        });
 
         sourceText.value = backendResult.text ?? '';
         ocrProgress.value = 100;

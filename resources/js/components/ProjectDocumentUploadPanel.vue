@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dialog';
 import OptionSelect from '@/components/prototype/OptionSelect.vue';
 import { extractImportantDocumentData } from '@/lib/documentExtraction';
+import { csrfToken, extractWithLaravelOcr } from '@/lib/ocr';
 import type { UploadedDocument } from '@/types/project';
 
 type ProjectOption = {
@@ -40,11 +41,11 @@ type ConnectionOption = {
 const props = withDefaults(
     defineProps<{
         projectId?: null | number;
-        projectOptions?: ProjectOption[];
+        projectOptions?: readonly ProjectOption[];
         documents?: UploadedDocument[];
         componentType?: string;
         componentId?: null | number;
-        connectionOptions?: ConnectionOption[];
+        connectionOptions?: readonly ConnectionOption[];
         title?: string;
         description?: string;
         emptyText?: string;
@@ -326,39 +327,6 @@ const removePreviewBudgetItem = (index: number) => {
     previewBudgetItems.value.splice(index, 1);
 };
 
-const csrfToken = () =>
-    document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
-        ?.content ?? '';
-
-const cookieValue = (name: string) =>
-    document.cookie
-        .split('; ')
-        .find((cookie) => cookie.startsWith(`${name}=`))
-        ?.split('=')
-        .slice(1)
-        .join('=');
-
-const buildOcrRequest = (file: File) => {
-    const xsrfToken = cookieValue('XSRF-TOKEN');
-    const fallbackToken = csrfToken();
-    const formData = new FormData();
-    formData.append('file', file);
-
-    if (!xsrfToken && fallbackToken) {
-        formData.append('_token', fallbackToken);
-    }
-
-    return {
-        body: formData,
-        headers: {
-            Accept: 'application/json',
-            ...(xsrfToken
-                ? { 'X-XSRF-TOKEN': decodeURIComponent(xsrfToken) }
-                : { 'X-CSRF-TOKEN': fallbackToken }),
-        },
-    };
-};
-
 const runOcr = async (file: File) => {
     uploadError.value = null;
     readerStatus.value = 'Uploading to Laravel OCR service';
@@ -370,42 +338,7 @@ const runOcr = async (file: File) => {
     applyError.value = null;
 
     try {
-        const request = buildOcrRequest(file);
-        let response = await fetch('/projects/documents/ocr', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: request.headers,
-            body: request.body,
-        });
-
-        if (response.status === 419) {
-            await fetch('/sanctum/csrf-cookie', {
-                credentials: 'same-origin',
-                headers: { Accept: 'application/json' },
-            });
-
-            const retryRequest = buildOcrRequest(file);
-            response = await fetch('/projects/documents/ocr', {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: retryRequest.headers,
-                body: retryRequest.body,
-            });
-        }
-
-        const payload = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-            const detail =
-                typeof payload.detail === 'string' ? payload.detail : null;
-            throw new Error(
-                typeof payload.message === 'string'
-                    ? detail
-                        ? `${payload.message} ${detail}`
-                        : payload.message
-                    : 'OCR request failed.',
-            );
-        }
+        const payload = await extractWithLaravelOcr(file);
 
         ocrText.value = typeof payload.text === 'string' ? payload.text : '';
         ocrEngine.value =
@@ -485,7 +418,7 @@ const applyExtraction = async () => {
                 ? payload.message
                 : 'Extracted data applied.';
         isPreviewOpen.value = false;
-        router.reload({ preserveScroll: true });
+        router.reload();
     } catch (error) {
         applyError.value =
             error instanceof Error
@@ -545,7 +478,7 @@ const upload = () => {
             if (input.value) {
                 input.value.value = '';
             }
-            router.reload({ preserveScroll: true });
+            router.reload();
         },
     });
 };

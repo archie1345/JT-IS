@@ -111,7 +111,7 @@ const backToList = () => {
 };
 
 const refreshPage = () => {
-    router.reload({ preserveScroll: true });
+    router.reload();
 };
 
 const recordUpdateUrl = computed(() =>

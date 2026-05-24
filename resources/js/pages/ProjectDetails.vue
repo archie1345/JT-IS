@@ -40,6 +40,7 @@ import type {
 
 import { toast } from 'vue-sonner';
 import { extractImportantDocumentData } from '@/lib/documentExtraction';
+import { extractWithLaravelOcr } from '@/lib/ocr';
 
 // Leaflet Imports
 import 'leaflet/dist/leaflet.css';
@@ -314,16 +315,8 @@ const sourceText = ref<string>('');
 const readDocumentFile = async (file: File) => {
     isReadingFile.value = true;
     try {
-        const formData = new FormData();
-        formData.append('file', file);
+        const result = await extractWithLaravelOcr(file);
 
-        const response = await fetch('/ai-document-extraction/ocr', {
-            method: 'POST',
-            body: formData,
-            headers: { 'Accept': 'application/json' }
-        });
-
-        const result = await response.json();
         if (result.text) {
             autoFillForm(result.text);
         }

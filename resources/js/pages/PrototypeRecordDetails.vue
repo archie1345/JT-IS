@@ -101,7 +101,7 @@ const backToList = () => {
 };
 
 const refreshPage = () => {
-    router.reload({ preserveScroll: true });
+    router.reload();
 };
 
 const submit = () => {

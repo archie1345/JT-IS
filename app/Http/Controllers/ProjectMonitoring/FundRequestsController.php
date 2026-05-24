@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\ProjectMonitoring;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
@@ -10,6 +12,14 @@ class FundRequestsController extends TableCrudController
 {
     // Gunakan Eloquent Model
     protected string $model = \App\Models\FundRequest::class;
+
+    protected function indexQuery(Request $request): Builder
+    {
+        $projectId = $request->integer('project');
+
+        return parent::indexQuery($request)
+            ->when($projectId > 0, fn (Builder $query) => $query->where('project_id', $projectId));
+    }
 
     protected function storeRules(): array
     {

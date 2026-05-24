@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue';
 import { FileText, Palette, Printer } from 'lucide-vue-next';
+import InvoicePrintPreview from '@/components/invoice/InvoicePrintPreview.vue';
 import CrudPrototypePage from '@/components/prototype/CrudPrototypePage.vue';
 import type { SpreadsheetColumn } from '@/components/ProjectDataTable.vue';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { formatCurrency } from '@/lib/formatters';
 import type { BreadcrumbItem } from '@/types';
 import type { UploadedDocument } from '@/types/project';
 
@@ -130,28 +132,27 @@ const selectedInvoice = computed(
         ) ?? props.records[0],
 );
 
-const formatCurrency = (value: null | number | string | undefined) =>
-    value === null || value === undefined || value === ''
-        ? '-'
-        : new Intl.NumberFormat('id-ID', {
-              style: 'currency',
-              currency: 'IDR',
-              maximumFractionDigits: 0,
-          }).format(Number(value));
-
-const invoiceAmount = computed(() =>
+const invoiceLineItems = computed(() =>
+    selectedInvoice.value
+        ? [
+              {
+                  description:
+                      selectedInvoice.value.description ||
+                      selectedInvoice.value.project_name ||
+                      'Project billing',
+                  projectName: selectedInvoice.value.project_name,
+                  quantity: 1,
+                  unitPrice: selectedInvoice.value.amount,
+                  totalPrice: selectedInvoice.value.amount,
+              },
+          ]
+        : [],
+);
+const invoiceSubtotal = computed(() =>
     Number(selectedInvoice.value?.amount ?? 0),
 );
-const invoiceTax = computed(() =>
-    Number(selectedInvoice.value?.tax_amount ?? 0),
-);
-const invoiceTotal = computed(() => invoiceAmount.value + invoiceTax.value);
-const invoiceStyle = computed(() => ({
-    '--invoice-accent': template.accentColor,
-    '--invoice-text': template.textColor,
-    '--invoice-paper': template.paperColor,
-    '--invoice-border': template.borderColor,
-}));
+const invoiceTax = computed(() => Number(selectedInvoice.value?.tax_amount ?? 0));
+const invoiceTotal = computed(() => invoiceSubtotal.value + invoiceTax.value);
 
 const openInvoiceModal = () => {
     if (!selectedInvoiceId.value && props.records[0]?.id) {
@@ -266,209 +267,27 @@ const printInvoice = () => {
                 </Button>
             </div>
 
-            <section
+            <InvoicePrintPreview
                 v-if="selectedInvoice"
-                class="invoice-print-area overflow-x-auto rounded-lg bg-muted/30 p-3"
-            >
-                <div
-                    class="invoice-sheet mx-auto flex min-h-[297mm] w-[210mm] flex-col bg-white shadow-lg"
-                    :style="invoiceStyle"
-                >
-                    <div
-                        class="px-10 py-8"
-                        :style="{
-                            background: 'var(--invoice-accent)',
-                            color: 'white',
-                        }"
-                    >
-                        <div class="flex items-start justify-between gap-8">
-                            <div>
-                                <p class="text-sm tracking-[0.2em] uppercase">
-                                    PT. Jasa Tirta Energi
-                                </p>
-                                <h1 class="mt-4 text-4xl font-semibold">
-                                    {{ template.title }}
-                                </h1>
-                            </div>
-                            <div class="text-right text-sm">
-                                <p class="font-medium">
-                                    {{
-                                        selectedInvoice.invoice_number ||
-                                        `Invoice #${selectedInvoice.id}`
-                                    }}
-                                </p>
-                                <p class="mt-1">
-                                    Date:
-                                    {{ selectedInvoice.invoice_date || '-' }}
-                                </p>
-                                <p>
-                                    Due: {{ selectedInvoice.due_date || '-' }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div
-                        class="flex flex-1 flex-col gap-8 px-10 py-8 text-sm"
-                        :style="{
-                            color: 'var(--invoice-text)',
-                            background: 'var(--invoice-paper)',
-                        }"
-                    >
-                        <div class="grid gap-6 sm:grid-cols-2">
-                            <div>
-                                <p
-                                    class="text-xs font-medium uppercase opacity-60"
-                                >
-                                    Bill To
-                                </p>
-                                <p class="mt-2 text-lg font-semibold">
-                                    {{ selectedInvoice.client_name || '-' }}
-                                </p>
-                                <p class="mt-1 opacity-75">
-                                    {{
-                                        selectedInvoice.project_name ||
-                                        'Project billing'
-                                    }}
-                                </p>
-                            </div>
-                            <div
-                                class="rounded border p-4"
-                                :style="{
-                                    borderColor: 'var(--invoice-border)',
-                                }"
-                            >
-                                <p class="font-medium">Billing Summary</p>
-                                <p class="mt-2 opacity-75">
-                                    {{
-                                        selectedInvoice.description ||
-                                        'Project billing'
-                                    }}
-                                </p>
-                                <p class="mt-2 capitalize opacity-75">
-                                    Status:
-                                    {{ selectedInvoice.status || 'pending' }}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="overflow-hidden rounded border">
-                            <table class="w-full border-collapse">
-                                <thead
-                                    :style="{
-                                        background: 'var(--invoice-accent)',
-                                        color: 'white',
-                                    }"
-                                >
-                                    <tr>
-                                        <th class="px-4 py-3 text-left">
-                                            Description
-                                        </th>
-                                        <th class="px-4 py-3 text-right">
-                                            Qty
-                                        </th>
-                                        <th class="px-4 py-3 text-right">
-                                            Amount
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td class="px-4 py-3">
-                                            {{
-                                                selectedInvoice.description ||
-                                                selectedInvoice.project_name ||
-                                                'Project billing'
-                                            }}
-                                        </td>
-                                        <td class="px-4 py-3 text-right">1</td>
-                                        <td class="px-4 py-3 text-right">
-                                            {{
-                                                formatCurrency(
-                                                    selectedInvoice.amount,
-                                                )
-                                            }}
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="grid gap-6 sm:grid-cols-[1fr_18rem]">
-                            <div class="space-y-4">
-                                <div v-if="template.showBankDetails">
-                                    <p class="font-medium">Bank Details</p>
-                                    <p
-                                        class="mt-1 whitespace-pre-line opacity-75"
-                                    >
-                                        {{ template.bankDetails }}
-                                    </p>
-                                </div>
-                                <div v-if="template.showNotes">
-                                    <p class="font-medium">Notes</p>
-                                    <p
-                                        class="mt-1 whitespace-pre-line opacity-75"
-                                    >
-                                        {{ template.notes }}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="space-y-2">
-                                <div class="flex justify-between gap-4">
-                                    <span>Subtotal</span>
-                                    <span>{{
-                                        formatCurrency(invoiceAmount)
-                                    }}</span>
-                                </div>
-                                <div class="flex justify-between gap-4">
-                                    <span>Tax</span>
-                                    <span>{{
-                                        formatCurrency(invoiceTax)
-                                    }}</span>
-                                </div>
-                                <div
-                                    class="mt-3 flex justify-between gap-4 border-t pt-3 text-base font-semibold"
-                                    :style="{
-                                        borderColor: 'var(--invoice-border)',
-                                    }"
-                                >
-                                    <span>Total</span>
-                                    <span>{{
-                                        formatCurrency(invoiceTotal)
-                                    }}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div
-                            v-if="template.showSignature"
-                            class="mt-auto flex justify-end pt-8"
-                        >
-                            <div class="w-48 text-center">
-                                <div
-                                    class="mb-16 border-t"
-                                    :style="{
-                                        borderColor: 'var(--invoice-border)',
-                                    }"
-                                ></div>
-                                <p class="font-medium">Authorized Signature</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div
-                        class="border-t px-10 py-4 text-center text-xs opacity-70"
-                        :style="{
-                            borderColor: 'var(--invoice-border)',
-                            color: 'var(--invoice-text)',
-                            background: 'var(--invoice-paper)',
-                        }"
-                    >
-                        {{ template.footerText }}
-                    </div>
-                </div>
-            </section>
+                :bill-to="selectedInvoice.client_name"
+                :description="selectedInvoice.description"
+                :due-date="selectedInvoice.due_date"
+                :invoice-date="selectedInvoice.invoice_date"
+                :invoice-number="
+                    String(
+                        selectedInvoice.invoice_number ||
+                            `Invoice #${selectedInvoice.id}`,
+                    )
+                "
+                :line-items="invoiceLineItems"
+                :project-name="selectedInvoice.project_name"
+                :status="selectedInvoice.status"
+                :subtotal="invoiceSubtotal"
+                :tax="invoiceTax"
+                :template="template"
+                :total="invoiceTotal"
+                variant="summary"
+            />
         </DialogContent>
     </Dialog>
 
@@ -565,47 +384,3 @@ const printInvoice = () => {
         </DialogContent>
     </Dialog>
 </template>
-
-<style>
-.invoice-sheet :where(div, section):has(> table) {
-    overflow-x: visible !important;
-}
-
-.invoice-sheet :where(div, section):has(> table) > table {
-    width: 100% !important;
-    min-width: 100%;
-}
-
-@media print {
-    @page {
-        size: A4;
-        margin: 0;
-    }
-
-    body * {
-        visibility: hidden;
-    }
-
-    .invoice-print-area,
-    .invoice-print-area * {
-        visibility: visible;
-    }
-
-    .invoice-print-area {
-        position: absolute;
-        inset: 0;
-        overflow: visible !important;
-        background: white;
-    }
-
-    .invoice-sheet {
-        width: 210mm;
-        min-height: 297mm;
-        box-shadow: none !important;
-    }
-
-    .no-print {
-        display: none !important;
-    }
-}
-</style>

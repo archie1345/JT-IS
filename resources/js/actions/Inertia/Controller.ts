@@ -134,50 +134,6 @@ Controller42a740574ecbfbac32f8cc353fc32db9.head = (options?: RouteQueryOptions):
 /**
 * @see \Inertia\Controller::__invoke
 * @see vendor/inertiajs/inertia-laravel/src/Controller.php:13
-* @route '/prototype'
-*/
-const Controller75bf144c352994f27bc8fcb22b0cdcef = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: Controller75bf144c352994f27bc8fcb22b0cdcef.url(options),
-    method: 'get',
-})
-
-Controller75bf144c352994f27bc8fcb22b0cdcef.definition = {
-    methods: ["get","head"],
-    url: '/prototype',
-} satisfies RouteDefinition<["get","head"]>
-
-/**
-* @see \Inertia\Controller::__invoke
-* @see vendor/inertiajs/inertia-laravel/src/Controller.php:13
-* @route '/prototype'
-*/
-Controller75bf144c352994f27bc8fcb22b0cdcef.url = (options?: RouteQueryOptions) => {
-    return Controller75bf144c352994f27bc8fcb22b0cdcef.definition.url + queryParams(options)
-}
-
-/**
-* @see \Inertia\Controller::__invoke
-* @see vendor/inertiajs/inertia-laravel/src/Controller.php:13
-* @route '/prototype'
-*/
-Controller75bf144c352994f27bc8fcb22b0cdcef.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: Controller75bf144c352994f27bc8fcb22b0cdcef.url(options),
-    method: 'get',
-})
-
-/**
-* @see \Inertia\Controller::__invoke
-* @see vendor/inertiajs/inertia-laravel/src/Controller.php:13
-* @route '/prototype'
-*/
-Controller75bf144c352994f27bc8fcb22b0cdcef.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
-    url: Controller75bf144c352994f27bc8fcb22b0cdcef.url(options),
-    method: 'head',
-})
-
-/**
-* @see \Inertia\Controller::__invoke
-* @see vendor/inertiajs/inertia-laravel/src/Controller.php:13
 * @route '/settings/appearance'
 */
 const Controllere19ee86e9cf603ce1a59a1ec5d21dec5 = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -223,7 +179,6 @@ const Controller = {
     '/login': Controllerb6041c76e8e1cd791f8f89d035d48611,
     '/': Controller980bb49ee7ae63891f1d891d2fbcf1c9,
     '/dashboard': Controller42a740574ecbfbac32f8cc353fc32db9,
-    '/prototype': Controller75bf144c352994f27bc8fcb22b0cdcef,
     '/settings/appearance': Controllere19ee86e9cf603ce1a59a1ec5d21dec5,
 }
 

@@ -15,7 +15,9 @@ import EntityDetailHero from '@/components/entity/EntityDetailHero.vue';
 import EntityMetricCard from '@/components/entity/EntityMetricCard.vue';
 import EntityPageSection from '@/components/entity/EntityPageSection.vue';
 import InputError from '@/components/InputError.vue';
+import InvoicePrintPreview from '@/components/invoice/InvoicePrintPreview.vue';
 import ProjectDocumentUploadPanel from '@/components/ProjectDocumentUploadPanel.vue';
+import ProjectOCRScanner from '@/components/ProjectOCRScanner.vue';
 import RecordFieldInput from '@/components/prototype/RecordFieldInput.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,6 +30,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { extractImportantDocumentData } from '@/lib/documentExtraction';
+import { formatCurrency } from '@/lib/formatters';
 import type { BreadcrumbItem } from '@/types';
 import type { UploadedDocument } from '@/types/project';
 
@@ -103,6 +107,8 @@ const isPdfOpen = ref(false);
 const editingItemId = ref<null | number>(null);
 const selectedSource = ref('');
 const deletingItemId = ref<null | number>(null);
+const scannerText = ref('');
+const scannerApplied = ref(false);
 
 const headerForm = useForm<Record<string, number | string>>(
     Object.fromEntries(
@@ -126,15 +132,6 @@ const itemForm = useForm({
     notes: '',
 });
 
-const formatCurrency = (value: number | string | null | undefined) =>
-    value === null || value === undefined || value === ''
-        ? '-'
-        : new Intl.NumberFormat('id-ID', {
-              style: 'currency',
-              currency: 'IDR',
-              maximumFractionDigits: 0,
-          }).format(Number(value));
-
 const documentTitle = computed(() =>
     String(
         props.record.invoice_number ||
@@ -150,9 +147,62 @@ const itemDialogTitle = computed(() =>
 const itemTotal = computed(
     () => Number(itemForm.quantity || 0) * Number(itemForm.unit_price || 0),
 );
+const scannerData = computed(() =>
+    scannerText.value.trim()
+        ? extractImportantDocumentData(scannerText.value, props.upload.componentType)
+        : null,
+);
+const scannerRows = computed(() =>
+    (scannerData.value?.grouping_results ?? []).flatMap((category) =>
+        category.sub_categories.flatMap((subCategory) =>
+            subCategory.items.map((item) => ({
+                category: category.category,
+                description: item.description,
+                unit: item.unit ?? '',
+                quantity: item.volume ?? 1,
+                unitPrice: item.unit_price ?? 0,
+                totalPrice:
+                    item.total ??
+                    Number(item.volume ?? 0) * Number(item.unit_price ?? 0),
+            })),
+        ),
+    ),
+);
+const scannerSummary = computed(() => {
+    if (!scannerData.value) {
+        return 'Upload a file to scan invoice or cost details.';
+    }
+
+    const metadata = scannerData.value.metadata;
+    const detected = [
+        metadata.doc_number ? 'document number' : null,
+        metadata.contract_value ? 'amount' : null,
+        metadata.contract_date ? 'date' : null,
+        scannerRows.value.length > 0
+            ? `${scannerRows.value.length} line item(s)`
+            : null,
+    ].filter(Boolean);
+
+    return detected.length > 0
+        ? `Detected ${detected.join(', ')}.`
+        : 'OCR finished, but no structured fields were detected.';
+});
+const invoicePrintLineItems = computed(() =>
+    props.items.map((item) => ({
+        id: item.id,
+        category: item.category,
+        description: item.description,
+        quantity: item.quantity,
+        unit: item.unit,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice,
+    })),
+);
 
 const backToList = () => router.get(props.indexUrl);
 const refreshPage = () => router.reload();
+const toDateInputValue = (value: null | string | undefined) =>
+    value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : '';
 
 const submitHeader = () => {
     headerForm.patch(props.updateUrl, {
@@ -236,6 +286,68 @@ const applyBudgetItem = () => {
     itemForm.quantity = option.quantity || 1;
     itemForm.unit_price = option.unitPrice || 0;
     itemForm.total_price = option.totalPrice || 0;
+};
+
+const handleScannerData = (text: string) => {
+    scannerText.value = text;
+    scannerApplied.value = false;
+};
+
+const applyScannerToHeader = () => {
+    const metadata = scannerData.value?.metadata;
+
+    if (!metadata) {
+        return;
+    }
+
+    if (props.kind === 'invoice') {
+        headerForm.invoice_number =
+            metadata.doc_number || headerForm.invoice_number || '';
+        headerForm.amount =
+            metadata.contract_value ?? headerForm.amount ?? '';
+        headerForm.invoice_date =
+            toDateInputValue(metadata.contract_date) ||
+            headerForm.invoice_date ||
+            '';
+        headerForm.description =
+            metadata.project_name || headerForm.description || '';
+    } else {
+        headerForm.reference_number =
+            metadata.doc_number || headerForm.reference_number || '';
+        headerForm.amount =
+            metadata.contract_value ?? headerForm.amount ?? '';
+        headerForm.date =
+            toDateInputValue(metadata.contract_date) || headerForm.date || '';
+        headerForm.description =
+            metadata.project_name || headerForm.description || '';
+        headerForm.vendor = metadata.owner || headerForm.vendor || '';
+    }
+
+    scannerApplied.value = true;
+};
+
+const openScannerItem = () => {
+    const row = scannerRows.value[0];
+
+    resetItemForm();
+
+    if (row) {
+        itemForm.category = row.category;
+        itemForm.description = row.description;
+        itemForm.unit = row.unit;
+        itemForm.quantity = Number(row.quantity || 1);
+        itemForm.unit_price = Number(row.unitPrice || 0);
+        itemForm.total_price = Number(row.totalPrice || 0);
+    } else if (scannerData.value?.metadata.contract_value) {
+        itemForm.description =
+            scannerData.value.metadata.project_name || documentTitle.value;
+        itemForm.quantity = 1;
+        itemForm.unit = 'ls';
+        itemForm.unit_price = Number(scannerData.value.metadata.contract_value);
+        itemForm.total_price = Number(scannerData.value.metadata.contract_value);
+    }
+
+    isItemOpen.value = true;
 };
 
 const submitItem = () => {
@@ -376,6 +488,109 @@ const printInvoice = () => window.print();
                     title="Uploaded Files"
                     :description="`Files attached to this ${props.recordLabel.toLowerCase()} record.`"
                 >
+                    <div class="mb-4 grid gap-3 lg:grid-cols-[22rem_1fr]">
+                        <ProjectOCRScanner
+                            @data-extracted="handleScannerData"
+                        />
+                        <div
+                            class="rounded-xl border border-sidebar-border/70 bg-background p-4 shadow-xs dark:border-sidebar-border"
+                        >
+                            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                <div>
+                                    <p class="text-sm font-medium">
+                                        OCR Scanner Result
+                                    </p>
+                                    <p class="mt-1 text-sm text-muted-foreground">
+                                        {{ scannerSummary }}
+                                    </p>
+                                </div>
+                                <div class="flex flex-wrap gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        :disabled="!scannerData"
+                                        @click="applyScannerToHeader"
+                                    >
+                                        Fill Header
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        :disabled="!scannerData"
+                                        @click="openScannerItem"
+                                    >
+                                        Add OCR Row
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <div
+                                v-if="scannerData"
+                                class="mt-4 grid gap-3 text-sm sm:grid-cols-2"
+                            >
+                                <div class="rounded-md bg-muted/40 px-3 py-2">
+                                    <span class="block text-xs text-muted-foreground">
+                                        Reference
+                                    </span>
+                                    <span class="font-medium">
+                                        {{
+                                            scannerData.metadata.doc_number ||
+                                            '-'
+                                        }}
+                                    </span>
+                                </div>
+                                <div class="rounded-md bg-muted/40 px-3 py-2">
+                                    <span class="block text-xs text-muted-foreground">
+                                        Amount
+                                    </span>
+                                    <span class="font-medium">
+                                        {{
+                                            formatCurrency(
+                                                scannerData.metadata
+                                                    .contract_value,
+                                            )
+                                        }}
+                                    </span>
+                                </div>
+                                <div class="rounded-md bg-muted/40 px-3 py-2">
+                                    <span class="block text-xs text-muted-foreground">
+                                        Project / Description
+                                    </span>
+                                    <span class="font-medium">
+                                        {{
+                                            scannerData.metadata
+                                                .project_name || '-'
+                                        }}
+                                    </span>
+                                </div>
+                                <div class="rounded-md bg-muted/40 px-3 py-2">
+                                    <span class="block text-xs text-muted-foreground">
+                                        Detected Rows
+                                    </span>
+                                    <span class="font-medium">
+                                        {{ scannerRows.length }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <p
+                                v-if="scannerApplied"
+                                class="mt-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700"
+                            >
+                                OCR values were copied into the form. Review
+                                them, then save the record fields.
+                            </p>
+
+                            <p
+                                v-if="scannerText"
+                                class="mt-3 max-h-28 overflow-y-auto rounded-md border border-sidebar-border/60 px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-muted-foreground"
+                            >
+                                {{ scannerText.slice(0, 800) }}
+                            </p>
+                        </div>
+                    </div>
+
                     <ProjectDocumentUploadPanel
                         :project-id="props.upload.projectId"
                         :component-type="props.upload.componentType"
@@ -651,167 +866,20 @@ const printInvoice = () => window.print();
                         Create PDF
                     </Button>
                 </div>
-                <section
-                    class="invoice-print-area overflow-x-auto rounded-lg bg-muted/30 p-3"
-                >
-                    <div
-                        class="invoice-sheet mx-auto flex min-h-[297mm] w-[210mm] flex-col bg-white text-[#111827] shadow-lg"
-                    >
-                        <div class="bg-[#0f766e] px-10 py-8 text-white">
-                            <div class="flex items-start justify-between gap-8">
-                                <div>
-                                    <p
-                                        class="text-sm tracking-[0.2em] uppercase"
-                                    >
-                                        PT. Jasa Tirta Energi
-                                    </p>
-                                    <h1 class="mt-4 text-4xl font-semibold">
-                                        INVOICE
-                                    </h1>
-                                </div>
-                                <div class="text-right text-sm">
-                                    <p class="font-medium">
-                                        {{ documentTitle }}
-                                    </p>
-                                    <p class="mt-1">
-                                        Date:
-                                        {{ headerForm.invoice_date || '-' }}
-                                    </p>
-                                    <p>Due: {{ headerForm.due_date || '-' }}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div
-                            class="flex flex-1 flex-col gap-8 px-10 py-8 text-sm"
-                        >
-                            <div>
-                                <p
-                                    class="text-xs font-medium uppercase opacity-60"
-                                >
-                                    Bill To
-                                </p>
-                                <p class="mt-2 text-lg font-semibold">
-                                    {{ props.record.client_name || '-' }}
-                                </p>
-                                <p class="mt-1 opacity-75">
-                                    {{
-                                        props.record.project_name ||
-                                        'Project billing'
-                                    }}
-                                </p>
-                            </div>
-                            <table class="w-full border-collapse">
-                                <thead class="bg-[#0f766e] text-white">
-                                    <tr>
-                                        <th class="px-4 py-3 text-left">
-                                            Description
-                                        </th>
-                                        <th class="px-4 py-3 text-right">
-                                            Qty
-                                        </th>
-                                        <th class="px-4 py-3 text-right">
-                                            Amount
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr
-                                        v-for="item in props.items"
-                                        :key="item.id"
-                                        class="border-b"
-                                    >
-                                        <td class="px-4 py-3">
-                                            {{ item.description || '-' }}
-                                        </td>
-                                        <td class="px-4 py-3 text-right">
-                                            {{ item.quantity }}
-                                        </td>
-                                        <td class="px-4 py-3 text-right">
-                                            {{
-                                                formatCurrency(item.totalPrice)
-                                            }}
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <div class="ml-auto w-72 space-y-2">
-                                <div class="flex justify-between">
-                                    <span>Subtotal</span
-                                    ><span>{{
-                                        formatCurrency(props.summary.subtotal)
-                                    }}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span>Tax</span
-                                    ><span>{{
-                                        formatCurrency(props.summary.tax)
-                                    }}</span>
-                                </div>
-                                <div
-                                    class="flex justify-between border-t pt-3 text-base font-semibold"
-                                >
-                                    <span>Total</span
-                                    ><span>{{
-                                        formatCurrency(props.summary.total)
-                                    }}</span>
-                                </div>
-                            </div>
-                            <div class="mt-auto flex justify-end pt-8">
-                                <div class="w-48 text-center">
-                                    <div class="mb-16 border-t"></div>
-                                    <p class="font-medium">
-                                        Authorized Signature
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
+                <InvoicePrintPreview
+                    :bill-to="props.record.client_name"
+                    :description="props.record.description"
+                    :due-date="headerForm.due_date"
+                    :invoice-date="headerForm.invoice_date"
+                    :invoice-number="documentTitle"
+                    :line-items="invoicePrintLineItems"
+                    :project-name="props.record.project_name"
+                    :status="headerForm.status"
+                    :subtotal="props.summary.subtotal"
+                    :tax="props.summary.tax"
+                    :total="props.summary.total"
+                />
             </DialogContent>
         </Dialog>
     </AppLayout>
 </template>
-
-<style>
-.invoice-sheet :where(div, section):has(> table) {
-    overflow-x: visible !important;
-}
-
-.invoice-sheet :where(div, section):has(> table) > table {
-    width: 100% !important;
-    min-width: 100%;
-}
-
-@media print {
-    @page {
-        size: A4;
-        margin: 0;
-    }
-
-    body * {
-        visibility: hidden;
-    }
-
-    .invoice-print-area,
-    .invoice-print-area * {
-        visibility: visible;
-    }
-
-    .invoice-print-area {
-        position: absolute;
-        inset: 0;
-        overflow: visible !important;
-        background: white;
-    }
-
-    .invoice-sheet {
-        width: 210mm;
-        min-height: 297mm;
-        box-shadow: none !important;
-    }
-
-    .no-print {
-        display: none !important;
-    }
-}
-</style>

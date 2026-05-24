@@ -19,8 +19,9 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import OptionSelect from '@/components/prototype/OptionSelect.vue';
+import { useDocumentOcr } from '@/composables/useDocumentOcr';
 import { extractImportantDocumentData } from '@/lib/documentExtraction';
-import { csrfToken, extractWithLaravelOcr } from '@/lib/ocr';
+import { csrfToken } from '@/lib/ocr';
 import type { UploadedDocument } from '@/types/project';
 
 type ProjectOption = {
@@ -65,16 +66,24 @@ const props = withDefaults(
 );
 
 const input = ref<HTMLInputElement | null>(null);
-const isReadingFile = ref(false);
-const ocrProgress = ref(0);
-const readerStatus = ref<null | string>(null);
-const uploadError = ref<null | string>(null);
 const applyStatus = ref<null | string>(null);
 const applyError = ref<null | string>(null);
 const isApplying = ref(false);
 const isPreviewOpen = ref(false);
-const ocrText = ref('');
-const ocrEngine = ref<null | string>(null);
+const {
+    engine: ocrEngine,
+    error: uploadError,
+    extractFile: extractOcrFile,
+    hasState: hasOcrState,
+    isReading: isReadingFile,
+    preview: ocrPreview,
+    progress: ocrProgress,
+    reset: resetOcr,
+    status: readerStatus,
+    text: ocrText,
+} = useDocumentOcr({
+    initialStatus: 'Uploading to Laravel OCR service',
+});
 const previewProjectUpdates = ref<Record<string, number | string>>({});
 const previewProgressPercent = ref<number | string>('');
 const previewAmount = ref<number | string>('');
@@ -183,10 +192,6 @@ const statusText = computed(() => {
 
     return 'Upload document';
 });
-const hasOcrState = computed(() =>
-    Boolean(readerStatus.value || uploadError.value || ocrText.value),
-);
-const ocrPreview = computed(() => ocrText.value.trim().slice(0, 600));
 const truncateText = (value: null | string | undefined, max: number) => {
     const cleaned = value?.trim();
 
@@ -328,38 +333,13 @@ const removePreviewBudgetItem = (index: number) => {
 };
 
 const runOcr = async (file: File) => {
-    uploadError.value = null;
-    readerStatus.value = 'Uploading to Laravel OCR service';
-    ocrProgress.value = 10;
-    isReadingFile.value = true;
-    ocrText.value = '';
-    ocrEngine.value = null;
     applyStatus.value = null;
     applyError.value = null;
 
     try {
-        const payload = await extractWithLaravelOcr(file);
-
-        ocrText.value = typeof payload.text === 'string' ? payload.text : '';
-        ocrEngine.value =
-            typeof payload.engine === 'string' ? payload.engine : 'ocr';
-        readerStatus.value = ocrEngine.value
-            ? `Extraction complete via ${ocrEngine.value}`
-            : 'Extraction complete';
-        ocrProgress.value = 100;
-
-        if (!ocrText.value.trim()) {
-            uploadError.value = 'No readable text was returned by OCR.';
-        }
-    } catch (error) {
-        uploadError.value =
-            error instanceof Error
-                ? error.message
-                : 'Unable to OCR this document.';
-        readerStatus.value = 'OCR failed';
-        ocrProgress.value = 0;
-    } finally {
-        isReadingFile.value = false;
+        await extractOcrFile(file);
+    } catch {
+        return;
     }
 };
 
@@ -431,11 +411,7 @@ const applyExtraction = async () => {
 
 const setFiles = (files: File[]) => {
     form.documents = files;
-    ocrText.value = '';
-    ocrEngine.value = null;
-    uploadError.value = null;
-    readerStatus.value = null;
-    ocrProgress.value = 0;
+    resetOcr();
 
     if (files[0]) {
         void runOcr(files[0]);
@@ -470,11 +446,7 @@ const upload = () => {
             form.reset('documents');
             form.ocr_text = '';
             form.ocr_engine = '';
-            ocrText.value = '';
-            ocrEngine.value = null;
-            readerStatus.value = null;
-            uploadError.value = null;
-            ocrProgress.value = 0;
+            resetOcr();
             if (input.value) {
                 input.value.value = '';
             }

@@ -4,6 +4,7 @@ import { ArrowLeft, FileText, Printer, Save } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import EntityPageSection from '@/components/entity/EntityPageSection.vue';
+import InvoicePrintPreview from '@/components/invoice/InvoicePrintPreview.vue';
 import ProjectDocumentUploadPanel from '@/components/ProjectDocumentUploadPanel.vue';
 import RecordFieldInput from '@/components/prototype/RecordFieldInput.vue';
 import { Button } from '@/components/ui/button';
@@ -80,21 +81,18 @@ const invoiceRecord = computed(() => ({
 const invoiceAmount = computed(() => Number(invoiceRecord.value.amount ?? 0));
 const invoiceTax = computed(() => Number(invoiceRecord.value.tax_amount ?? 0));
 const invoiceTotal = computed(() => invoiceAmount.value + invoiceTax.value);
-const invoiceStyle = {
-    '--invoice-accent': '#0f766e',
-    '--invoice-text': '#111827',
-    '--invoice-paper': '#ffffff',
-    '--invoice-border': '#d1d5db',
-};
-
-const formatCurrency = (value: null | number | string | undefined) =>
-    value === null || value === undefined || value === ''
-        ? '-'
-        : new Intl.NumberFormat('id-ID', {
-              style: 'currency',
-              currency: 'IDR',
-              maximumFractionDigits: 0,
-          }).format(Number(value));
+const invoiceLineItems = computed(() => [
+    {
+        description:
+            invoiceRecord.value.description ||
+            invoiceRecord.value.project_name ||
+            'Project billing',
+        projectName: invoiceRecord.value.project_name,
+        quantity: 1,
+        unitPrice: invoiceRecord.value.amount,
+        totalPrice: invoiceRecord.value.amount,
+    },
+]);
 
 const backToList = () => {
     router.get(props.indexUrl);
@@ -225,262 +223,26 @@ const printInvoice = () => {
                     </Button>
                 </div>
 
-                <section
-                    class="invoice-print-area overflow-x-auto rounded-lg bg-muted/30 p-3"
-                >
-                    <div
-                        class="invoice-sheet mx-auto flex min-h-[297mm] w-[210mm] flex-col bg-white shadow-lg"
-                        :style="invoiceStyle"
-                    >
-                        <div
-                            class="px-10 py-8"
-                            :style="{
-                                background: 'var(--invoice-accent)',
-                                color: 'white',
-                            }"
-                        >
-                            <div class="flex items-start justify-between gap-8">
-                                <div>
-                                    <p
-                                        class="text-sm tracking-[0.2em] uppercase"
-                                    >
-                                        PT. Jasa Tirta Energi
-                                    </p>
-                                    <h1 class="mt-4 text-4xl font-semibold">
-                                        INVOICE
-                                    </h1>
-                                </div>
-                                <div class="text-right text-sm">
-                                    <p class="font-medium">
-                                        {{
-                                            invoiceRecord.invoice_number ||
-                                            `Invoice #${invoiceRecord.id}`
-                                        }}
-                                    </p>
-                                    <p class="mt-1">
-                                        Date:
-                                        {{ invoiceRecord.invoice_date || '-' }}
-                                    </p>
-                                    <p>
-                                        Due:
-                                        {{ invoiceRecord.due_date || '-' }}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div
-                            class="flex flex-1 flex-col gap-8 px-10 py-8 text-sm"
-                            :style="{
-                                color: 'var(--invoice-text)',
-                                background: 'var(--invoice-paper)',
-                            }"
-                        >
-                            <div class="grid gap-6 sm:grid-cols-2">
-                                <div>
-                                    <p
-                                        class="text-xs font-medium uppercase opacity-60"
-                                    >
-                                        Bill To
-                                    </p>
-                                    <p class="mt-2 text-lg font-semibold">
-                                        {{ invoiceRecord.client_name || '-' }}
-                                    </p>
-                                    <p class="mt-1 opacity-75">
-                                        {{
-                                            invoiceRecord.project_name ||
-                                            'Project billing'
-                                        }}
-                                    </p>
-                                </div>
-                                <div
-                                    class="rounded border p-4"
-                                    :style="{
-                                        borderColor: 'var(--invoice-border)',
-                                    }"
-                                >
-                                    <p class="font-medium">Billing Summary</p>
-                                    <p class="mt-2 opacity-75">
-                                        {{
-                                            invoiceRecord.description ||
-                                            'Project billing'
-                                        }}
-                                    </p>
-                                    <p class="mt-2 capitalize opacity-75">
-                                        Status:
-                                        {{ invoiceRecord.status || 'pending' }}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="overflow-hidden rounded border">
-                                <table class="w-full border-collapse">
-                                    <thead
-                                        :style="{
-                                            background: 'var(--invoice-accent)',
-                                            color: 'white',
-                                        }"
-                                    >
-                                        <tr>
-                                            <th class="px-4 py-3 text-left">
-                                                Description
-                                            </th>
-                                            <th class="px-4 py-3 text-right">
-                                                Qty
-                                            </th>
-                                            <th class="px-4 py-3 text-right">
-                                                Amount
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td class="px-4 py-3">
-                                                {{
-                                                    invoiceRecord.description ||
-                                                    invoiceRecord.project_name ||
-                                                    'Project billing'
-                                                }}
-                                            </td>
-                                            <td class="px-4 py-3 text-right">
-                                                1
-                                            </td>
-                                            <td class="px-4 py-3 text-right">
-                                                {{
-                                                    formatCurrency(
-                                                        invoiceRecord.amount,
-                                                    )
-                                                }}
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div class="grid gap-6 sm:grid-cols-[1fr_18rem]">
-                                <div class="space-y-4">
-                                    <div>
-                                        <p class="font-medium">Bank Details</p>
-                                        <p
-                                            class="mt-1 whitespace-pre-line opacity-75"
-                                        >
-                                            Bank:
-                                            <br />
-                                            Account Name:
-                                            <br />
-                                            Account No:
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p class="font-medium">Notes</p>
-                                        <p class="mt-1 opacity-75">
-                                            Please make payment according to the
-                                            bank information above.
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div class="space-y-2">
-                                    <div class="flex justify-between gap-4">
-                                        <span>Subtotal</span>
-                                        <span>{{
-                                            formatCurrency(invoiceAmount)
-                                        }}</span>
-                                    </div>
-                                    <div class="flex justify-between gap-4">
-                                        <span>Tax</span>
-                                        <span>{{
-                                            formatCurrency(invoiceTax)
-                                        }}</span>
-                                    </div>
-                                    <div
-                                        class="mt-3 flex justify-between gap-4 border-t pt-3 text-base font-semibold"
-                                        :style="{
-                                            borderColor:
-                                                'var(--invoice-border)',
-                                        }"
-                                    >
-                                        <span>Total</span>
-                                        <span>{{
-                                            formatCurrency(invoiceTotal)
-                                        }}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="mt-auto flex justify-end pt-8">
-                                <div class="w-48 text-center">
-                                    <div
-                                        class="mb-16 border-t"
-                                        :style="{
-                                            borderColor:
-                                                'var(--invoice-border)',
-                                        }"
-                                    ></div>
-                                    <p class="font-medium">
-                                        Authorized Signature
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div
-                            class="border-t px-10 py-4 text-center text-xs opacity-70"
-                            :style="{
-                                borderColor: 'var(--invoice-border)',
-                                color: 'var(--invoice-text)',
-                                background: 'var(--invoice-paper)',
-                            }"
-                        >
-                            Thank you for your business.
-                        </div>
-                    </div>
-                </section>
+                <InvoicePrintPreview
+                    :bill-to="invoiceRecord.client_name"
+                    :description="invoiceRecord.description"
+                    :due-date="invoiceRecord.due_date"
+                    :invoice-date="invoiceRecord.invoice_date"
+                    :invoice-number="
+                        String(
+                            invoiceRecord.invoice_number ||
+                                `Invoice #${invoiceRecord.id}`,
+                        )
+                    "
+                    :line-items="invoiceLineItems"
+                    :project-name="invoiceRecord.project_name"
+                    :status="invoiceRecord.status"
+                    :subtotal="invoiceAmount"
+                    :tax="invoiceTax"
+                    :total="invoiceTotal"
+                    variant="summary"
+                />
             </DialogContent>
         </Dialog>
     </AppLayout>
 </template>
-
-<style>
-.invoice-sheet :where(div, section):has(> table) {
-    overflow-x: visible !important;
-}
-
-.invoice-sheet :where(div, section):has(> table) > table {
-    width: 100% !important;
-    min-width: 100%;
-}
-
-@media print {
-    @page {
-        size: A4;
-        margin: 0;
-    }
-
-    body * {
-        visibility: hidden;
-    }
-
-    .invoice-print-area,
-    .invoice-print-area * {
-        visibility: visible;
-    }
-
-    .invoice-print-area {
-        position: absolute;
-        inset: 0;
-        overflow: visible !important;
-        background: white;
-    }
-
-    .invoice-sheet {
-        width: 210mm;
-        min-height: 297mm;
-        box-shadow: none !important;
-    }
-
-    .no-print {
-        display: none !important;
-    }
-}
-</style>

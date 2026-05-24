@@ -270,6 +270,7 @@ class ProjectDocumentsController extends Controller
 
     public function destroy(ProjectDocument $projectDocument): RedirectResponse
     {
+        Storage::disk('public')->delete($projectDocument->path);
         $projectDocument->delete();
 
         return back()->with('success', 'Document removed.');

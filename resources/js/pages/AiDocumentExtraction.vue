@@ -11,8 +11,9 @@ import {
 import { computed, ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { useDocumentOcr } from '@/composables/useDocumentOcr';
 import { extractImportantDocumentData } from '@/lib/documentExtraction';
-import { csrfToken, extractWithLaravelOcr } from '@/lib/ocr';
+import { csrfToken } from '@/lib/ocr';
 import type {
     ExtractedDocumentItem,
     ExtractedDocumentMetadata,
@@ -46,10 +47,19 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const sourceText = ref('');
 const selectedFileName = ref<null | string>(null);
-const uploadError = ref<null | string>(null);
-const isReadingFile = ref(false);
-const readerStatus = ref<null | string>(null);
-const ocrProgress = ref(0);
+const {
+    error: uploadError,
+    extractFile: extractOcrFile,
+    isReading: isReadingFile,
+    progress: ocrProgress,
+    reset: resetOcr,
+    status: readerStatus,
+} = useDocumentOcr({
+    emptyTextMessage: 'No readable text was returned by the OCR service.',
+    failedStatus: 'Laravel OCR failed',
+    initialStatus: 'Uploading to Laravel OCR service',
+    successStatus: 'Extraction complete',
+});
 const selectedProjectId = ref('');
 const autoCreateProject = ref(false);
 const selectedClientId = ref('');
@@ -179,9 +189,7 @@ const canSaveExtraction = computed(
 const clearText = () => {
     sourceText.value = '';
     selectedFileName.value = null;
-    uploadError.value = null;
-    readerStatus.value = null;
-    ocrProgress.value = 0;
+    resetOcr();
     saveStatus.value = null;
     saveError.value = null;
 };
@@ -295,38 +303,17 @@ const saveBudgetItems = async () => {
 
 const readDocumentFile = async (file: File) => {
     selectedFileName.value = file.name;
-    uploadError.value = null;
     saveStatus.value = null;
     saveError.value = null;
-    isReadingFile.value = true;
-    readerStatus.value = 'Uploading to Laravel OCR service';
-    ocrProgress.value = 10;
 
     try {
-        const backendResult = await extractWithLaravelOcr(file, {
+        const backendResult = await extractOcrFile(file, {
             endpoint: '/ai-document-extraction/ocr',
         });
 
         sourceText.value = backendResult.text ?? '';
-        ocrProgress.value = 100;
-        readerStatus.value = backendResult.engine
-            ? `Extraction complete via ${backendResult.engine}`
-            : 'Extraction complete via Laravel OCR service';
-
-        if (!sourceText.value.trim()) {
-            uploadError.value =
-                'No readable text was returned by the OCR service.';
-        }
-    } catch (error) {
+    } catch {
         sourceText.value = '';
-        uploadError.value =
-            error instanceof Error
-                ? error.message
-                : 'Unable to read this document.';
-        readerStatus.value = 'Laravel OCR failed';
-        ocrProgress.value = 0;
-    } finally {
-        isReadingFile.value = false;
     }
 };
 

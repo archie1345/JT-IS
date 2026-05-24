@@ -10,6 +10,7 @@ import {
     Gauge,
     Plus,
     Save,
+    Trash2,
     MapPin, LocateFixed, ScanText,
 } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -19,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import InputError from '@/components/InputError.vue';
+import { useDocumentOcr } from '@/composables/useDocumentOcr';
 import {
     Select,
     SelectContent,
@@ -40,7 +42,6 @@ import type {
 
 import { toast } from 'vue-sonner';
 import { extractImportantDocumentData } from '@/lib/documentExtraction';
-import { extractWithLaravelOcr } from '@/lib/ocr';
 
 // Leaflet Imports
 import 'leaflet/dist/leaflet.css';
@@ -161,6 +162,7 @@ const documentForm = useForm({
     documents: [] as File[],
 });
 const documentInput = ref<HTMLInputElement | null>(null);
+const deletingDocumentId = ref<null | number>(null);
 
 const formatCurrency = (value: number) =>
     new Intl.NumberFormat('id-ID', {
@@ -276,6 +278,20 @@ const openDocument = (document: DocumentItem) => {
     router.visit(document.url);
 };
 
+const removeUploadedDocument = (document: UploadedDocument) => {
+    if (!window.confirm('Delete this uploaded document?')) {
+        return;
+    }
+
+    deletingDocumentId.value = document.id;
+    router.delete(`/projects/documents/${document.id}`, {
+        preserveScroll: true,
+        onFinish: () => {
+            deletingDocumentId.value = null;
+        },
+    });
+};
+
 const getCurrentLocation = () => {
     if (navigator.geolocation) {
         toast.info("Melacak lokasi saat ini...");
@@ -308,22 +324,25 @@ const getCurrentLocation = () => {
     }
 };
 
-const isReadingFile = ref<boolean>(false);
-const readerStatus = ref<string | null>(null);
-const sourceText = ref<string>('');
+const {
+    extractFile: extractOcrFile,
+    isReading: isReadingFile,
+    status: readerStatus,
+} = useDocumentOcr({
+    failedStatus: 'OCR failed',
+    initialStatus: 'Membaca dokumen...',
+    successStatus: 'Dokumen berhasil diproses',
+});
 
 const readDocumentFile = async (file: File) => {
-    isReadingFile.value = true;
     try {
-        const result = await extractWithLaravelOcr(file);
+        const result = await extractOcrFile(file);
 
         if (result.text) {
             autoFillForm(result.text);
         }
     } catch (e) {
         console.error("OCR Error:", e);
-    } finally {
-        isReadingFile.value = false;
     }
 };
 
@@ -630,9 +649,21 @@ const autoFillForm = (sourceText: string) => {
                                                 {{ doc.createdAt ?? '-' }} | {{ doc.mimeType ?? 'unknown type' }}
                                             </p>
                                         </div>
-                                        <Badge variant="secondary" class="shrink-0">
-                                            {{ doc.size ? Math.round(doc.size / 1024) + ' KB' : 'file' }}
-                                        </Badge>
+                                        <div class="flex shrink-0 items-center gap-2">
+                                            <Badge variant="secondary">
+                                                {{ doc.size ? Math.round(doc.size / 1024) + ' KB' : 'file' }}
+                                            </Badge>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon-sm"
+                                                class="text-destructive"
+                                                :disabled="deletingDocumentId === doc.id"
+                                                @click="removeUploadedDocument(doc)"
+                                            >
+                                                <Trash2 class="size-4" />
+                                            </Button>
+                                        </div>
                                     </div>
 
                                     <div v-if="props.uploadedDocuments.length === 0"

@@ -128,6 +128,13 @@ const valueFormatOptions: Array<{ value: ValueFormat; label: string }> = [
 ];
 
 const defaultWidgetIds = defaultWidgets.map((widget) => widget.id);
+const isChartType = (value: unknown): value is ChartType =>
+    chartTypeOptions.some((option) => option.value === value);
+const isValueFormat = (value: unknown): value is ValueFormat =>
+    valueFormatOptions.some((option) => option.value === value);
+const isDataSource = (value: unknown): value is string =>
+    typeof value === 'string' &&
+    dataSourceOptions.some((option) => option.value === value);
 const page = usePage<DashboardPageProps>();
 const dashboardList = ref<HTMLElement | null>(null);
 const widgets = ref<DashboardWidget[]>([...defaultWidgets]);
@@ -195,24 +202,18 @@ const normalizeSettings = (
         defaultWidgetIds.map((widgetId) => {
             const fallback = defaultSettingFor(widgetId);
             const stored = settings?.[widgetId] ?? {};
-            const dataSource = dataSourceOptions.some(
-                (option) => option.value === stored.dataSource,
-            )
+            const dataSource = isDataSource(stored.dataSource)
                 ? stored.dataSource
                 : fallback.dataSource;
 
             return [
                 widgetId,
                 {
-                    chartType: chartTypeOptions.some(
-                        (option) => option.value === stored.chartType,
-                    )
+                    chartType: isChartType(stored.chartType)
                         ? stored.chartType
                         : fallback.chartType,
                     dataSource,
-                    valueFormat: valueFormatOptions.some(
-                        (option) => option.value === stored.valueFormat,
-                    )
+                    valueFormat: isValueFormat(stored.valueFormat)
                         ? stored.valueFormat
                         : fallback.valueFormat,
                 },

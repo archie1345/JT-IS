@@ -55,7 +55,10 @@ class ProgressReportsController extends TableCrudController
 
     protected function indexQuery(Request $request): Builder
     {
+        $projectId = $request->integer('project');
+
         return ProgressReport::query()
+            ->when($projectId > 0, fn (Builder $query) => $query->where('project_id', $projectId))
             ->with(['project:id,client_id,name', 'project.client:id,name'])
             ->orderByDesc('report_date')
             ->orderByDesc('id');

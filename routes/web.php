@@ -344,8 +344,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 });
 
-// Prototype page: resources/js/pages/Prototype.vue
-Route::inertia('/prototype', 'Prototype')->name('prototype');
-
 // Settings account/profile/password/2FA routes: routes/settings.php
 require __DIR__.'/settings.php';

@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\ProjectMonitoring;
 
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
+
 class RabsController extends TableCrudController
 {
     protected string $table = 'rabs';
@@ -26,5 +29,19 @@ class RabsController extends TableCrudController
             'total_budget' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'notes' => ['sometimes', 'nullable', 'string'],
         ];
+    }
+
+    protected function prepareForStore(array $validated, Request $request): array
+    {
+        unset($validated['total_budget']);
+
+        return $validated;
+    }
+
+    protected function prepareForUpdate(array $validated, Request $request, Model $record): array
+    {
+        unset($validated['total_budget']);
+
+        return $validated;
     }
 }

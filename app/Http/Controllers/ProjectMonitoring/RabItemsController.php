@@ -79,7 +79,7 @@ class RabItemsController extends TableCrudController
 
     private function withCalculatedTotal(array $validated): array
     {
-        if (($validated['total_price'] ?? null) === null && isset($validated['quantity'], $validated['unit_price'])) {
+        if (isset($validated['quantity'], $validated['unit_price'])) {
             $validated['total_price'] = (float) $validated['quantity'] * (float) $validated['unit_price'];
         }
 

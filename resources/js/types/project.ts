@@ -1,4 +1,5 @@
 export type ProjectStatus = 'planning' | 'ongoing' | 'completed';
+export type MvpStatus = 'On Track' | 'Warning' | 'Critical' | 'On Hold';
 export type PaymentStatus = 'pending' | 'paid' | 'overdue' | 'partial';
 export type Mode = 'create' | 'edit';
 
@@ -61,9 +62,16 @@ export type ProjectDetails = {
     startDate: null | string;
     endDate: null | string;
     status: ProjectStatus;
+    mvpStatus?: MvpStatus;
+    warnings?: Array<{ type: string; level: string; message: string }>;
+    rabTotal?: number;
+    rapTotal?: number;
+    realizedCostTotal?: number;
     paymentStatus: PaymentStatus;
     latestProgressPercent: null | number;
     latestProgressNote: null | string;
+    latestProgressApproved?: boolean;
+    latestApprovedProgressPercent?: null | number;
 };
 
 export type ProjectItem = {
@@ -74,6 +82,7 @@ export type ProjectItem = {
     deadline: string;
     paymentStatus: PaymentStatus;
     projectStatus: ProjectStatus;
+    mvpStatus?: MvpStatus;
 };
 
 export type ProjectsPageProps = {

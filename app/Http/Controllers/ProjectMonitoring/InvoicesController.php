@@ -11,6 +11,7 @@ use App\Models\Rap;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -103,6 +104,31 @@ class InvoicesController extends TableCrudController
                 ->map(fn (ProjectDocument $document): array => ProjectDocumentsController::serialize($document))
                 ->all(),
         ];
+    }
+
+    protected function prepareForStore(array $validated, Request $request): array
+    {
+        $this->validateBillableAmount($validated);
+
+        return $validated;
+    }
+
+    protected function prepareForUpdate(array $validated, Request $request, Model $record): array
+    {
+        $payload = array_merge($record->only([
+            'project_id',
+            'amount',
+            'invoice_number',
+            'tax_amount',
+            'invoice_date',
+            'due_date',
+            'status',
+            'description',
+        ]), $validated);
+
+        $this->validateBillableAmount($payload, (int) $record->id);
+
+        return $validated;
     }
 
     public function show(int $id): Response
@@ -238,5 +264,42 @@ class InvoicesController extends TableCrudController
                 'hint' => $project->client?->name,
             ])
             ->all();
+    }
+
+    private function validateBillableAmount(array $payload, ?int $exceptInvoiceId = null): void
+    {
+        $amount = (float) ($payload['amount'] ?? 0);
+
+        if ($amount <= 0) {
+            return;
+        }
+
+        $project = Project::query()->findOrFail((int) $payload['project_id']);
+        $contractValue = (float) ($project->contract_value ?? 0);
+        $approvedProgress = $project->latestApprovedProgressPercent();
+
+        if ($contractValue <= 0) {
+            throw ValidationException::withMessages([
+                'amount' => 'Cannot create invoice: project contract value is empty.',
+            ]);
+        }
+
+        if ($approvedProgress === null) {
+            throw ValidationException::withMessages([
+                'amount' => 'Cannot create invoice: project has no fully approved progress yet.',
+            ]);
+        }
+
+        $maxBillable = $contractValue * ($approvedProgress / 100);
+        $remainingBillable = $maxBillable - $project->invoiceTotal($exceptInvoiceId);
+
+        if ($amount > $remainingBillable) {
+            throw ValidationException::withMessages([
+                'amount' => sprintf(
+                    'Invoice exceeds approved progress billing. Remaining billable amount is Rp%s.',
+                    number_format(max(0, $remainingBillable), 0, ',', '.'),
+                ),
+            ]);
+        }
     }
 }

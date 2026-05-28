@@ -46,6 +46,14 @@ const getProjectStatusClass = (status: ProjectItem['projectStatus']) =>
             'bg-emerald-500/15 text-emerald-500 ring-1 ring-emerald-500/25',
     })[status];
 
+const getMvpStatusClass = (status: string) =>
+    ({
+        'On Track': 'bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/25',
+        Warning: 'bg-amber-500/15 text-amber-600 ring-1 ring-amber-500/25',
+        Critical: 'bg-rose-500/15 text-rose-600 ring-1 ring-rose-500/25',
+        'On Hold': 'bg-slate-500/15 text-slate-600 ring-1 ring-slate-500/25',
+    })[status] ?? 'bg-slate-500/15 text-slate-600 ring-1 ring-slate-500/25';
+
 const projectColumns = [
     { key: 'id', label: 'Id' },
     {
@@ -85,7 +93,7 @@ const projectColumns = [
     },
     {
         key: 'projectStatus',
-        label: 'Project Status',
+        label: 'DB Status',
         accessor: (row: Record<string, unknown>) =>
             ({
                 planning: 'Planning',
@@ -93,6 +101,12 @@ const projectColumns = [
                 completed: 'Completed',
             })[(row as ProjectItem).projectStatus] ??
             (row as ProjectItem).projectStatus,
+    },
+    {
+        key: 'mvpStatus',
+        label: 'MVP Status',
+        accessor: (row: Record<string, unknown>) =>
+            (row as ProjectItem).mvpStatus ?? 'On Track',
     },
 ] satisfies SpreadsheetColumn[];
 </script>
@@ -124,6 +138,14 @@ const projectColumns = [
                     maximumFractionDigits: 0,
                 }).format(Number(value ?? 0))
             }}
+        </template>
+        <template #cell-mvpStatus="{ value }">
+            <span
+                class="inline-flex rounded-full px-2 py-1 text-xs font-medium"
+                :class="getMvpStatusClass(String(value ?? 'On Track'))"
+            >
+                {{ value ?? 'On Track' }}
+            </span>
         </template>
     </EntityIndexPage>
 </template>

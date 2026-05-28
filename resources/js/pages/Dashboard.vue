@@ -20,7 +20,28 @@ type DashboardPoint = {
     label: string;
     value: number;
 };
-type DashboardData = Record<string, DashboardPoint[]>;
+type WarningItem = { type: string; level: string; message: string };
+type ProblemProject = {
+    id: number;
+    name: string;
+    client: string;
+    status: string;
+    warnings: WarningItem[];
+    contractValue: number;
+    realizedCost: number;
+    rapTotal: number;
+    approvedProgress: number;
+};
+type RecentProject = {
+    id: number;
+    name: string;
+    client: string;
+    status: string;
+    dbStatus: string;
+    approvedProgress: number;
+    endDate: string | null;
+};
+type DashboardData = Record<string, unknown>;
 type WidgetSetting = {
     chartType: ChartType;
     dataSource: string;
@@ -146,6 +167,19 @@ const userName = computed(() => page.props.auth?.user?.name ?? 'this user');
 const storageKey = computed(() => `dashboard-layout:user-${userId.value}`);
 const dashboardData = computed<DashboardData>(
     () => page.props.dashboardData ?? {},
+);
+const mvpSummary = computed(
+    () => (dashboardData.value.mvpSummary as DashboardPoint[] | undefined) ?? [],
+);
+const problemProjects = computed(
+    () =>
+        (dashboardData.value.problemProjects as ProblemProject[] | undefined) ??
+        [],
+);
+const recentProjects = computed(
+    () =>
+        (dashboardData.value.recentProjects as RecentProject[] | undefined) ??
+        [],
 );
 const visibleWidgets = computed(() =>
     widgets.value.filter((widget) =>
@@ -379,7 +413,7 @@ const widgetData = (widgetId: string): DashboardPoint[] => {
         widgetSettings.value[widgetId]?.dataSource ??
         defaultSettingFor(widgetId).dataSource;
 
-    return dashboardData.value[source] ?? [];
+    return (dashboardData.value[source] as DashboardPoint[] | undefined) ?? [];
 };
 
 const maxValue = (points: DashboardPoint[]) =>
@@ -402,6 +436,14 @@ const formatValue = (value: number, format: ValueFormat) => {
         value,
     );
 };
+
+const statusClass = (status: string) =>
+    ({
+        'On Track': 'bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/25',
+        Warning: 'bg-amber-500/15 text-amber-600 ring-1 ring-amber-500/25',
+        Critical: 'bg-rose-500/15 text-rose-600 ring-1 ring-rose-500/25',
+        'On Hold': 'bg-slate-500/15 text-slate-600 ring-1 ring-slate-500/25',
+    })[status] ?? 'bg-slate-500/15 text-slate-600 ring-1 ring-slate-500/25';
 
 const linePoints = (points: DashboardPoint[]) => {
     if (points.length === 0) {
@@ -538,6 +580,139 @@ onBeforeUnmount(() => {
         <div
             class="flex min-h-[calc(100vh-8rem)] flex-1 flex-col gap-3 rounded-xl p-2 sm:gap-4 sm:p-4"
         >
+            <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+                <div
+                    v-for="point in mvpSummary"
+                    :key="point.label"
+                    class="rounded-xl border border-sidebar-border/70 bg-background/90 p-4 shadow-sm"
+                >
+                    <p class="text-xs text-muted-foreground">
+                        {{ point.label }}
+                    </p>
+                    <p class="mt-2 text-xl font-semibold text-foreground">
+                        {{
+                            point.label.toLowerCase().includes('value') ||
+                            point.label.toLowerCase().includes('cost') ||
+                            point.label.toLowerCase().includes('amount')
+                                ? formatValue(point.value, 'currency')
+                                : formatValue(point.value, 'number')
+                        }}
+                    </p>
+                </div>
+            </section>
+
+            <section
+                class="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]"
+            >
+                <div
+                    class="rounded-2xl border border-sidebar-border/70 bg-background/90 p-4 shadow-sm"
+                >
+                    <div class="mb-3 flex items-center justify-between gap-3">
+                        <div>
+                            <h2 class="text-sm font-semibold text-foreground">
+                                Problem Projects
+                            </h2>
+                            <p class="text-sm text-muted-foreground">
+                                Budget, payment, and progress warnings for the
+                                demo flow.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead class="text-left text-muted-foreground">
+                                <tr>
+                                    <th class="py-2 pr-3 font-medium">Project</th>
+                                    <th class="py-2 pr-3 font-medium">Status</th>
+                                    <th class="py-2 pr-3 font-medium">RAP</th>
+                                    <th class="py-2 pr-3 font-medium">Cost</th>
+                                    <th class="py-2 pr-3 font-medium">Warning</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr
+                                    v-for="project in problemProjects"
+                                    :key="project.id"
+                                    class="border-t border-sidebar-border/70"
+                                >
+                                    <td class="py-3 pr-3">
+                                        <button
+                                            class="text-left font-medium text-foreground hover:underline"
+                                            @click="router.get(`/projects/${project.id}`)"
+                                        >
+                                            {{ project.name }}
+                                        </button>
+                                        <p class="text-xs text-muted-foreground">
+                                            {{ project.client }}
+                                        </p>
+                                    </td>
+                                    <td class="py-3 pr-3">
+                                        <span
+                                            class="inline-flex rounded-full px-2 py-1 text-xs font-medium"
+                                            :class="statusClass(project.status)"
+                                        >
+                                            {{ project.status }}
+                                        </span>
+                                    </td>
+                                    <td class="py-3 pr-3">
+                                        {{ formatValue(project.rapTotal, 'currency') }}
+                                    </td>
+                                    <td class="py-3 pr-3">
+                                        {{ formatValue(project.realizedCost, 'currency') }}
+                                    </td>
+                                    <td class="py-3 pr-3 text-muted-foreground">
+                                        {{ project.warnings[0]?.message ?? '-' }}
+                                    </td>
+                                </tr>
+                                <tr v-if="problemProjects.length === 0">
+                                    <td colspan="5" class="py-6 text-center text-muted-foreground">
+                                        No problem projects.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div
+                    class="rounded-2xl border border-sidebar-border/70 bg-background/90 p-4 shadow-sm"
+                >
+                    <h2 class="text-sm font-semibold text-foreground">
+                        Recent Projects / Progress
+                    </h2>
+                    <div class="mt-3 space-y-2">
+                        <button
+                            v-for="project in recentProjects"
+                            :key="project.id"
+                            class="flex w-full items-center justify-between gap-3 rounded-xl border border-sidebar-border/70 bg-muted/20 px-3 py-2 text-left"
+                            @click="router.get(`/projects/${project.id}`)"
+                        >
+                            <span class="min-w-0">
+                                <span class="block truncate text-sm font-medium text-foreground">
+                                    {{ project.name }}
+                                </span>
+                                <span class="text-xs text-muted-foreground">
+                                    {{ project.approvedProgress }}% approved |
+                                    {{ project.endDate ?? '-' }}
+                                </span>
+                            </span>
+                            <span
+                                class="shrink-0 rounded-full px-2 py-1 text-xs font-medium"
+                                :class="statusClass(project.status)"
+                            >
+                                {{ project.status }}
+                            </span>
+                        </button>
+                        <div
+                            v-if="recentProjects.length === 0"
+                            class="rounded-xl border border-dashed border-sidebar-border/70 p-6 text-center text-sm text-muted-foreground"
+                        >
+                            No data yet.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <div
                 class="rounded-2xl border border-sidebar-border/70 bg-background/70 p-4 dark:border-sidebar-border"
             >

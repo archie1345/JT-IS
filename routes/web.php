@@ -202,6 +202,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->whereNumber('id')
                 ->middleware('permission:action.pipeline.update')
                 ->name('pipeline.update');
+            Route::post('{id}/convert', [TendersController::class, 'convertToProject'])
+                ->whereNumber('id')
+                ->middleware('permission:action.pipeline.update')
+                ->name('pipeline.convert');
             Route::delete('{id}', [TendersController::class, 'destroy'])
                 ->whereNumber('id')
                 ->middleware('permission:action.pipeline.delete')

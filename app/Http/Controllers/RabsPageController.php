@@ -19,6 +19,7 @@ class RabsPageController extends Controller
             ->when($projectId > 0, fn ($query) => $query->where('project_id', $projectId))
             ->with('project:id,name')
             ->withCount('items')
+            ->withSum('items as computed_total_budget', 'total_price')
             ->latest('id')
             ->paginate($this->perPageFromRequest($request))
             ->withQueryString();
@@ -29,11 +30,11 @@ class RabsPageController extends Controller
                 'project_id' => $rab->project_id,
                 'document_number' => $rab->document_number,
                 'document_date' => optional($rab->document_date)->format('Y-m-d'),
-                'total_budget' => (float) ($rab->total_budget ?? 0),
+                'total_budget' => (float) ($rab->computed_total_budget ?? 0),
                 'notes' => $rab->notes,
                 'projectId' => $rab->project_id,
                 'projectName' => $rab->project?->name ?? '-',
-                'totalBudget' => (float) ($rab->total_budget ?? 0),
+                'totalBudget' => (float) ($rab->computed_total_budget ?? 0),
                 'itemCount' => $rab->items_count,
                 'createdAt' => optional($rab->created_at)->format('Y-m-d'),
                 'updatedAt' => optional($rab->updated_at)->format('Y-m-d'),

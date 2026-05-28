@@ -324,6 +324,8 @@ const itemDialogTitle = computed(() =>
                                 type="number"
                                 min="0"
                                 step="0.01"
+                                readonly
+                                class="bg-muted/30"
                             />
                             <InputError
                                 :message="headerForm.errors.total_budget"

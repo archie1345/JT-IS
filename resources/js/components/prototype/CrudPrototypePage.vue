@@ -315,6 +315,7 @@ const goToPage = (page: number) => {
                         >
                             <Trash2 class="size-4" />
                         </Button>
+                        <slot name="row-extra-actions" :row="row" />
                     </div>
                 </template>
 

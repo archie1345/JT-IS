@@ -113,6 +113,7 @@ class AccessControl
             ['value' => 'marketing', 'label' => 'Marketing'],
             ['value' => 'finance', 'label' => 'Finance'],
             ['value' => 'operational', 'label' => 'Operational'],
+            ['value' => 'management', 'label' => 'Management'],
             ['value' => 'procurement', 'label' => 'Procurement'],
             ['value' => 'hr', 'label' => 'HR'],
         ];
@@ -153,7 +154,6 @@ class AccessControl
                     ['title' => 'RAB', 'href' => route('rabs'), 'icon' => 'FileText', 'permission' => 'sidebar.operational.rabs.view'],
                     ['title' => 'RAP', 'href' => route('raps'), 'icon' => 'FileText', 'permission' => 'sidebar.operational.raps.view'],
                     ['title' => 'Progress Update', 'href' => route('progress-updates.index'), 'icon' => 'CopyCheck', 'permission' => 'sidebar.operational.progress.view'],
-                    ['title' => 'AI Extraction', 'href' => route('ai-document-extraction'), 'icon' => 'FileSearch', 'permission' => 'sidebar.operational.progress.view'],
                 ],
             ],
         ];
@@ -363,6 +363,12 @@ class AccessControl
                 'action.progress-updates.create',
                 'action.progress-updates.update',
                 'action.progress-updates.delete',
+            ],
+            'management' => [
+                'sidebar.dashboard.view',
+                'sidebar.marketing.projects.view',
+                'page.dashboard.view',
+                'page.projects.view',
             ],
             'procurement' => [
                 'sidebar.dashboard.view',

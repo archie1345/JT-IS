@@ -3,15 +3,14 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, ref, onMounted, shallowRef, nextTick } from 'vue';
 import {
     ArrowLeft,
-    CalendarDays,
     CircleAlert,
     FileText,
     FolderOpen,
-    Gauge,
     Plus,
     Save,
     Trash2,
-    MapPin, LocateFixed, ScanText,
+    MapPin,
+    LocateFixed,
 } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
 import EntityDetailHero from '@/components/entity/EntityDetailHero.vue';
@@ -20,7 +19,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import InputError from '@/components/InputError.vue';
-import { useDocumentOcr } from '@/composables/useDocumentOcr';
 import {
     Select,
     SelectContent,
@@ -41,7 +39,6 @@ import type {
 } from '@/types/project';
 
 import { toast } from 'vue-sonner';
-import { extractImportantDocumentData } from '@/lib/documentExtraction';
 
 // Leaflet Imports
 import 'leaflet/dist/leaflet.css';
@@ -192,6 +189,14 @@ const formatProjectStatus = (status: ProjectStatus) =>
 const formatPaymentStatus = (status: PaymentStatus) =>
     paymentStatusOptions.find((option) => option.value === status)?.label ?? status;
 
+const getMvpStatusClass = (status: string) =>
+    ({
+        'On Track': 'bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/25',
+        Warning: 'bg-amber-500/15 text-amber-600 ring-1 ring-amber-500/25',
+        Critical: 'bg-rose-500/15 text-rose-600 ring-1 ring-rose-500/25',
+        'On Hold': 'bg-slate-500/15 text-slate-600 ring-1 ring-slate-500/25',
+    })[status] ?? 'bg-slate-500/15 text-slate-600 ring-1 ring-slate-500/25';
+
 const selectedClient = computed(
     () => props.clients.find((client) => String(client.id) === String(form.client_id)) ?? null,
 );
@@ -251,10 +256,6 @@ const handleDocumentChange = (event: Event) => {
 
     const files = Array.from(target.files ?? []);
     documentForm.documents = files;
-
-    if (files.length > 0) {
-        readDocumentFile(files[0]);
-    }
 };
 
 const uploadDocuments = () => {
@@ -324,40 +325,6 @@ const getCurrentLocation = () => {
     }
 };
 
-const {
-    extractFile: extractOcrFile,
-    isReading: isReadingFile,
-    status: readerStatus,
-} = useDocumentOcr({
-    failedStatus: 'OCR failed',
-    initialStatus: 'Membaca dokumen...',
-    successStatus: 'Dokumen berhasil diproses',
-});
-
-const readDocumentFile = async (file: File) => {
-    try {
-        const result = await extractOcrFile(file);
-
-        if (result.text) {
-            autoFillForm(result.text);
-        }
-    } catch (e) {
-        console.error("OCR Error:", e);
-    }
-};
-
-const autoFillForm = (sourceText: string) => {
-    const extracted = extractImportantDocumentData(sourceText, 'Uploaded File');
-    const meta = extracted.metadata;
-
-    // Mapping field OCR ke form yang sudah ada
-    if (meta.project_name) form.name = meta.project_name;
-    if (meta.location) form.location = meta.location;
-    if (meta.doc_number) form.contract_number = meta.doc_number;
-    if (meta.contract_value) form.contract_value = Number(meta.contract_value) || 0;
-
-    toast.success("Data berhasil diisi otomatis oleh AI.");
-};
 </script>
 
 <template>
@@ -382,8 +349,8 @@ const autoFillForm = (sourceText: string) => {
                         </p>
                     </div>
 
-                    <Badge :class="getProjectStatusClass(form.status)">
-                        {{ formatProjectStatus(form.status) }}
+                    <Badge :class="getMvpStatusClass(props.project.mvpStatus ?? 'On Track')">
+                        {{ props.project.mvpStatus ?? 'On Track' }}
                     </Badge>
                 </div>
 
@@ -391,8 +358,8 @@ const autoFillForm = (sourceText: string) => {
                     <div class="flex min-h-0 flex-col gap-4">
                         <EntityDetailHero back-label="Back to Projects" title="Project Detail"
                             :description="isCreateMode ? 'Fill in the project data and save it to the database.' : 'Edit the project details and save your updates to the database.'"
-                            :badge-text="formatProjectStatus(form.status)"
-                            :badge-class="getProjectStatusClass(form.status)" title-prefix="Project Title"
+                            :badge-text="props.project.mvpStatus ?? 'On Track'"
+                            :badge-class="getMvpStatusClass(props.project.mvpStatus ?? 'On Track')" title-prefix="Project Title"
                             metric-label="Overall Progress" :metric-value="`${liveProgressScore}%`"
                             :metric-description="progressLabel" progress-label="Progress snapshot"
                             :progress-value="`${form.progress_percent}% report progress`"
@@ -440,22 +407,43 @@ const autoFillForm = (sourceText: string) => {
                             </template>
                         </EntityDetailHero>
 
-                        <EntityPageSection title="AI Document Assistant" :icon="ScanText">
-                            <div class="mt-2">
-                                <label
-                                    class="block cursor-pointer w-full rounded-lg border-2 border-dashed border-sidebar-border/70 p-4 hover:bg-muted/50 transition">
-                                    <div
-                                        class="flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
-                                        <Upload class="size-6 text-primary" />
-                                        <span>Klik untuk upload RAB/SPH</span>
-                                    </div>
-                                    <input type="file" class="hidden"
-                                        @change="e => readDocumentFile((e.target as HTMLInputElement).files![0])" />
-                                </label>
+                        <EntityPageSection v-if="!isCreateMode && (props.project.warnings?.length ?? 0) > 0" title="Early Warnings" :icon="CircleAlert">
+                            <div class="grid gap-2">
+                                <div
+                                    v-for="warning in props.project.warnings"
+                                    :key="`${warning.type}-${warning.message}`"
+                                    class="rounded-xl border border-sidebar-border/70 bg-muted/20 p-3 text-sm"
+                                >
+                                    <Badge :class="warning.level === 'critical' ? 'bg-rose-500/15 text-rose-600 ring-1 ring-rose-500/25' : 'bg-amber-500/15 text-amber-600 ring-1 ring-amber-500/25'">
+                                        {{ warning.level }}
+                                    </Badge>
+                                    <p class="mt-2 text-foreground">{{ warning.message }}</p>
+                                </div>
+                            </div>
+                        </EntityPageSection>
 
-                                <div v-if="isReadingFile" class="mt-2 flex items-center gap-2 text-sm text-primary">
-                                    <LoaderCircle class="animate-spin size-4" />
-                                    {{ readerStatus }}
+                        <EntityPageSection v-if="!isCreateMode" title="MVP Monitoring Summary" :icon="FileText">
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <div class="rounded-xl bg-muted/30 p-4">
+                                    <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">RAB Total</p>
+                                    <p class="mt-1 text-sm font-medium text-foreground">{{ formatCurrency(props.project.rabTotal ?? 0) }}</p>
+                                </div>
+                                <div class="rounded-xl bg-muted/30 p-4">
+                                    <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">RAP Total</p>
+                                    <p class="mt-1 text-sm font-medium text-foreground">{{ formatCurrency(props.project.rapTotal ?? 0) }}</p>
+                                </div>
+                                <div class="rounded-xl bg-muted/30 p-4">
+                                    <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Realized Cost</p>
+                                    <p class="mt-1 text-sm font-medium text-foreground">{{ formatCurrency(props.project.realizedCostTotal ?? 0) }}</p>
+                                </div>
+                                <div class="rounded-xl bg-muted/30 p-4">
+                                    <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Latest Progress</p>
+                                    <p class="mt-1 text-sm font-medium text-foreground">
+                                        {{ props.project.latestProgressPercent ?? 0 }}%
+                                        <span class="text-muted-foreground">
+                                            {{ props.project.latestProgressApproved ? 'approved' : 'draft/unofficial' }}
+                                        </span>
+                                    </p>
                                 </div>
                             </div>
                         </EntityPageSection>

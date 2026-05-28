@@ -48,6 +48,10 @@ class HandleInertiaRequests extends Middleware
                 'sidebarSections' => AccessControl::sidebarSections(),
                 'footerItems' => AccessControl::footerItems(),
             ],
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
+            ],
         ]);
     }
 }

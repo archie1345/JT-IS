@@ -164,7 +164,10 @@ class ProjectDetailsController extends Controller
         }
 
         $latestProgressReport = $project->exists
-            ? $project->progressReports()->latest('report_date')->first(['id', 'project_id', 'progress_percent', 'report_date', 'description'])
+            ? $project->latestProgressReport()
+            : null;
+        $latestApprovedProgressReport = $project->exists
+            ? $project->latestApprovedProgressReport()
             : null;
 
         $rabsCount = $project->exists ? $project->rabs()->count() : 0;
@@ -355,9 +358,18 @@ class ProjectDetailsController extends Controller
                 'startDate' => $project->exists ? optional($project->start_date)->format('Y-m-d') : null,
                 'endDate' => $project->exists ? optional($project->end_date)->format('Y-m-d') : null,
                 'status' => $projectStatus,
+                'mvpStatus' => $project->exists ? $project->mvpStatus() : 'On Track',
+                'warnings' => $project->exists ? $project->mvpWarnings() : [],
+                'rabTotal' => $project->exists ? $project->rabTotal() : 0,
+                'rapTotal' => $project->exists ? $project->rapTotal() : 0,
+                'realizedCostTotal' => $project->exists ? $project->realizedCostTotal() : 0,
                 'paymentStatus' => $paymentStatus,
                 'latestProgressPercent' => $latestProgressReport?->progress_percent,
                 'latestProgressNote' => $latestProgressReport?->description,
+                'latestProgressApproved' => $latestProgressReport
+                    ? (bool) ($latestProgressReport->approved_by_client && $latestProgressReport->approved_by_internal)
+                    : false,
+                'latestApprovedProgressPercent' => $latestApprovedProgressReport?->progress_percent,
             ],
             'clients' => Client::query()
                 ->orderBy('name')

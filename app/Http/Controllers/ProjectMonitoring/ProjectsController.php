@@ -4,7 +4,7 @@ namespace App\Http\Controllers\ProjectMonitoring;
 
 use Illuminate\Validation\Rule;
 
-class ProjectsController extends TableCrudController
+class ProjectsController extends CrudResourceController
 {
     protected string $table = 'projects';
 

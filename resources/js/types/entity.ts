@@ -1,5 +1,5 @@
 import type { BreadcrumbItem } from './navigation';
-import type { SpreadsheetColumn } from '@/components/ProjectDataTable.vue';
+import type { SpreadsheetColumn } from '@/components/shared/DataTable.vue';
 
 export type EntityTableRow = Record<string, unknown>;
 

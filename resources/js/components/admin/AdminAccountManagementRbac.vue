@@ -12,8 +12,8 @@ import {
 import { computed, ref, watch } from 'vue';
 
 import InputError from '@/components/InputError.vue';
-import ProjectDataTable from '@/components/ProjectDataTable.vue';
-import type { SpreadsheetColumn } from '@/components/ProjectDataTable.vue';
+import DataTable from '@/components/shared/DataTable.vue';
+import type { SpreadsheetColumn } from '@/components/shared/DataTable.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -242,7 +242,7 @@ watch(
             </div>
         </div>
 
-        <ProjectDataTable
+        <DataTable
             :rows="props.users"
             :columns="userColumns"
             title="Users"
@@ -297,7 +297,7 @@ watch(
                     <PencilLine class="size-4" />
                 </Button>
             </template>
-        </ProjectDataTable>
+        </DataTable>
 
         <Dialog v-model:open="isFormOpen">
             <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-2xl">

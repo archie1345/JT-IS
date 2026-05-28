@@ -5,7 +5,7 @@ namespace App\Http\Controllers\ProjectMonitoring;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
-class RapsController extends TableCrudController
+class RapsController extends CrudResourceController
 {
     protected string $table = 'raps';
 

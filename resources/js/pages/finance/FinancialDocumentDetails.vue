@@ -16,7 +16,7 @@ import EntityMetricCard from '@/components/entity/EntityMetricCard.vue';
 import EntityPageSection from '@/components/entity/EntityPageSection.vue';
 import InputError from '@/components/InputError.vue';
 import InvoicePrintPreview from '@/components/invoice/InvoicePrintPreview.vue';
-import ProjectDocumentUploadPanel from '@/components/ProjectDocumentUploadPanel.vue';
+import DocumentUploadPanel from '@/components/shared/DocumentUploadPanel.vue';
 import ProjectOCRScanner from '@/components/ProjectOCRScanner.vue';
 import RecordFieldInput from '@/components/prototype/RecordFieldInput.vue';
 import { Button } from '@/components/ui/button';
@@ -591,7 +591,7 @@ const printInvoice = () => window.print();
                         </div>
                     </div>
 
-                    <ProjectDocumentUploadPanel
+                    <DocumentUploadPanel
                         :project-id="props.upload.projectId"
                         :component-type="props.upload.componentType"
                         :component-id="props.upload.componentId"

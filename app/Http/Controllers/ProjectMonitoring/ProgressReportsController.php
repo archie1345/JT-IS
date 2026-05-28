@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class ProgressReportsController extends TableCrudController
+class ProgressReportsController extends CrudResourceController
 {
     protected string $model = ProgressReport::class;
 
@@ -50,7 +50,7 @@ class ProgressReportsController extends TableCrudController
 
     protected function inertiaView(): ?string
     {
-        return 'ProgressUpdates';
+        return 'progress/Index';
     }
 
     protected function indexQuery(Request $request): Builder
@@ -114,7 +114,7 @@ class ProgressReportsController extends TableCrudController
             ->with(['project:id,client_id,name', 'project.client:id,name'])
             ->findOrFail($id);
 
-        return Inertia::render('PrototypeRecordDetails', [
+        return Inertia::render('shared/RecordDetails', [
             'title' => 'Progress Detail',
             'subtitle' => trim(($record->progress_percent ?? 0).'% '.$record->project?->name),
             'indexUrl' => route('progress-updates.index'),

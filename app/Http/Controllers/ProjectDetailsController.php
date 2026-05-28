@@ -17,7 +17,7 @@ class ProjectDetailsController extends Controller
 {
     public function create(Request $request): Response
     {
-        return Inertia::render('ProjectDetails', $this->pagePayload(
+        return Inertia::render('projects/Show', $this->pagePayload(
             project: null,
             mode: 'create',
             defaults: [
@@ -55,7 +55,7 @@ class ProjectDetailsController extends Controller
 
     public function show(Project $project): Response
     {
-        return Inertia::render('ProjectDetails', $this->pagePayload($project, 'edit'));
+        return Inertia::render('projects/Show', $this->pagePayload($project, 'edit'));
     }
 
     public function update(Request $request, Project $project): RedirectResponse

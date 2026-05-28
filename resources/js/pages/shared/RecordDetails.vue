@@ -5,7 +5,7 @@ import { computed, ref } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import EntityPageSection from '@/components/entity/EntityPageSection.vue';
 import InvoicePrintPreview from '@/components/invoice/InvoicePrintPreview.vue';
-import ProjectDocumentUploadPanel from '@/components/ProjectDocumentUploadPanel.vue';
+import DocumentUploadPanel from '@/components/shared/DocumentUploadPanel.vue';
 import RecordFieldInput from '@/components/prototype/RecordFieldInput.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -192,7 +192,7 @@ const printInvoice = () => {
                     title="Attached Files"
                     description="Documents linked to this record."
                 >
-                    <ProjectDocumentUploadPanel
+                    <DocumentUploadPanel
                         :project-id="props.upload.projectId"
                         :component-type="props.upload.componentType"
                         :component-id="props.upload.componentId"

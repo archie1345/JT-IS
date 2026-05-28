@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import CrudPrototypePage from '@/components/prototype/CrudPrototypePage.vue';
-import type { SpreadsheetColumn } from '@/components/ProjectDataTable.vue';
+import type { SpreadsheetColumn } from '@/components/shared/DataTable.vue';
 import type { BreadcrumbItem } from '@/types';
 import type { UploadedDocument } from '@/types/project';
 

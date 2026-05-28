@@ -16,7 +16,7 @@ use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class InvoicesController extends TableCrudController
+class InvoicesController extends CrudResourceController
 {
     protected string $model = Invoice::class;
 
@@ -50,7 +50,7 @@ class InvoicesController extends TableCrudController
 
     protected function inertiaView(): ?string
     {
-        return 'Invoices';
+        return 'finance/invoices/Index';
     }
 
     protected function indexQuery(Request $request): Builder
@@ -137,7 +137,7 @@ class InvoicesController extends TableCrudController
             ->with(['items', 'project:id,client_id,name', 'project.client:id,name'])
             ->findOrFail($id);
 
-        return Inertia::render('FinancialDocumentDetails', [
+        return Inertia::render('finance/FinancialDocumentDetails', [
             'kind' => 'invoice',
             'title' => 'Billing Detail',
             'recordLabel' => 'Billing',

@@ -3,10 +3,10 @@ import { computed, ref, useSlots } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { ExternalLink, Pencil, Trash2 } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
-import ProjectDocumentUploadPanel from '@/components/ProjectDocumentUploadPanel.vue';
-import ProjectDataTable, {
+import DocumentUploadPanel from '@/components/shared/DocumentUploadPanel.vue';
+import DataTable, {
     type SpreadsheetColumn,
-} from '@/components/ProjectDataTable.vue';
+} from '@/components/shared/DataTable.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -251,7 +251,7 @@ const goToPage = (page: number) => {
         <div
             class="flex min-h-[calc(100vh-8rem)] flex-1 flex-col gap-3 rounded-xl p-2 sm:gap-4 sm:p-4"
         >
-            <ProjectDataTable
+            <DataTable
                 :rows="props.rows"
                 :columns="props.columns"
                 :title="props.title"
@@ -326,7 +326,7 @@ const goToPage = (page: number) => {
                 >
                     <slot :name="slotName" v-bind="slotProps" />
                 </template>
-            </ProjectDataTable>
+            </DataTable>
 
             <div
                 v-if="props.pagination"
@@ -366,7 +366,7 @@ const goToPage = (page: number) => {
                 v-if="props.uploadComponentType"
                 class="rounded-2xl border border-sidebar-border/70 bg-background/80 p-3 shadow-sm sm:p-5"
             >
-                <ProjectDocumentUploadPanel
+                <DocumentUploadPanel
                     :project-id="props.uploadProjectId"
                     :project-options="props.projectOptions"
                     :component-type="props.uploadComponentType"

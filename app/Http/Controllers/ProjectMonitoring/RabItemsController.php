@@ -6,7 +6,7 @@ use App\Models\Rab;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
-class RabItemsController extends TableCrudController
+class RabItemsController extends CrudResourceController
 {
     protected string $table = 'rab_items';
 

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import CrudPrototypePage from '@/components/prototype/CrudPrototypePage.vue';
-import type { SpreadsheetColumn } from '@/components/ProjectDataTable.vue';
+import type { SpreadsheetColumn } from '@/components/shared/DataTable.vue';
 import type { BreadcrumbItem } from '@/types';
-import type { RabRow } from '@/types/rab';
+import type { RapRow } from '@/types/rap';
 import type { UploadedDocument } from '@/types/project';
 
 type Option = {
@@ -21,21 +21,21 @@ type Pagination = {
 };
 
 const props = defineProps<{
-    rabs?: RabRow[];
-    data?: RabRow[];
+    raps?: RapRow[];
+    data?: RapRow[];
     activeProjectId?: number | null;
     pagination?: Pagination;
     projectOptions: Option[];
     uploadedDocuments: UploadedDocument[];
 }>();
 
-const rows = computed(() => props.rabs ?? props.data ?? []);
+const rows = computed(() => props.raps ?? props.data ?? []);
 const uploadConnectionOptions = computed(() =>
     rows.value.map((row) => ({
-        value: `rab:${row.id}`,
-        label: `RAB #${row.id}`,
+        value: `rap:${row.id}`,
+        label: `RAP #${row.id}`,
         hint: row.projectName,
-        componentType: 'rab',
+        componentType: 'rap',
         componentId: row.id,
         projectId: row.projectId,
     })),
@@ -43,8 +43,8 @@ const uploadConnectionOptions = computed(() =>
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'RAB',
-        href: '/rabs',
+        title: 'RAP',
+        href: '/raps',
     },
 ];
 
@@ -55,30 +55,30 @@ const formatCurrency = (value: number) =>
         maximumFractionDigits: 0,
     }).format(value);
 
-const rabColumns = [
+const rapColumns = [
     { key: 'id', label: 'Id' },
     {
         key: 'projectName',
         label: 'Project',
-        accessor: (row: Record<string, unknown>) => (row as RabRow).projectName,
+        accessor: (row: Record<string, unknown>) => (row as RapRow).projectName,
     },
     { key: 'document_number', label: 'Document No.' },
     { key: 'document_date', label: 'Document Date' },
     {
         key: 'totalBudget',
         label: 'Total Budget',
-        accessor: (row: Record<string, unknown>) => (row as RabRow).totalBudget,
+        accessor: (row: Record<string, unknown>) => (row as RapRow).totalBudget,
     },
     {
         key: 'itemCount',
         label: 'Items',
-        accessor: (row: Record<string, unknown>) => (row as RabRow).itemCount,
+        accessor: (row: Record<string, unknown>) => (row as RapRow).itemCount,
     },
     {
-        key: 'updatedAt',
-        label: 'Updated',
+        key: 'createdAt',
+        label: 'Created',
         accessor: (row: Record<string, unknown>) =>
-            (row as RabRow).updatedAt ?? '-',
+            (row as RapRow).createdAt ?? '-',
     },
 ] satisfies SpreadsheetColumn[];
 
@@ -94,7 +94,7 @@ const fields = [
         name: 'document_number',
         label: 'Document Number',
         type: 'text',
-        placeholder: 'RAB or contract document number',
+        placeholder: 'RAP or execution document number',
     },
     {
         name: 'document_date',
@@ -103,7 +103,7 @@ const fields = [
     },
     {
         name: 'total_budget',
-        label: 'Total / Contract Value',
+        label: 'Total Execution Budget',
         type: 'number',
         min: 0,
         step: '0.01',
@@ -112,35 +112,35 @@ const fields = [
         name: 'notes',
         label: 'Notes',
         type: 'textarea',
-        placeholder: 'Terbilang or document remarks',
+        placeholder: 'Rekapitulasi, deviasi, or document remarks',
     },
 ] as const;
 </script>
 
 <template>
     <CrudPrototypePage
-        head-title="RAB"
-        title="RAB List"
-        description="Budget plan records grouped by project."
+        head-title="RAP"
+        title="RAP List"
+        description="Plan records grouped by project."
         :rows="rows"
-        :columns="rabColumns"
+        :columns="rapColumns"
         :fields="fields"
         :breadcrumbs="breadcrumbs"
-        create-url="/rabs"
-        update-url-base="/rabs"
-        delete-url-base="/rabs"
-        detail-url-base="/rabs"
-        upload-component-type="rab"
+        create-url="/raps"
+        update-url-base="/raps"
+        delete-url-base="/raps"
+        detail-url-base="/raps"
+        upload-component-type="rap"
         :upload-project-id="props.activeProjectId"
         :project-options="props.projectOptions"
         :uploaded-documents="props.uploadedDocuments"
         :upload-connection-options="uploadConnectionOptions"
         :pagination="props.pagination"
-        create-label="New RAB"
+        create-label="New RAP"
         :note="
             props.activeProjectId
                 ? `Filtered by project ID ${props.activeProjectId}`
-                : `Showing ${props.pagination?.total ?? rows.length} RAB record(s)`
+                : `Showing ${props.pagination?.total ?? rows.length} RAP record(s)`
         "
     >
         <template #cell-totalBudget="{ value }">

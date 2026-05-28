@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\ProjectMonitoring;
 
-class ClientsController extends TableCrudController
+class ClientsController extends CrudResourceController
 {
     protected string $model = \App\Models\Client::class;
 

@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { router } from '@inertiajs/vue3';
 import EntityIndexPage from '@/components/entity/EntityIndexPage.vue';
-import type { SpreadsheetColumn } from '@/components/ProjectDataTable.vue';
+import type { SpreadsheetColumn } from '@/components/shared/DataTable.vue';
 import type { BreadcrumbItem } from '@/types';
 import type { ClientItem } from '@/types/client';
 

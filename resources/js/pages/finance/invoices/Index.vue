@@ -3,7 +3,7 @@ import { computed, reactive, ref } from 'vue';
 import { FileText, Palette, Printer } from 'lucide-vue-next';
 import InvoicePrintPreview from '@/components/invoice/InvoicePrintPreview.vue';
 import CrudPrototypePage from '@/components/prototype/CrudPrototypePage.vue';
-import type { SpreadsheetColumn } from '@/components/ProjectDataTable.vue';
+import type { SpreadsheetColumn } from '@/components/shared/DataTable.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,

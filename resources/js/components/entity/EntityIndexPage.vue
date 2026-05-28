@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
-import ProjectDataTable from '@/components/ProjectDataTable.vue';
-import type { SpreadsheetColumn } from '@/components/ProjectDataTable.vue';
+import DataTable from '@/components/shared/DataTable.vue';
+import type { SpreadsheetColumn } from '@/components/shared/DataTable.vue';
 import type { BreadcrumbItem } from '@/types';
 import type { EntityTableRow } from '@/types/entity';
 
@@ -79,7 +79,7 @@ const emit = defineEmits<{
                 </div>
             </section>
 
-            <ProjectDataTable
+            <DataTable
                 :rows="props.rows"
                 :columns="props.columns"
                 :title="props.title"
@@ -100,7 +100,7 @@ const emit = defineEmits<{
                 >
                     <slot :name="slotName" v-bind="slotProps" />
                 </template>
-            </ProjectDataTable>
+            </DataTable>
         </div>
     </AppLayout>
 </template>

@@ -41,7 +41,7 @@ class RapsPageController extends Controller
             ])
             ->all();
 
-        return Inertia::render('Raps', [
+        return Inertia::render('budget/raps/Index', [
             'raps' => $raps,
             'pagination' => $this->paginationMeta($paginator),
             'activeProjectId' => $projectId > 0 ? $projectId : null,

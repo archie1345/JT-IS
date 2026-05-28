@@ -107,7 +107,7 @@ class RabRapDetailsController extends Controller
             ->map(fn (ProjectDocument $document): array => ProjectDocumentsController::serialize($document))
             ->all();
 
-        return Inertia::render('RabRapDetails', [
+        return Inertia::render('budget/BudgetDetails', [
             'kind' => $kind,
             'title' => $title,
             'recordLabel' => $recordLabel,

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\ProjectStatusService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,7 +10,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Carbon;
 
 class Project extends Model
 {
@@ -170,56 +170,11 @@ class Project extends Model
      */
     public function mvpWarnings(): array
     {
-        $warnings = [];
-        $rapTotal = $this->rapTotal();
-        $realizedCost = $this->realizedCostTotal();
-
-        if ($rapTotal > 0 && $realizedCost > $rapTotal) {
-            $warnings[] = [
-                'type' => 'budget',
-                'level' => 'critical',
-                'message' => 'Budget Critical: realized cost is above RAP.',
-            ];
-        } elseif ($rapTotal > 0 && $realizedCost >= ($rapTotal * 0.9)) {
-            $warnings[] = [
-                'type' => 'budget',
-                'level' => 'warning',
-                'message' => 'Budget Warning: realized cost has reached at least 90% of RAP.',
-            ];
-        }
-
-        if ($this->hasOverdueInvoice()) {
-            $warnings[] = [
-                'type' => 'payment',
-                'level' => 'warning',
-                'message' => 'Payment Warning: project has overdue invoice.',
-            ];
-        }
-
-        $approvedProgress = $this->latestApprovedProgressPercent() ?? 0;
-        if ($this->end_date && Carbon::parse($this->end_date)->isPast() && $approvedProgress < 100) {
-            $warnings[] = [
-                'type' => 'progress',
-                'level' => 'critical',
-                'message' => 'Progress Critical: project end date has passed without 100% approved progress.',
-            ];
-        }
-
-        return $warnings;
+        return app(ProjectStatusService::class)->warnings($this);
     }
 
     public function mvpStatus(): string
     {
-        $warnings = $this->mvpWarnings();
-
-        if (collect($warnings)->contains(fn (array $warning): bool => $warning['level'] === 'critical')) {
-            return 'Critical';
-        }
-
-        if ($warnings !== []) {
-            return 'Warning';
-        }
-
-        return 'On Track';
+        return app(ProjectStatusService::class)->status($this);
     }
 }

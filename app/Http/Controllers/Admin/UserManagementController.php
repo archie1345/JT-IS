@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\User;
 use App\Support\AccessControl;
@@ -15,7 +16,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\Permission\Models\Role;
 
-class AdminAccMgmtController extends Controller
+class UserManagementController extends Controller
 {
     public function index(): Response
     {
@@ -23,9 +24,7 @@ class AdminAccMgmtController extends Controller
         AccessControl::sync();
 
         $users = User::query()
-            // Hapus ->with('client') karena relasi sudah tidak ada
             ->latest('id')
-            // Hapus 'client_id' dari list get()
             ->get(['id', 'name', 'email', 'user_type', 'employee_role', 'email_verified_at', 'created_at'])
             ->map(fn(User $user): array => [
                 'id' => $user->id,
@@ -50,7 +49,6 @@ class AdminAccMgmtController extends Controller
             'total' => User::query()->count(),
             'admin' => User::query()->where('user_type', 'admin')->count(),
             'employee' => User::query()->where('user_type', 'employee')->count(),
-            // Stat client dihapus karena client tidak lagi di tabel users
         ];
 
         $roles = Role::query()
@@ -73,10 +71,8 @@ class AdminAccMgmtController extends Controller
             ])
             ->all();
 
-        return Inertia::render('AdmnUsrMgmtPbac', [
+        return Inertia::render('admin/UserManagement', [
             'users' => $users,
-            // Clients tetap dikirim jika dibutuhkan untuk dropdown di tempat lain, 
-            // tapi tidak lagi untuk dihubungkan ke User
             'clients' => Client::query()
                 ->orderBy('name')
                 ->get(['id', 'name']),
@@ -135,15 +131,13 @@ class AdminAccMgmtController extends Controller
         return to_route('admin.acc_mgmt')->with('success', 'Account updated successfully.');
     }
 
-    // ... method destroy & updateRolePermissions tetap sama ...
-
     protected function validatePayload(Request $request, ?int $userId = null, bool $updating = false): array
     {
         $rules = [
             'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'max:150', Rule::unique('users', 'email')->ignore($userId)],
             'password' => [$updating ? 'nullable' : 'required', 'string', 'min:8', 'max:255'],
-            'user_type' => ['required', Rule::in(['admin', 'employee'])], // 'client' dibuang
+            'user_type' => ['required', Rule::in(['admin', 'employee'])],
             'employee_role' => ['nullable', 'string', 'max:50'],
         ];
 
@@ -160,19 +154,20 @@ class AdminAccMgmtController extends Controller
 
     protected function ensureUserTypeEnum(): void
     {
-        // Pastikan kolom employee_role ada
         if (! Schema::hasColumn('users', 'employee_role')) {
             DB::statement('ALTER TABLE users ADD COLUMN employee_role VARCHAR(50) NULL AFTER user_type');
         }
 
-        // Update Enum agar hanya berisi admin dan employee
         DB::statement("ALTER TABLE users MODIFY user_type ENUM('employee','admin') NOT NULL DEFAULT 'employee'");
     }
 
     protected function normalizeEmployeeRole(null|string $role): ?string
     {
         $value = trim((string) $role);
-        if ($value === '') return null;
+        if ($value === '') {
+            return null;
+        }
+
         return Str::slug($value);
     }
 }

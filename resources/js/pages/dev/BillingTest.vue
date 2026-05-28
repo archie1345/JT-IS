@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import AppHeader from '@/components/AppHeader.vue';
-import AppLogo from '@/components/AppLogo.vue';
-import AppLogoIcon from '@/components/AppLogoIcon.vue';
-import AppSidebarHeader from '@/components/AppSidebarHeader.vue';
+import AppHeader from '@/components/layout/AppHeader.vue';
+import AppLogo from '@/components/layout/AppLogo.vue';
+import AppLogoIcon from '@/components/layout/AppLogoIcon.vue';
+import AppSidebarHeader from '@/components/layout/AppSidebarHeader.vue';
 import AppearanceTabs from '@/components/AppearanceTabs.vue';
 import Heading from '@/components/Heading.vue';
 import PlaceholderPattern from '@/components/PlaceholderPattern.vue';

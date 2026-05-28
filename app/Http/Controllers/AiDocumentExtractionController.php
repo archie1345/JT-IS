@@ -19,7 +19,7 @@ class AiDocumentExtractionController extends Controller
 {
     public function index(): Response
     {
-        return Inertia::render('AiDocumentExtraction', [
+        return Inertia::render('dev/AiDocumentExtraction', [
             'clients' => Client::query()
                 ->orderBy('name')
                 ->get(['id', 'name'])

@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import EntityDetailHero from '@/components/entity/EntityDetailHero.vue';
 import EntityMetricCard from '@/components/entity/EntityMetricCard.vue';
 import EntityPageSection from '@/components/entity/EntityPageSection.vue';
-import ProjectDocumentUploadPanel from '@/components/ProjectDocumentUploadPanel.vue';
+import DocumentUploadPanel from '@/components/shared/DocumentUploadPanel.vue';
 import type { BreadcrumbItem } from '@/types';
 import type { UploadedDocument } from '@/types/project';
 
@@ -358,7 +358,7 @@ const itemDialogTitle = computed(() =>
                     title="Uploaded Files"
                     :description="`Files attached to this ${props.recordLabel}.`"
                 >
-                    <ProjectDocumentUploadPanel
+                    <DocumentUploadPanel
                         :project-id="props.record.projectId"
                         :component-type="props.kind"
                         :component-id="props.record.id"

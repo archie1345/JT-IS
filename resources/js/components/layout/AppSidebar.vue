@@ -3,10 +3,10 @@ import { Link, usePage } from '@inertiajs/vue3';
 import * as icons from 'lucide-vue-next';
 import { computed } from 'vue';
 import type { Component } from 'vue';
-import AppLogo from '@/components/AppLogo.vue';
-import NavFooter from '@/components/NavFooter.vue';
-import NavMain from '@/components/NavMain.vue';
-import NavUser from '@/components/NavUser.vue';
+import AppLogo from '@/components/layout/AppLogo.vue';
+import NavFooter from '@/components/layout/NavFooter.vue';
+import NavMain from '@/components/layout/NavMain.vue';
+import NavUser from '@/components/layout/NavUser.vue';
 import {
     Sidebar,
     SidebarContent,

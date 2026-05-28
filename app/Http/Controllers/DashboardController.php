@@ -14,7 +14,7 @@ class DashboardController extends Controller
 {
     public function __invoke(): Response
     {
-        return Inertia::render('Dashboard', [
+        return Inertia::render('dashboard/Index', [
             'dashboardData' => [
                 'projectStatus' => $this->projectStatus(),
                 'invoiceStatus' => $this->invoiceStatus(),

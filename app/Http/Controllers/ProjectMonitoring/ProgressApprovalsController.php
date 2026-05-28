@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\ProjectMonitoring;
 
-class ProgressApprovalsController extends TableCrudController
+class ProgressApprovalsController extends CrudResourceController
 {
     protected string $table = 'progress_approvals';
 

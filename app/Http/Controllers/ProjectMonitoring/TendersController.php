@@ -16,7 +16,7 @@ use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class TendersController extends TableCrudController
+class TendersController extends CrudResourceController
 {
     protected string $model = Tender::class;
 
@@ -52,7 +52,7 @@ class TendersController extends TableCrudController
 
     protected function inertiaView(): ?string
     {
-        return 'Pipeline';
+        return 'marketing/TendersIndex';
     }
 
     protected function indexQuery(Request $request): Builder
@@ -171,7 +171,7 @@ class TendersController extends TableCrudController
             ->with(['project:id,client_id,name', 'project.client:id,name'])
             ->findOrFail($id);
 
-        return Inertia::render('PrototypeRecordDetails', [
+        return Inertia::render('shared/RecordDetails', [
             'title' => 'Report Detail',
             'subtitle' => $record->title,
             'indexUrl' => route('pipeline'),

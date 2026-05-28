@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class ProjectCostsController extends TableCrudController
+class ProjectCostsController extends CrudResourceController
 {
     protected string $model = ProjectCost::class;
 
@@ -46,7 +46,7 @@ class ProjectCostsController extends TableCrudController
 
     protected function inertiaView(): ?string
     {
-        return 'ProjectCosts';
+        return 'finance/costs/Index';
     }
 
     protected function indexQuery(Request $request): Builder
@@ -107,7 +107,7 @@ class ProjectCostsController extends TableCrudController
             ->with(['items', 'project:id,client_id,name', 'project.client:id,name'])
             ->findOrFail($id);
 
-        return Inertia::render('FinancialDocumentDetails', [
+        return Inertia::render('finance/FinancialDocumentDetails', [
             'kind' => 'cost',
             'title' => 'Cost Realization Detail',
             'recordLabel' => 'Cost Realization',

@@ -8,7 +8,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
 
-class FundRequestsController extends TableCrudController
+class FundRequestsController extends CrudResourceController
 {
     // Gunakan Eloquent Model
     protected string $model = \App\Models\FundRequest::class;

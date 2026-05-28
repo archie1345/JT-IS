@@ -23,7 +23,7 @@ class ClientsPageController extends Controller
                 'totalProjectValue' => (float) ($client->projects_sum_contract_value ?? 0),
             ]);
 
-        return Inertia::render('Clients', [
+        return Inertia::render('clients/Index', [
             'clients' => $clients,
         ]);
     }

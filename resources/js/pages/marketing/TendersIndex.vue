@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { ArrowRightCircle } from 'lucide-vue-next';
 import CrudPrototypePage from '@/components/prototype/CrudPrototypePage.vue';
-import type { SpreadsheetColumn } from '@/components/ProjectDataTable.vue';
+import type { SpreadsheetColumn } from '@/components/shared/DataTable.vue';
 import { Button } from '@/components/ui/button';
 import type { BreadcrumbItem } from '@/types';
 import type { UploadedDocument } from '@/types/project';

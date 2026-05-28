@@ -36,7 +36,7 @@ class ProjectsPageController extends Controller
                 'mvpStatus' => $project->mvpStatus(),
             ]);
 
-        return Inertia::render('Projects', [
+        return Inertia::render('projects/Index', [
             'projects' => $projects,
             'activeClientId' => $clientId > 0 ? $clientId : null,
         ]);

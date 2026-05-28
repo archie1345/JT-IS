@@ -10,7 +10,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use RuntimeException;
 
-abstract class TableCrudController extends Controller
+abstract class CrudResourceController extends Controller
 {
     protected string $model = '';
     protected string $table = '';
@@ -114,10 +114,10 @@ abstract class TableCrudController extends Controller
     protected function inertiaView(): ?string
     {
         return match ($this->modelClass()) {
-            \App\Models\Client::class => 'Clients',
-            \App\Models\Project::class => 'Projects',
-            \App\Models\Rab::class => 'Rabs',
-            \App\Models\Rap::class => 'Raps',
+            \App\Models\Client::class => 'clients/Index',
+            \App\Models\Project::class => 'projects/Index',
+            \App\Models\Rab::class => 'budget/rabs/Index',
+            \App\Models\Rap::class => 'budget/raps/Index',
             \App\Models\User::class => 'Admin/Users/Index', // Tambahkan View User
             default => null,
         };

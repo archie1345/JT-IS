@@ -13,7 +13,7 @@ class ClientDetailsController extends Controller
 {
     public function create(): Response
     {
-        return Inertia::render('ClientsDetails', [
+        return Inertia::render('clients/Show', [
             'mode' => 'create',
             'client' => [
                 'id' => null,
@@ -56,7 +56,7 @@ class ClientDetailsController extends Controller
         $lastProjectDate = $client->projects()->orderByDesc('end_date')->value('end_date');
         $lastUpdated = $client->projects()->orderByDesc('updated_at')->value('updated_at') ?? $client->updated_at;
 
-        return Inertia::render('ClientsDetails', [
+        return Inertia::render('clients/Show', [
             'mode' => 'edit',
             'client' => [
                 'id' => $client->id,

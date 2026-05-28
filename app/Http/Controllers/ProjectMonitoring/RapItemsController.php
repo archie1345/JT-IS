@@ -6,7 +6,7 @@ use App\Models\Rap;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
-class RapItemsController extends TableCrudController
+class RapItemsController extends CrudResourceController
 {
     protected string $table = 'rap_items';
 

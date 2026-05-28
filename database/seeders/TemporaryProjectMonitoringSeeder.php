@@ -24,10 +24,10 @@ class TemporaryProjectMonitoringSeeder extends Seeder
 
         DB::transaction(function (): void {
             $users = [
-                ['name' => 'Demo Admin', 'email' => 'admin@example.com', 'user_type' => 'admin', 'employee_role' => 'System Admin', 'roles' => ['admin']],
-                ['name' => 'Demo Operational', 'email' => 'operational@example.com', 'user_type' => 'employee', 'employee_role' => 'operational', 'roles' => ['employee', 'operational']],
-                ['name' => 'Demo Finance', 'email' => 'finance@example.com', 'user_type' => 'employee', 'employee_role' => 'finance', 'roles' => ['employee', 'finance']],
-                ['name' => 'Demo Management', 'email' => 'management@example.com', 'user_type' => 'employee', 'employee_role' => 'management', 'roles' => ['employee', 'management']],
+                ['name' => 'Demo Admin', 'email' => 'admin@jte.com', 'user_type' => 'admin', 'employee_role' => 'System Admin', 'roles' => ['admin']],
+                ['name' => 'Demo Operational', 'email' => 'operational@jte.com', 'user_type' => 'employee', 'employee_role' => 'operational', 'roles' => ['employee', 'operational']],
+                ['name' => 'Demo Finance', 'email' => 'finance@jte.com', 'user_type' => 'employee', 'employee_role' => 'finance', 'roles' => ['employee', 'finance']],
+                ['name' => 'Demo Management', 'email' => 'management@jte.com', 'user_type' => 'employee', 'employee_role' => 'management', 'roles' => ['employee', 'management']],
             ];
 
             foreach ($users as $seed) {
@@ -37,7 +37,7 @@ class TemporaryProjectMonitoringSeeder extends Seeder
                 $user = User::query()->updateOrCreate(
                     ['email' => $seed['email']],
                     array_merge($seed, [
-                        'password' => Hash::make('password'),
+                        'password' => Hash::make('password123'),
                         'email_verified_at' => now(),
                     ]),
                 );

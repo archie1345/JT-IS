@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\Project;
-use App\Models\ProgressReport;
 use App\Models\Tender;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -44,12 +43,6 @@ class ProjectDetailsController extends Controller
         ]);
 
         $this->syncPaymentStatus($project, $data['payment_status'], (float) $data['contract_value']);
-        $this->syncProgressReport(
-            $project,
-            $data['progress_percent'] ?? null,
-            $data['progress_note'] ?? null,
-        );
-
         return to_route('projects.show', $project)->with('success', 'Project created successfully.');
     }
 
@@ -76,12 +69,6 @@ class ProjectDetailsController extends Controller
         ]);
 
         $this->syncPaymentStatus($project, $data['payment_status'], (float) $data['contract_value']);
-        $this->syncProgressReport(
-            $project,
-            $data['progress_percent'] ?? null,
-            $data['progress_note'] ?? null,
-        );
-
         return to_route('projects.show', $project)->with('success', 'Project updated successfully.');
     }
 
@@ -99,8 +86,6 @@ class ProjectDetailsController extends Controller
             'longitude' => ['nullable', 'numeric'],  // <-- Ditambahkan
             'status' => ['required', Rule::in(['planning', 'ongoing', 'completed'])],
             'payment_status' => ['required', Rule::in(['pending', 'partial', 'paid', 'overdue'])],
-            'progress_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'progress_note' => ['nullable', 'string'],
         ]);
     }
 
@@ -123,27 +108,6 @@ class ProjectDetailsController extends Controller
         }
 
         $project->invoices()->create($payload);
-    }
-
-    protected function syncProgressReport(Project $project, int|float|null $progressPercent, ?string $progressNote): void
-    {
-        if ($progressPercent === null && blank($progressNote)) {
-            return;
-        }
-
-        $report = $project->progressReports()->latest('report_date')->first();
-        $payload = [
-            'progress_percent' => $progressPercent ?? $report?->progress_percent ?? 0,
-            'report_date' => now()->toDateString(),
-            'description' => $progressNote ?? $report?->description,
-        ];
-
-        if ($report) {
-            $report->update($payload);
-            return;
-        }
-
-        $project->progressReports()->create($payload);
     }
 
     protected function pagePayload(?Project $project, string $mode, array $defaults = []): array
@@ -198,25 +162,6 @@ class ProjectDetailsController extends Controller
             : 'pending';
 
         $reportScore = (float) ($latestProgressReport?->progress_percent ?? 0);
-        $projectStatusScore = match ($projectStatus) {
-            'planning' => 25,
-            'ongoing' => 65,
-            'completed' => 100,
-            default => 0,
-        };
-        $paymentStatusScore = match ($paymentStatus) {
-            'pending' => 20,
-            'partial' => 55,
-            'paid' => 100,
-            'overdue' => 35,
-            default => 0,
-        };
-
-        $overallProgress = (int) round(
-            ($reportScore * 0.55) +
-                ($projectStatusScore * 0.25) +
-                ($paymentStatusScore * 0.20)
-        );
 
         $documents = [
             [
@@ -385,9 +330,9 @@ class ProjectDetailsController extends Controller
             'documentConnections' => $documentConnections,
             'progress' => [
                 'reportScore' => $reportScore,
-                'projectStatusScore' => $projectStatusScore,
-                'paymentStatusScore' => $paymentStatusScore,
-                'overallProgress' => $overallProgress,
+                'projectStatusScore' => 0,
+                'paymentStatusScore' => 0,
+                'overallProgress' => $reportScore,
             ],
             'recentReport' => $latestProgressReport ? [
                 'date' => optional($latestProgressReport->report_date)->format('Y-m-d'),

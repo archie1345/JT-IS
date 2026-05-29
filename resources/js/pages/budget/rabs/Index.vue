@@ -121,7 +121,7 @@ const fields = [
     <CrudPrototypePage
         head-title="RAB"
         title="RAB List"
-        description="Budget plan records grouped by project."
+        description="Review project revenue budgets and contract-value baselines for each monitored project."
         :rows="rows"
         :columns="rabColumns"
         :fields="fields"
@@ -139,8 +139,8 @@ const fields = [
         create-label="New RAB"
         :note="
             props.activeProjectId
-                ? `Filtered by project ID ${props.activeProjectId}`
-                : `Showing ${props.pagination?.total ?? rows.length} RAB record(s)`
+                ? `Showing RAB documents for project ID ${props.activeProjectId}`
+                : `${props.pagination?.total ?? rows.length} RAB documents available`
         "
     >
         <template #cell-totalBudget="{ value }">

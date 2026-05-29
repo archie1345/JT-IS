@@ -48,7 +48,8 @@ const getProjectStatusClass = (status: ProjectItem['projectStatus']) =>
 
 const getMvpStatusClass = (status: string) =>
     ({
-        'On Track': 'bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/25',
+        'On Track':
+            'bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/25',
         Warning: 'bg-amber-500/15 text-amber-600 ring-1 ring-amber-500/25',
         Critical: 'bg-rose-500/15 text-rose-600 ring-1 ring-rose-500/25',
         'On Hold': 'bg-slate-500/15 text-slate-600 ring-1 ring-slate-500/25',
@@ -118,10 +119,10 @@ const projectColumns = [
         :rows="rows"
         :columns="projectColumns"
         :breadcrumbs="breadcrumbs"
-        description="Project data below is loaded from the database."
+        description="Monitor active contracts, payment condition, project status, and MVP warning level."
         :note="
             props.activeClientId
-                ? `Filtered by client ID: ${props.activeClientId}`
+                ? `Showing projects for client ID ${props.activeClientId}`
                 : ''
         "
         row-key-field="id"

@@ -58,10 +58,9 @@ const props = withDefaults(
         componentType: 'project',
         componentId: null,
         connectionOptions: () => [],
-        title: 'Document Upload',
-        description:
-            'Attach files and they will be linked to this project area.',
-        emptyText: 'No files uploaded yet.',
+        title: 'Unggah Dokumen',
+        description: 'Lampirkan dokumen dan hubungkan ke area proyek terkait.',
+        emptyText: 'Belum ada dokumen.',
     },
 );
 
@@ -82,7 +81,11 @@ const {
     status: readerStatus,
     text: ocrText,
 } = useDocumentOcr({
-    initialStatus: 'Uploading to Laravel OCR service',
+    initialStatus: 'Mengirim dokumen ke OCR',
+    successStatus: 'OCR selesai',
+    failedStatus: 'OCR gagal',
+    emptyTextMessage:
+        'OCR selesai, tetapi tidak menemukan teks yang bisa dibaca. Silakan input manual.',
 });
 const previewProjectUpdates = ref<Record<string, number | string>>({});
 const previewProgressPercent = ref<number | string>('');
@@ -111,6 +114,61 @@ const selectedProjectValue = computed({
     },
 });
 
+const documentTypeOptions = [
+    { value: 'contract', label: 'Kontrak' },
+    { value: 'rab', label: 'RAB' },
+    { value: 'rap', label: 'RAP' },
+    { value: 'bamc', label: 'BAMC / Berita Acara' },
+    { value: 'invoice', label: 'Tagihan' },
+    { value: 'receipt', label: 'Bukti Pembayaran' },
+    { value: 'other', label: 'Dokumen Lainnya' },
+];
+
+const defaultDocumentTypeFor = (componentType: string) =>
+    ({
+        rab: 'rab',
+        rap: 'rap',
+        invoice: 'invoice',
+        project_cost: 'receipt',
+        progress_report: 'bamc',
+        project: 'contract',
+    })[componentType] ?? 'other';
+
+const documentTypeLabel = (value?: null | string) =>
+    documentTypeOptions.find((option) => option.value === value)?.label ??
+    value ??
+    'Dokumen';
+
+const ocrStatusLabel = (document: UploadedDocument) =>
+    document.ocrProcessedAt
+        ? `OCR diproses${document.ocrEngine ? ` (${document.ocrEngine})` : ''}`
+        : 'OCR belum diproses';
+
+const sanitizePercentInput = (value: string) => {
+    const cleaned = value
+        .replace(',', '.')
+        .replace(/[^\d.]/g, '')
+        .replace(/(\..*)\./g, '$1');
+    const [whole = '', decimal] = cleaned.split('.');
+    const cappedWhole =
+        whole === '' ? '' : String(Math.min(Number(whole), 100));
+    const cappedDecimal =
+        decimal === undefined ? '' : `.${decimal.slice(0, 2)}`;
+    const nextValue = `${cappedWhole}${cappedDecimal}`;
+
+    return nextValue !== '' && Number(nextValue) > 100 ? '100' : nextValue;
+};
+
+const handleProgressPercentInput = (event: Event) => {
+    if (!(event.target instanceof HTMLInputElement)) {
+        return;
+    }
+
+    const sanitizedValue = sanitizePercentInput(event.target.value);
+    event.target.value = sanitizedValue;
+    previewProgressPercent.value = sanitizedValue;
+};
+
 watch(
     () => props.projectId,
     (projectId) => {
@@ -131,7 +189,7 @@ const form = useForm<{
     documents: [],
     component_type: props.componentType,
     component_id: props.componentId,
-    document_type: props.componentType,
+    document_type: defaultDocumentTypeFor(props.componentType),
     ocr_text: '',
     ocr_engine: '',
 });
@@ -142,8 +200,8 @@ const canChooseProject = computed(
 const canChooseConnection = computed(() => props.connectionOptions.length > 0);
 const defaultConnectionOption = computed<ConnectionOption>(() => ({
     value: `${props.componentType}:${props.componentId ?? 'general'}`,
-    label: 'General page',
-    hint: 'Do not attach to a specific row',
+    label: 'Dokumen umum',
+    hint: 'Tidak terhubung ke baris tertentu',
     componentType: props.componentType,
     componentId: props.componentId,
     projectId: props.projectId,
@@ -179,18 +237,22 @@ watch(selectedConnection, (connection) => {
     if (connection?.projectId) {
         selectedProjectId.value = connection.projectId;
     }
+
+    if (connection?.componentType) {
+        form.document_type = defaultDocumentTypeFor(connection.componentType);
+    }
 });
 const selectedFileNames = computed(() =>
     form.documents.map((file) => file.name).join(', '),
 );
 const statusText = computed(() => {
-    if (isReadingFile.value) return 'Reading document...';
-    if (form.processing) return 'Uploading document...';
+    if (isReadingFile.value) return 'Membaca dokumen...';
+    if (form.processing) return 'Mengunggah dokumen...';
     if (form.documents.length > 0) {
-        return `${form.documents.length} file(s) ready to upload`;
+        return `${form.documents.length} file siap diunggah`;
     }
 
-    return 'Upload document';
+    return 'Unggah dokumen';
 });
 const truncateText = (value: null | string | undefined, max: number) => {
     const cleaned = value?.trim();
@@ -218,10 +280,10 @@ const projectUpdates = computed(() => {
     };
 });
 const projectUpdateLabels: Record<string, string> = {
-    name: 'Project Name',
-    contract_number: 'Contract Number',
-    contract_value: 'Contract Value',
-    location: 'Location',
+    name: 'Nama Proyek',
+    contract_number: 'Nomor Kontrak',
+    contract_value: 'Nilai Kontrak',
+    location: 'Lokasi',
 };
 const projectUpdatePreview = computed(() =>
     Object.entries(previewProjectUpdates.value)
@@ -288,9 +350,9 @@ const applySummary = computed(() => {
     ).length;
     const itemCount = budgetItems.value.length;
 
-    if (!extractedData.value) return 'No extracted data yet.';
+    if (!extractedData.value) return 'Belum ada draft hasil OCR.';
 
-    return `${updates} project field(s), ${itemCount} budget row(s) detected.`;
+    return `${updates} field proyek dan ${itemCount} baris anggaran terdeteksi.`;
 });
 const canApplyExtraction = computed(
     () =>
@@ -317,7 +379,9 @@ const openExtractionPreview = () => {
     ) as Record<string, number | string>;
     previewProgressPercent.value =
         effectiveComponentType.value === 'progress_report'
-            ? (extractedData.value?.metadata.progress_percent ?? '')
+            ? sanitizePercentInput(
+                  String(extractedData.value?.metadata.progress_percent ?? ''),
+              )
             : '';
     previewAmount.value =
         effectiveComponentType.value === 'invoice' ||
@@ -389,21 +453,21 @@ const applyExtraction = async () => {
             throw new Error(
                 typeof payload.message === 'string'
                     ? payload.message
-                    : 'Unable to apply extracted data.',
+                    : 'Draft OCR belum bisa diterapkan.',
             );
         }
 
         applyStatus.value =
             typeof payload.message === 'string'
                 ? payload.message
-                : 'Extracted data applied.';
+                : 'Draft hasil OCR berhasil diterapkan.';
         isPreviewOpen.value = false;
         router.reload();
     } catch (error) {
         applyError.value =
             error instanceof Error
                 ? error.message
-                : 'Unable to apply extracted data.';
+                : 'Draft OCR belum bisa diterapkan.';
     } finally {
         isApplying.value = false;
     }
@@ -434,7 +498,6 @@ const upload = () => {
 
     form.component_type = effectiveComponentType.value;
     form.component_id = effectiveComponentId.value;
-    form.document_type = effectiveComponentType.value;
     form.ocr_text = form.documents.length === 1 ? ocrText.value : '';
     form.ocr_engine =
         form.documents.length === 1 && ocrEngine.value ? ocrEngine.value : '';
@@ -456,7 +519,7 @@ const upload = () => {
 };
 
 const removeDocument = (document: UploadedDocument) => {
-    if (!window.confirm('Delete this uploaded file?')) {
+    if (!window.confirm('Hapus dokumen ini?')) {
         return;
     }
 
@@ -478,23 +541,34 @@ const removeDocument = (document: UploadedDocument) => {
 
             <label v-if="canChooseProject" class="mt-4 block space-y-1.5">
                 <span class="text-xs font-medium text-muted-foreground"
-                    >Project</span
+                    >Proyek</span
                 >
                 <OptionSelect
                     v-model="selectedProjectValue"
                     :options="props.projectOptions"
-                    placeholder="Select project"
+                    placeholder="Pilih proyek"
                 />
             </label>
 
             <label v-if="canChooseConnection" class="mt-4 block space-y-1.5">
                 <span class="text-xs font-medium text-muted-foreground"
-                    >Connect to</span
+                    >Hubungkan ke</span
                 >
                 <OptionSelect
                     v-model="selectedConnectionValue"
                     :options="connectionSelectOptions"
-                    placeholder="Select connection"
+                    placeholder="Pilih koneksi"
+                />
+            </label>
+
+            <label class="mt-4 block space-y-1.5">
+                <span class="text-xs font-medium text-muted-foreground"
+                    >Jenis Dokumen</span
+                >
+                <OptionSelect
+                    v-model="form.document_type"
+                    :options="documentTypeOptions"
+                    placeholder="Pilih jenis dokumen"
                 />
             </label>
 
@@ -539,7 +613,7 @@ const removeDocument = (document: UploadedDocument) => {
                     class="rounded-md border border-sidebar-border/60 px-3 py-2 text-sm dark:border-sidebar-border"
                 >
                     <span class="block text-xs text-muted-foreground"
-                        >Selected file</span
+                        >File dipilih</span
                     >
                     <span class="mt-0.5 block font-medium break-words">
                         {{ selectedFileNames }}
@@ -558,8 +632,8 @@ const removeDocument = (document: UploadedDocument) => {
                         <ScanText v-else class="size-4 text-muted-foreground" />
                         <span>{{
                             form.processing
-                                ? 'Saving upload to this project...'
-                                : (readerStatus ?? 'OCR ready')
+                                ? 'Menyimpan dokumen ke proyek...'
+                                : (readerStatus ?? 'OCR siap digunakan')
                         }}</span>
                     </div>
                     <div
@@ -589,7 +663,7 @@ const removeDocument = (document: UploadedDocument) => {
                     class="rounded-md border border-sidebar-border/60 px-3 py-2 text-sm dark:border-sidebar-border"
                 >
                     <span class="block text-xs text-muted-foreground"
-                        >OCR preview</span
+                        >Preview teks OCR</span
                     >
                     <p
                         class="mt-1 max-h-32 overflow-y-auto text-xs leading-relaxed whitespace-pre-wrap text-muted-foreground"
@@ -603,7 +677,7 @@ const removeDocument = (document: UploadedDocument) => {
                     class="rounded-md border border-sidebar-border/60 px-3 py-2 text-sm dark:border-sidebar-border"
                 >
                     <span class="block text-xs text-muted-foreground"
-                        >Detected fields</span
+                        >Draft hasil OCR</span
                     >
                     <p class="mt-0.5 text-sm">{{ applySummary }}</p>
                     <div class="mt-3 flex flex-wrap items-center gap-2">
@@ -614,7 +688,7 @@ const removeDocument = (document: UploadedDocument) => {
                             @click="openExtractionPreview"
                         >
                             <ScanText class="mr-2 size-4" />
-                            Preview extracted data
+                            Review draft OCR
                         </Button>
                         <span
                             v-if="applyStatus"
@@ -645,7 +719,7 @@ const removeDocument = (document: UploadedDocument) => {
                     @click="upload"
                 >
                     <Upload class="mr-2 size-4" />
-                    Upload
+                    Unggah
                 </Button>
             </div>
         </div>
@@ -655,7 +729,7 @@ const removeDocument = (document: UploadedDocument) => {
         >
             <div class="flex items-center gap-2">
                 <FileText class="size-4 text-muted-foreground" />
-                <h3 class="text-sm font-medium">Uploaded Documents</h3>
+                <h3 class="text-sm font-medium">Dokumen Proyek</h3>
             </div>
 
             <div class="mt-4 grid gap-2">
@@ -685,7 +759,9 @@ const removeDocument = (document: UploadedDocument) => {
                                         ? `${document.projectName} / `
                                         : ''
                                 }}
-                                {{ document.createdAt ?? 'uploaded' }}
+                                {{ document.createdAt ?? 'diunggah' }}
+                                /
+                                {{ documentTypeLabel(document.documentType) }}
                                 /
                                 {{
                                     document.size
@@ -693,10 +769,8 @@ const removeDocument = (document: UploadedDocument) => {
                                           ' KB'
                                         : 'file'
                                 }}
-                                <template v-if="document.ocrProcessedAt">
-                                    / OCR
-                                    {{ document.ocrEngine ?? 'processed' }}
-                                </template>
+                                /
+                                {{ ocrStatusLabel(document) }}
                             </span>
                         </span>
                     </a>
@@ -725,7 +799,7 @@ const removeDocument = (document: UploadedDocument) => {
                 class="max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto sm:max-w-4xl"
             >
                 <DialogHeader>
-                    <DialogTitle>Preview OCR Data</DialogTitle>
+                    <DialogTitle>Review Draft Hasil OCR</DialogTitle>
                 </DialogHeader>
 
                 <div class="space-y-5">
@@ -733,7 +807,7 @@ const removeDocument = (document: UploadedDocument) => {
                         v-if="projectUpdatePreview.length > 0"
                         class="space-y-3"
                     >
-                        <h4 class="text-sm font-medium">Project fields</h4>
+                        <h4 class="text-sm font-medium">Field proyek</h4>
                         <div class="grid gap-3 sm:grid-cols-2">
                             <label
                                 v-for="field in projectUpdatePreview"
@@ -745,7 +819,7 @@ const removeDocument = (document: UploadedDocument) => {
                                     >{{ field.label }}</span
                                 >
                                 <textarea
-                                    v-if="field.label === 'Location'"
+                                    v-if="field.label === 'Lokasi'"
                                     v-model="previewProjectUpdates[field.key]"
                                     class="min-h-24 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs"
                                 />
@@ -768,15 +842,18 @@ const removeDocument = (document: UploadedDocument) => {
                         >
                             <span
                                 class="text-xs font-medium text-muted-foreground"
-                                >Progress Percent</span
+                                >Persentase Progress</span
                             >
                             <input
                                 v-model="previewProgressPercent"
-                                type="number"
+                                type="text"
+                                inputmode="decimal"
+                                pattern="^\d{0,3}(\.\d{0,2})?$"
                                 min="0"
                                 max="100"
                                 step="0.01"
                                 class="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+                                @input="handleProgressPercentInput"
                             />
                         </label>
 
@@ -789,7 +866,7 @@ const removeDocument = (document: UploadedDocument) => {
                         >
                             <span
                                 class="text-xs font-medium text-muted-foreground"
-                                >Amount</span
+                                >Nilai</span
                             >
                             <input
                                 v-model="previewAmount"
@@ -809,13 +886,13 @@ const removeDocument = (document: UploadedDocument) => {
                         "
                         class="space-y-3"
                     >
-                        <h4 class="text-sm font-medium">Budget rows</h4>
+                        <h4 class="text-sm font-medium">Baris anggaran</h4>
                         <div class="overflow-x-auto rounded-md border">
                             <table class="min-w-[54rem] text-sm">
                                 <thead class="bg-muted/50 text-left text-xs">
                                     <tr>
-                                        <th class="px-3 py-2">Description</th>
-                                        <th class="px-3 py-2">Section</th>
+                                        <th class="px-3 py-2">Uraian</th>
+                                        <th class="px-3 py-2">Bagian</th>
                                         <th class="px-3 py-2">Qty</th>
                                         <th class="px-3 py-2">Unit</th>
                                         <th class="px-3 py-2">Unit Price</th>
@@ -884,7 +961,7 @@ const removeDocument = (document: UploadedDocument) => {
                                                     )
                                                 "
                                             >
-                                                Remove
+                                                Hapus
                                             </Button>
                                         </td>
                                     </tr>
@@ -901,7 +978,8 @@ const removeDocument = (document: UploadedDocument) => {
                         "
                         class="rounded-md border border-dashed p-4 text-sm text-muted-foreground"
                     >
-                        No fields or rows were detected from this OCR result.
+                        Tidak ada field atau baris yang terdeteksi dari hasil
+                        OCR ini.
                     </p>
                 </div>
 
@@ -911,7 +989,7 @@ const removeDocument = (document: UploadedDocument) => {
                         variant="outline"
                         @click="isPreviewOpen = false"
                     >
-                        Cancel
+                        Batal
                     </Button>
                     <Button
                         type="button"
@@ -922,7 +1000,7 @@ const removeDocument = (document: UploadedDocument) => {
                             v-if="isApplying"
                             class="mr-2 size-4 animate-spin"
                         />
-                        Apply Edited Data
+                        Terapkan Draft
                     </Button>
                 </DialogFooter>
             </DialogContent>

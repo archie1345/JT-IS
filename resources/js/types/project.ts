@@ -31,6 +31,7 @@ export type UploadedDocument = {
     ocrText?: null | string;
     ocrEngine?: null | string;
     ocrProcessedAt?: null | string;
+    ocrStatus?: 'failed' | 'not_configured' | 'not_processed' | 'processed';
     createdAt: null | string;
 };
 

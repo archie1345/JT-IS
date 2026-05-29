@@ -28,7 +28,9 @@ const props = defineProps<{
     };
 }>();
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Reports', href: '/pipeline' }];
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Marketing Pipeline', href: '/pipeline' },
+];
 
 const uploadConnectionOptions = computed(() =>
     props.records.map((record) => ({
@@ -118,17 +120,21 @@ const fields = [
 ] as const;
 
 const convertTender = (record: Record<string, null | number | string>) => {
-    router.post(`/pipeline/${Number(record.id)}/convert`, {}, {
-        preserveScroll: true,
-    });
+    router.post(
+        `/pipeline/${Number(record.id)}/convert`,
+        {},
+        {
+            preserveScroll: true,
+        },
+    );
 };
 </script>
 
 <template>
     <CrudPrototypePage
-        head-title="Reports"
-        title="Reports"
-        description="Simple marketing pipeline prototype backed by the tenders table."
+        head-title="Marketing Pipeline"
+        title="Marketing Pipeline"
+        description="Track tender opportunities from open offer through submitted, won, or lost status."
         :breadcrumbs="breadcrumbs"
         :rows="props.records"
         :columns="columns"
@@ -142,8 +148,8 @@ const convertTender = (record: Record<string, null | number | string>) => {
         :uploaded-documents="props.uploadedDocuments"
         :upload-connection-options="uploadConnectionOptions"
         :pagination="props.pagination"
-        create-label="New Pipeline Item"
-        :note="`Showing ${props.pagination.total} pipeline item(s)`"
+        create-label="New Tender"
+        :note="`${props.pagination.total} tender opportunities in the pipeline`"
     >
         <template #cell-value="{ value }">
             {{
@@ -178,7 +184,9 @@ const convertTender = (record: Record<string, null | number | string>) => {
                 variant="outline"
                 size="icon-sm"
                 title="Convert to Project"
-                @click="convertTender(row as Record<string, null | number | string>)"
+                @click="
+                    convertTender(row as Record<string, null | number | string>)
+                "
             >
                 <ArrowRightCircle class="size-4" />
             </Button>

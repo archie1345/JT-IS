@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invoice;
+use App\Models\Payment;
 use App\Models\Project;
 use App\Models\ProjectCost;
 use App\Models\ProgressReport;
@@ -26,6 +27,7 @@ class DashboardController extends Controller
                 'mvpSummary' => $this->mvpSummary(),
                 'problemProjects' => $this->problemProjects(),
                 'recentProjects' => $this->recentProjects(),
+                'recentProgress' => $this->recentProgress(),
             ],
         ]);
     }
@@ -130,10 +132,11 @@ class DashboardController extends Controller
     private function totals(): array
     {
         return [
-            ['label' => 'Projects', 'value' => (float) Project::query()->count()],
-            ['label' => 'Contract Value', 'value' => (float) Project::query()->sum('contract_value')],
-            ['label' => 'Invoices', 'value' => (float) Invoice::query()->sum('amount')],
-            ['label' => 'Costs', 'value' => (float) ProjectCost::query()->sum('amount')],
+            ['label' => 'Projects', 'value' => (float) Project::query()->count(), 'format' => 'number'],
+            ['label' => 'Contract Value', 'value' => (float) Project::query()->sum('contract_value'), 'format' => 'currency'],
+            ['label' => 'Invoices', 'value' => (float) Invoice::query()->sum('amount'), 'format' => 'currency'],
+            ['label' => 'Payments', 'value' => (float) Payment::query()->sum('amount'), 'format' => 'currency'],
+            ['label' => 'Costs', 'value' => (float) ProjectCost::query()->sum('amount'), 'format' => 'currency'],
         ];
     }
 
@@ -143,12 +146,14 @@ class DashboardController extends Controller
         $statuses = $projects->map(fn (Project $project): string => $project->mvpStatus());
 
         return [
-            ['label' => 'Total Contract Value', 'value' => (float) $projects->sum('contract_value')],
-            ['label' => 'Active Projects', 'value' => (float) $projects->whereIn('status', ['planning', 'ongoing'])->count()],
-            ['label' => 'Realized Cost', 'value' => (float) ProjectCost::query()->sum('amount')],
-            ['label' => 'Invoice Amount', 'value' => (float) Invoice::query()->sum('amount')],
-            ['label' => 'Overdue Invoices', 'value' => (float) Invoice::query()->where('status', 'overdue')->count()],
-            ['label' => 'Warning/Critical Projects', 'value' => (float) $statuses->filter(fn (string $status): bool => in_array($status, ['Warning', 'Critical'], true))->count()],
+            ['label' => 'Total Nilai Kontrak', 'value' => (float) $projects->sum('contract_value'), 'format' => 'currency'],
+            ['label' => 'Proyek Aktif', 'value' => (float) $projects->whereIn('status', ['planning', 'ongoing'])->count(), 'format' => 'number'],
+            ['label' => 'Total Realisasi Biaya', 'value' => (float) ProjectCost::query()->sum('amount'), 'format' => 'currency'],
+            ['label' => 'Total Tagihan', 'value' => (float) Invoice::query()->sum('amount'), 'format' => 'currency'],
+            ['label' => 'Total Pembayaran', 'value' => (float) Payment::query()->sum('amount'), 'format' => 'currency'],
+            ['label' => 'Tagihan Jatuh Tempo', 'value' => (float) Invoice::query()->where('status', 'overdue')->count(), 'format' => 'number'],
+            ['label' => 'Proyek Warning', 'value' => (float) $statuses->filter(fn (string $status): bool => $status === 'Warning')->count(), 'format' => 'number'],
+            ['label' => 'Proyek Critical', 'value' => (float) $statuses->filter(fn (string $status): bool => $status === 'Critical')->count(), 'format' => 'number'],
         ];
     }
 
@@ -191,6 +196,27 @@ class DashboardController extends Controller
                 'dbStatus' => $project->status,
                 'approvedProgress' => $project->latestApprovedProgressPercent() ?? 0,
                 'endDate' => optional($project->end_date)->format('Y-m-d'),
+            ])
+            ->all();
+    }
+
+    private function recentProgress(): array
+    {
+        return ProgressReport::query()
+            ->with('project:id,name,client_id', 'project.client:id,name')
+            ->latest('report_date')
+            ->latest('id')
+            ->limit(8)
+            ->get()
+            ->map(fn (ProgressReport $report): array => [
+                'id' => $report->id,
+                'projectId' => $report->project_id,
+                'projectName' => $report->project?->name ?? 'Untitled project',
+                'client' => $report->project?->client?->name ?? '-',
+                'percent' => (float) ($report->progress_percent ?? 0),
+                'date' => optional($report->report_date)->format('Y-m-d'),
+                'approved' => (bool) ($report->approved_by_client && $report->approved_by_internal),
+                'documentNumber' => $report->document_number,
             ])
             ->all();
     }

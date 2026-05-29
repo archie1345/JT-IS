@@ -59,7 +59,7 @@ const clientColumns = [
         :rows="rows"
         :columns="clientColumns"
         :breadcrumbs="breadcrumbs"
-        description="Data below is loaded from the database and summarizes each client portfolio."
+        description="Review client contacts and the projects connected to each account."
         row-key-field="id"
         show-create-button
         create-label="New Client"

@@ -30,6 +30,10 @@ const props = defineProps<{
 
 const model = defineModel<number | string>({ required: true });
 
+const isPercentField = computed(
+    () => props.field.type === 'number' && props.field.name.includes('percent'),
+);
+
 const selectValue = computed({
     get: () =>
         model.value === '' || model.value === null || model.value === undefined
@@ -39,6 +43,36 @@ const selectValue = computed({
         model.value = value;
     },
 });
+
+const sanitizePercentInput = (value: string) => {
+    const cleaned = value
+        .replace(',', '.')
+        .replace(/[^\d.]/g, '')
+        .replace(/(\..*)\./g, '$1');
+    const [whole = '', decimal] = cleaned.split('.');
+    const cappedWhole =
+        whole === ''
+            ? ''
+            : String(Math.min(Number(whole), props.field.max ?? 100));
+    const cappedDecimal =
+        decimal === undefined ? '' : `.${decimal.slice(0, 2)}`;
+    const nextValue = `${cappedWhole}${cappedDecimal}`;
+    const maxValue = props.field.max ?? 100;
+
+    return nextValue !== '' && Number(nextValue) > maxValue
+        ? String(maxValue)
+        : nextValue;
+};
+
+const handleInput = (event: Event) => {
+    if (!isPercentField.value || !(event.target instanceof HTMLInputElement)) {
+        return;
+    }
+
+    const sanitizedValue = sanitizePercentInput(event.target.value);
+    event.target.value = sanitizedValue;
+    model.value = sanitizedValue;
+};
 </script>
 
 <template>
@@ -71,12 +105,15 @@ const selectValue = computed({
             v-else
             :id="props.field.name"
             v-model="model"
-            :type="props.field.type"
+            :type="isPercentField ? 'text' : props.field.type"
+            :inputmode="isPercentField ? 'decimal' : undefined"
+            :pattern="isPercentField ? '^\\d{0,3}(\\.\\d{0,2})?$' : undefined"
             :placeholder="props.field.placeholder"
             :min="props.field.min"
             :max="props.field.max"
             :step="props.field.step"
             :required="props.field.required"
+            @input="handleInput"
         />
 
         <InputError :message="props.error" />

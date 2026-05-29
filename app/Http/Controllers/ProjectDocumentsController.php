@@ -9,23 +9,39 @@ use App\Models\ProjectDocument;
 use App\Models\ProgressReport;
 use App\Models\Rab;
 use App\Models\Rap;
+use App\Services\Ocr\OcrNotConfiguredException;
+use App\Services\Ocr\OcrProviderException;
+use App\Services\Ocr\OcrService;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ProjectDocumentsController extends Controller
 {
     public function store(Request $request, Project $project): RedirectResponse
     {
+        $allowedExtensions = implode(',', config('ocr.allowed_extensions', []));
+
         $data = $request->validate([
             'documents' => ['required', 'array', 'min:1'],
-            'documents.*' => ['file', 'max:51200'],
-            'document_type' => ['nullable', 'string', 'max:80'],
+            'documents.*' => ['file', 'mimes:'.$allowedExtensions, 'max:'.config('ocr.max_file_size_kb')],
+            'document_type' => ['nullable', 'string', 'max:80', Rule::in([
+                'contract',
+                'rab',
+                'rap',
+                'bamc',
+                'invoice',
+                'receipt',
+                'other',
+                'project',
+                'project_cost',
+                'progress_report',
+                'pipeline',
+            ])],
             'ocr_text' => ['nullable', 'string'],
             'ocr_engine' => ['nullable', 'string', 'max:100'],
             'component_type' => ['nullable', 'string', 'max:80', Rule::in([
@@ -64,57 +80,34 @@ class ProjectDocumentsController extends Controller
             ]);
         }
 
-        return back()->with('success', 'Documents uploaded successfully.');
+        return back()->with('success', 'Dokumen berhasil diunggah.');
     }
 
-    public function ocr(Request $request): JsonResponse
+    public function ocr(Request $request, OcrService $ocrService): JsonResponse
     {
+        $allowedExtensions = implode(',', config('ocr.allowed_extensions', []));
+
         $validated = $request->validate([
-            'file' => ['required', 'file', 'mimes:pdf,png,jpg,jpeg,webp,bmp,tif,tiff,txt,csv', 'max:51200'],
+            'file' => ['required', 'file', 'mimes:'.$allowedExtensions, 'max:'.config('ocr.max_file_size_kb')],
         ]);
 
-        $file = $validated['file'];
-
-        if (in_array(strtolower($file->getClientOriginalExtension()), ['txt', 'csv'], true)) {
-            return response()->json([
-                'engine' => 'laravel-text',
-                'text' => file_get_contents($file->getRealPath()) ?: '',
-                'pages' => [],
-            ]);
-        }
-
-        $ocrUrl = rtrim((string) config('services.ocr.url'), '/').'/ocr';
-
         try {
-            $response = Http::connectTimeout(10)
-                ->timeout((int) config('services.ocr.timeout'))
-                ->attach(
-                    'file',
-                    file_get_contents($file->getRealPath()),
-                    $file->getClientOriginalName(),
-                )
-                ->post($ocrUrl);
-        } catch (ConnectionException) {
+            return response()->json($ocrService->extract($validated['file']));
+        } catch (OcrNotConfiguredException $exception) {
             return response()->json([
-                'message' => 'OCR service did not respond before the timeout.',
-                'detail' => sprintf(
-                    'Timed out calling %s after %s seconds. Restart the OCR service and keep OCR_PREFER_PDF_TEXT=1, OCR_FAST_MODE=1, and OCR_MAX_PAGES at a practical page count for large PDFs.',
-                    $ocrUrl,
-                    config('services.ocr.timeout'),
-                ),
-            ], 504);
-        }
-
-        if ($response->failed()) {
-            $detail = $response->json('detail') ?? $response->json() ?: $response->body();
-
+                'message' => $exception->getMessage(),
+                'engine' => 'manual',
+                'text' => '',
+                'pages' => [],
+            ], 503);
+        } catch (OcrProviderException $exception) {
             return response()->json([
-                'message' => 'OCR service failed.',
-                'detail' => $detail,
-            ], $response->status() >= 500 ? 503 : $response->status());
+                'message' => $exception->getMessage(),
+                'engine' => 'manual',
+                'text' => '',
+                'pages' => [],
+            ], $exception->statusCode());
         }
-
-        return response()->json($response->json());
     }
 
     public function applyExtraction(Request $request): JsonResponse
@@ -143,7 +136,7 @@ class ProjectDocumentsController extends Controller
             'items.*.quantity' => ['nullable', 'numeric', 'min:0'],
             'items.*.unit_price' => ['nullable', 'numeric', 'min:0'],
             'items.*.total_price' => ['nullable', 'numeric', 'min:0'],
-            'progress_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'progress_percent' => ['nullable', 'numeric', 'decimal:0,2', 'min:0', 'max:100'],
             'amount' => ['nullable', 'numeric', 'min:0'],
         ]);
 
@@ -158,8 +151,8 @@ class ProjectDocumentsController extends Controller
                     }
 
                     return match ($key) {
-                        'name' => mb_substr(trim($value), 0, 200),
-                        'contract_number' => mb_substr(trim($value), 0, 100),
+                        'name' => substr(trim($value), 0, 200),
+                        'contract_number' => substr(trim($value), 0, 100),
                         default => trim($value),
                     };
                 })
@@ -225,10 +218,34 @@ class ProjectDocumentsController extends Controller
             }
 
             if ($validated['component_type'] === 'invoice' && ($validated['amount'] ?? null) !== null) {
+                $amount = (float) $validated['amount'];
+                $contractValue = (float) ($project->contract_value ?? 0);
+                $approvedProgress = $project->latestApprovedProgressPercent();
+
+                if ($contractValue <= 0) {
+                    throw ValidationException::withMessages([
+                'amount' => 'Draft tagihan dari OCR belum bisa diterapkan karena nilai kontrak proyek masih kosong.',
+                    ]);
+                }
+
+                if ($approvedProgress === null || $approvedProgress <= 0) {
+                    throw ValidationException::withMessages([
+                'amount' => 'Draft tagihan dari OCR belum bisa diterapkan karena proyek belum memiliki progress yang disetujui lengkap.',
+                    ]);
+                }
+
+                $remainingBillable = ($contractValue * ($approvedProgress / 100)) - $project->invoiceTotal($recordId);
+
+                if ($amount > $remainingBillable) {
+                    throw ValidationException::withMessages([
+                'amount' => 'Draft tagihan dari OCR melebihi sisa nilai yang boleh ditagihkan berdasarkan progress disetujui.',
+                    ]);
+                }
+
                 $record = $recordId
                     ? Invoice::query()->where('project_id', $project->id)->findOrFail($recordId)
                     : $project->invoices()->create(['invoice_date' => now()->toDateString(), 'status' => 'pending']);
-                $record->update(['amount' => $validated['amount']]);
+                $record->update(['amount' => $amount]);
                 $recordId = $record->id;
             }
 
@@ -250,7 +267,7 @@ class ProjectDocumentsController extends Controller
         });
 
         return response()->json([
-            'message' => 'Extracted data applied.',
+            'message' => 'Draft hasil OCR berhasil diterapkan.',
             ...$result,
         ]);
     }
@@ -273,7 +290,7 @@ class ProjectDocumentsController extends Controller
         Storage::disk('public')->delete($projectDocument->path);
         $projectDocument->delete();
 
-        return back()->with('success', 'Document removed.');
+        return back()->with('success', 'Dokumen berhasil dihapus.');
     }
 
     public static function serialize(ProjectDocument $document): array
@@ -293,6 +310,7 @@ class ProjectDocumentsController extends Controller
             'ocrText' => $document->ocr_text,
             'ocrEngine' => $document->ocr_engine,
             'ocrProcessedAt' => optional($document->ocr_processed_at)->format('Y-m-d H:i'),
+            'ocrStatus' => $document->ocr_processed_at ? 'processed' : 'not_processed',
             'createdAt' => optional($document->created_at)->format('Y-m-d H:i'),
         ];
     }

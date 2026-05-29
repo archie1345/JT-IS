@@ -121,7 +121,7 @@ const fields = [
     <CrudPrototypePage
         head-title="RAP"
         title="RAP List"
-        description="Plan records grouped by project."
+        description="Review execution budgets used to compare planned spend against realized project costs."
         :rows="rows"
         :columns="rapColumns"
         :fields="fields"
@@ -139,8 +139,8 @@ const fields = [
         create-label="New RAP"
         :note="
             props.activeProjectId
-                ? `Filtered by project ID ${props.activeProjectId}`
-                : `Showing ${props.pagination?.total ?? rows.length} RAP record(s)`
+                ? `Showing RAP documents for project ID ${props.activeProjectId}`
+                : `${props.pagination?.total ?? rows.length} RAP documents available`
         "
     >
         <template #cell-totalBudget="{ value }">

@@ -6,6 +6,7 @@ use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\Project;
 use App\Models\ProjectCost;
+use App\Models\ProjectDocument;
 use App\Models\ProgressReport;
 use App\Models\Rab;
 use App\Models\Rap;
@@ -15,6 +16,7 @@ use App\Support\AccessControl;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class TemporaryProjectMonitoringSeeder extends Seeder
 {
@@ -24,10 +26,10 @@ class TemporaryProjectMonitoringSeeder extends Seeder
 
         DB::transaction(function (): void {
             $users = [
-                ['name' => 'Demo Admin', 'email' => 'admin@jte.com', 'user_type' => 'admin', 'employee_role' => 'System Admin', 'roles' => ['admin']],
-                ['name' => 'Demo Operational', 'email' => 'operational@jte.com', 'user_type' => 'employee', 'employee_role' => 'operational', 'roles' => ['employee', 'operational']],
-                ['name' => 'Demo Finance', 'email' => 'finance@jte.com', 'user_type' => 'employee', 'employee_role' => 'finance', 'roles' => ['employee', 'finance']],
-                ['name' => 'Demo Management', 'email' => 'management@jte.com', 'user_type' => 'employee', 'employee_role' => 'management', 'roles' => ['employee', 'management']],
+                ['name' => 'Demo Admin', 'email' => 'admin@example.com', 'user_type' => 'admin', 'employee_role' => 'System Admin', 'roles' => ['admin']],
+                ['name' => 'Demo Operational', 'email' => 'operational@example.com', 'user_type' => 'employee', 'employee_role' => 'operational', 'roles' => ['employee', 'operational']],
+                ['name' => 'Demo Finance', 'email' => 'finance@example.com', 'user_type' => 'employee', 'employee_role' => 'finance', 'roles' => ['employee', 'finance']],
+                ['name' => 'Demo Management', 'email' => 'management@example.com', 'user_type' => 'employee', 'employee_role' => 'management', 'roles' => ['employee', 'management']],
             ];
 
             foreach ($users as $seed) {
@@ -37,7 +39,7 @@ class TemporaryProjectMonitoringSeeder extends Seeder
                 $user = User::query()->updateOrCreate(
                     ['email' => $seed['email']],
                     array_merge($seed, [
-                        'password' => Hash::make('password123'),
+                        'password' => Hash::make('password'),
                         'email_verified_at' => now(),
                     ]),
                 );
@@ -88,6 +90,24 @@ class TemporaryProjectMonitoringSeeder extends Seeder
             $this->progress($projectB, 75, true, true, 'BA MC 75% disetujui.');
             $this->progress($projectC, 75, true, true, 'BA MC 75% disetujui.');
             $this->progress($projectC, 90, true, false, 'Draft progress lapangan 90%, belum disetujui client.');
+
+            Storage::disk('public')->put(
+                'projects/'.$projectA->id.'/project/demo-bamc.txt',
+                "BA MC 50%\nProgress fisik pekerjaan Revitalisasi SCADA Bendungan telah disetujui internal dan client.",
+            );
+            ProjectDocument::query()->create([
+                'project_id' => $projectA->id,
+                'document_type' => 'bamc',
+                'component_type' => 'progress_report',
+                'name' => 'Demo BAMC 50 Persen',
+                'original_name' => 'demo-bamc-50.txt',
+                'path' => 'projects/'.$projectA->id.'/project/demo-bamc.txt',
+                'mime_type' => 'text/plain',
+                'size' => 96,
+                'ocr_text' => "BA MC 50%\nProgress fisik pekerjaan Revitalisasi SCADA Bendungan telah disetujui internal dan client.",
+                'ocr_engine' => 'seeded-demo',
+                'ocr_processed_at' => now(),
+            ]);
 
             ProjectCost::query()->create(['project_id' => $projectA->id, 'category' => 'Material', 'amount' => 650000000, 'date' => now()->subDays(15)]);
             ProjectCost::query()->create(['project_id' => $projectB->id, 'category' => 'Subcontractor', 'amount' => 1650000000, 'date' => now()->subDays(10)]);

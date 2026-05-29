@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import {
     ArrowLeft,
     FileText,
@@ -149,7 +149,10 @@ const itemTotal = computed(
 );
 const scannerData = computed(() =>
     scannerText.value.trim()
-        ? extractImportantDocumentData(scannerText.value, props.upload.componentType)
+        ? extractImportantDocumentData(
+              scannerText.value,
+              props.upload.componentType,
+          )
         : null,
 );
 const scannerRows = computed(() =>
@@ -303,8 +306,7 @@ const applyScannerToHeader = () => {
     if (props.kind === 'invoice') {
         headerForm.invoice_number =
             metadata.doc_number || headerForm.invoice_number || '';
-        headerForm.amount =
-            metadata.contract_value ?? headerForm.amount ?? '';
+        headerForm.amount = metadata.contract_value ?? headerForm.amount ?? '';
         headerForm.invoice_date =
             toDateInputValue(metadata.contract_date) ||
             headerForm.invoice_date ||
@@ -314,8 +316,7 @@ const applyScannerToHeader = () => {
     } else {
         headerForm.reference_number =
             metadata.doc_number || headerForm.reference_number || '';
-        headerForm.amount =
-            metadata.contract_value ?? headerForm.amount ?? '';
+        headerForm.amount = metadata.contract_value ?? headerForm.amount ?? '';
         headerForm.date =
             toDateInputValue(metadata.contract_date) || headerForm.date || '';
         headerForm.description =
@@ -344,7 +345,9 @@ const openScannerItem = () => {
         itemForm.quantity = 1;
         itemForm.unit = 'ls';
         itemForm.unit_price = Number(scannerData.value.metadata.contract_value);
-        itemForm.total_price = Number(scannerData.value.metadata.contract_value);
+        itemForm.total_price = Number(
+            scannerData.value.metadata.contract_value,
+        );
     }
 
     isItemOpen.value = true;
@@ -389,7 +392,10 @@ const destroyItem = (item: FinancialItem) => {
     });
 };
 
-const printInvoice = () => window.print();
+const printInvoice = async () => {
+    await nextTick();
+    window.print();
+};
 </script>
 
 <template>
@@ -495,12 +501,16 @@ const printInvoice = () => window.print();
                         <div
                             class="rounded-xl border border-sidebar-border/70 bg-background p-4 shadow-xs dark:border-sidebar-border"
                         >
-                            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div
+                                class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+                            >
                                 <div>
                                     <p class="text-sm font-medium">
                                         OCR Scanner Result
                                     </p>
-                                    <p class="mt-1 text-sm text-muted-foreground">
+                                    <p
+                                        class="mt-1 text-sm text-muted-foreground"
+                                    >
                                         {{ scannerSummary }}
                                     </p>
                                 </div>
@@ -530,7 +540,9 @@ const printInvoice = () => window.print();
                                 class="mt-4 grid gap-3 text-sm sm:grid-cols-2"
                             >
                                 <div class="rounded-md bg-muted/40 px-3 py-2">
-                                    <span class="block text-xs text-muted-foreground">
+                                    <span
+                                        class="block text-xs text-muted-foreground"
+                                    >
                                         Reference
                                     </span>
                                     <span class="font-medium">
@@ -541,7 +553,9 @@ const printInvoice = () => window.print();
                                     </span>
                                 </div>
                                 <div class="rounded-md bg-muted/40 px-3 py-2">
-                                    <span class="block text-xs text-muted-foreground">
+                                    <span
+                                        class="block text-xs text-muted-foreground"
+                                    >
                                         Amount
                                     </span>
                                     <span class="font-medium">
@@ -554,18 +568,22 @@ const printInvoice = () => window.print();
                                     </span>
                                 </div>
                                 <div class="rounded-md bg-muted/40 px-3 py-2">
-                                    <span class="block text-xs text-muted-foreground">
+                                    <span
+                                        class="block text-xs text-muted-foreground"
+                                    >
                                         Project / Description
                                     </span>
                                     <span class="font-medium">
                                         {{
-                                            scannerData.metadata
-                                                .project_name || '-'
+                                            scannerData.metadata.project_name ||
+                                            '-'
                                         }}
                                     </span>
                                 </div>
                                 <div class="rounded-md bg-muted/40 px-3 py-2">
-                                    <span class="block text-xs text-muted-foreground">
+                                    <span
+                                        class="block text-xs text-muted-foreground"
+                                    >
                                         Detected Rows
                                     </span>
                                     <span class="font-medium">

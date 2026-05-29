@@ -211,13 +211,9 @@ const changeRowsPerPage = (value: string) => {
     params.set('per_page', value);
     params.delete('page');
 
-    router.get(
-        window.location.pathname,
-        Object.fromEntries(params.entries()),
-        {
-            preserveScroll: true,
-        },
-    );
+    router.get(window.location.pathname, Object.fromEntries(params.entries()), {
+        preserveScroll: true,
+    });
 };
 
 const goToPage = (page: number) => {
@@ -225,22 +221,15 @@ const goToPage = (page: number) => {
         return;
     }
 
-    const targetPage = Math.min(
-        Math.max(page, 1),
-        props.pagination.lastPage,
-    );
+    const targetPage = Math.min(Math.max(page, 1), props.pagination.lastPage);
     const params = new URLSearchParams(window.location.search);
 
     params.set('page', String(targetPage));
     params.set('per_page', String(props.pagination.perPage));
 
-    router.get(
-        window.location.pathname,
-        Object.fromEntries(params.entries()),
-        {
-            preserveScroll: true,
-        },
-    );
+    router.get(window.location.pathname, Object.fromEntries(params.entries()), {
+        preserveScroll: true,
+    });
 };
 </script>
 
@@ -335,7 +324,7 @@ const goToPage = (page: number) => {
                 <span class="text-muted-foreground">
                     Page {{ props.pagination.currentPage }} of
                     {{ props.pagination.lastPage }} -
-                    {{ props.pagination.total }} total record(s)
+                    {{ props.pagination.total }} total entries
                 </span>
                 <div class="flex gap-2">
                     <Button
@@ -372,8 +361,8 @@ const goToPage = (page: number) => {
                     :component-type="props.uploadComponentType"
                     :connection-options="props.uploadConnectionOptions"
                     :documents="props.uploadedDocuments"
-                    title="Page Files"
-                    description="Upload supporting files here and they will be linked to the selected project and this page."
+                    title="Supporting Documents"
+                    description="Upload supporting files and link them to the selected project and monitoring record."
                 />
             </section>
         </div>

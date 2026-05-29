@@ -25,6 +25,13 @@ Project warning/status rules are in:
 
 - `app/Services/ProjectStatusService.php`
 
+Reviewable OCR support is in:
+
+- `config/ocr.php`
+- `app/Services/Ocr/*`
+- `ProjectDocumentsController`
+- `resources/js/components/shared/DocumentUploadPanel.vue`
+
 Use this service when changing the meaning of `On Track`, `Warning`, or `Critical`.
 
 ## Frontend Pages
@@ -64,6 +71,10 @@ Demo users:
 - `finance@example.com / password`
 - `management@example.com / password`
 
+## OCR
+
+OCR is optional and review-before-apply. Missing OCR configuration returns a friendly manual-input fallback instead of breaking the demo. See `docs/OCR.md`.
+
 ## Experimental Code
 
-OCR/AI extraction and billing test routes remain available for compatibility, but they are hidden from the normal MVP sidebar and kept under `resources/js/pages/dev`.
+Raw AI extraction and billing test routes remain available for compatibility, but they are hidden from the normal MVP sidebar and kept under `resources/js/pages/dev`.

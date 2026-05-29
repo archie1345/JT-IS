@@ -142,29 +142,39 @@ class AccessControl
             [
                 'label' => 'Marketing',
                 'items' => [
-                    ['title' => 'Pipeline / Tenders', 'href' => route('pipeline'), 'icon' => 'Files', 'permission' => 'sidebar.marketing.reports.view'],
-                    ['title' => 'Projects', 'href' => route('projects'), 'icon' => 'Network', 'permission' => 'sidebar.marketing.projects.view'],
+                    ['title' => 'Penawaran / Pipeline', 'href' => route('pipeline'), 'icon' => 'Files', 'permission' => 'sidebar.marketing.reports.view'],
                 ],
             ],
             [
-                'label' => 'Budget & Progress',
+                'label' => 'Projects',
+                'items' => [
+                    ['title' => 'Proyek', 'href' => route('projects'), 'icon' => 'Network', 'permission' => 'sidebar.marketing.projects.view'],
+                ],
+            ],
+            [
+                'label' => 'Budget',
                 'items' => [
                     ['title' => 'RAB', 'href' => route('rabs'), 'icon' => 'FileText', 'permission' => 'sidebar.operational.rabs.view'],
                     ['title' => 'RAP', 'href' => route('raps'), 'icon' => 'FileText', 'permission' => 'sidebar.operational.raps.view'],
+                ],
+            ],
+            [
+                'label' => 'Progress',
+                'items' => [
                     ['title' => 'Progress / BAMC', 'href' => route('progress-updates.index'), 'icon' => 'CopyCheck', 'permission' => 'sidebar.operational.progress.view'],
                 ],
             ],
             [
                 'label' => 'Finance',
                 'items' => [
-                    ['title' => 'Cost Realization', 'href' => route('project-costs.index'), 'icon' => 'FileCheck', 'permission' => 'sidebar.finance.cost-realization.view'],
-                    ['title' => 'Invoices', 'href' => route('invoices.index'), 'icon' => 'BadgeDollarSign', 'permission' => 'sidebar.finance.billing.view'],
+                    ['title' => 'Realisasi Biaya', 'href' => route('project-costs.index'), 'icon' => 'FileCheck', 'permission' => 'sidebar.finance.cost-realization.view'],
+                    ['title' => 'Tagihan', 'href' => route('invoices.index'), 'icon' => 'BadgeDollarSign', 'permission' => 'sidebar.finance.billing.view'],
                 ],
             ],
             [
                 'label' => 'Clients',
                 'items' => [
-                    ['title' => 'Clients', 'href' => route('client'), 'icon' => 'Building2', 'permission' => 'sidebar.clients.view'],
+                    ['title' => 'Klien', 'href' => route('client'), 'icon' => 'Building2', 'permission' => 'sidebar.clients.view'],
                 ],
             ],
             [
@@ -181,9 +191,7 @@ class AccessControl
      */
     public static function footerItems(): array
     {
-        return [
-            ['title' => 'Testing', 'href' => route('billing.test'), 'icon' => 'TestTube', 'permission' => 'sidebar.footer.testing.view'],
-        ];
+        return [];
     }
 
     public static function sync(): void

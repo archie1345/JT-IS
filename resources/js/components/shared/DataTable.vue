@@ -49,7 +49,7 @@ const props = withDefaults(
     }>(),
     {
         rowKeyField: 'id',
-        searchPlaceholder: 'Search like a spreadsheet...',
+        searchPlaceholder: 'Search records...',
         showCreateButton: false,
         createLabel: 'New Item',
         emptyText: 'No matching data found.',

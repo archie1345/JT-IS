@@ -19,6 +19,7 @@ type ValueFormat = 'number' | 'currency' | 'percent';
 type DashboardPoint = {
     label: string;
     value: number;
+    format?: ValueFormat;
 };
 type WarningItem = { type: string; level: string; message: string };
 type ProblemProject = {
@@ -32,14 +33,15 @@ type ProblemProject = {
     rapTotal: number;
     approvedProgress: number;
 };
-type RecentProject = {
+type RecentProgress = {
     id: number;
-    name: string;
+    projectId: number;
+    projectName: string;
     client: string;
-    status: string;
-    dbStatus: string;
-    approvedProgress: number;
-    endDate: string | null;
+    percent: number;
+    date: string | null;
+    approved: boolean;
+    documentNumber: string | null;
 };
 type DashboardData = Record<string, unknown>;
 type WidgetSetting = {
@@ -72,33 +74,37 @@ const breadcrumbs: BreadcrumbItem[] = [
 const defaultWidgets: DashboardWidget[] = [
     {
         id: 'revenue-overview',
-        title: 'Revenue overview',
+        title: 'Contract & invoice overview',
         description:
-            'Placeholder for a graph, KPI block, or any summary widget.',
+            'Contract value, billing, and realized cost summary for active monitoring.',
         heightClass: 'min-h-72',
     },
     {
         id: 'conversion-trend',
-        title: 'Conversion trend',
-        description: 'Use this slot for a chart, funnel, or timeline widget.',
+        title: 'Pipeline and billing trend',
+        description:
+            'Tender, invoice, and cashflow movement for the current demo data.',
         heightClass: 'min-h-56',
     },
     {
         id: 'team-activity',
-        title: 'Team activity',
-        description: 'Good fit for a feed, alerts, or compact table.',
+        title: 'Recent monitoring activity',
+        description:
+            'Latest project, progress, and finance activity that needs review.',
         heightClass: 'min-h-56',
     },
     {
         id: 'projects-health',
-        title: 'projects health',
-        description: 'Another placeholder area for a graph or metric card.',
+        title: 'Project health',
+        description:
+            'Status distribution based on budget, progress, and payment warnings.',
         heightClass: 'min-h-56',
     },
     {
         id: 'upcoming-items',
-        title: 'Upcoming items',
-        description: 'Use this for tasks, reminders, or anything else later.',
+        title: 'Upcoming attention',
+        description:
+            'Open items that management should check before the next review.',
         heightClass: 'min-h-56',
     },
 ];
@@ -163,22 +169,22 @@ const visibleWidgetIds = ref<string[]>([...defaultWidgetIds]);
 const widgetSettings = ref<Record<string, WidgetSetting>>({});
 const openSettingsWidgetId = ref<string | null>(null);
 const userId = computed(() => page.props.auth?.user?.id ?? 'guest');
-const userName = computed(() => page.props.auth?.user?.name ?? 'this user');
 const storageKey = computed(() => `dashboard-layout:user-${userId.value}`);
 const dashboardData = computed<DashboardData>(
     () => page.props.dashboardData ?? {},
 );
 const mvpSummary = computed(
-    () => (dashboardData.value.mvpSummary as DashboardPoint[] | undefined) ?? [],
+    () =>
+        (dashboardData.value.mvpSummary as DashboardPoint[] | undefined) ?? [],
 );
 const problemProjects = computed(
     () =>
         (dashboardData.value.problemProjects as ProblemProject[] | undefined) ??
         [],
 );
-const recentProjects = computed(
+const recentProgress = computed(
     () =>
-        (dashboardData.value.recentProjects as RecentProject[] | undefined) ??
+        (dashboardData.value.recentProgress as RecentProgress[] | undefined) ??
         [],
 );
 const visibleWidgets = computed(() =>
@@ -439,11 +445,26 @@ const formatValue = (value: number, format: ValueFormat) => {
 
 const statusClass = (status: string) =>
     ({
-        'On Track': 'bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/25',
+        'On Track':
+            'bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/25',
         Warning: 'bg-amber-500/15 text-amber-600 ring-1 ring-amber-500/25',
         Critical: 'bg-rose-500/15 text-rose-600 ring-1 ring-rose-500/25',
         'On Hold': 'bg-slate-500/15 text-slate-600 ring-1 ring-slate-500/25',
     })[status] ?? 'bg-slate-500/15 text-slate-600 ring-1 ring-slate-500/25';
+
+const pointFormat = (point: DashboardPoint): ValueFormat =>
+    point.format ??
+    ([
+        'value',
+        'cost',
+        'amount',
+        'nilai',
+        'biaya',
+        'tagihan',
+        'pembayaran',
+    ].some((keyword) => point.label.toLowerCase().includes(keyword))
+        ? 'currency'
+        : 'number');
 
 const linePoints = (points: DashboardPoint[]) => {
     if (points.length === 0) {
@@ -590,13 +611,7 @@ onBeforeUnmount(() => {
                         {{ point.label }}
                     </p>
                     <p class="mt-2 text-xl font-semibold text-foreground">
-                        {{
-                            point.label.toLowerCase().includes('value') ||
-                            point.label.toLowerCase().includes('cost') ||
-                            point.label.toLowerCase().includes('amount')
-                                ? formatValue(point.value, 'currency')
-                                : formatValue(point.value, 'number')
-                        }}
+                        {{ formatValue(point.value ?? 0, pointFormat(point)) }}
                     </p>
                 </div>
             </section>
@@ -610,11 +625,11 @@ onBeforeUnmount(() => {
                     <div class="mb-3 flex items-center justify-between gap-3">
                         <div>
                             <h2 class="text-sm font-semibold text-foreground">
-                                Problem Projects
+                                Proyek Bermasalah
                             </h2>
                             <p class="text-sm text-muted-foreground">
-                                Budget, payment, and progress warnings for the
-                                demo flow.
+                                Peringatan dini dari deviasi biaya, pembayaran,
+                                dan progress.
                             </p>
                         </div>
                     </div>
@@ -622,11 +637,17 @@ onBeforeUnmount(() => {
                         <table class="min-w-full text-sm">
                             <thead class="text-left text-muted-foreground">
                                 <tr>
-                                    <th class="py-2 pr-3 font-medium">Project</th>
-                                    <th class="py-2 pr-3 font-medium">Status</th>
+                                    <th class="py-2 pr-3 font-medium">
+                                        Proyek
+                                    </th>
+                                    <th class="py-2 pr-3 font-medium">
+                                        Status
+                                    </th>
                                     <th class="py-2 pr-3 font-medium">RAP</th>
-                                    <th class="py-2 pr-3 font-medium">Cost</th>
-                                    <th class="py-2 pr-3 font-medium">Warning</th>
+                                    <th class="py-2 pr-3 font-medium">Biaya</th>
+                                    <th class="py-2 pr-3 font-medium">
+                                        Peringatan
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -638,11 +659,17 @@ onBeforeUnmount(() => {
                                     <td class="py-3 pr-3">
                                         <button
                                             class="text-left font-medium text-foreground hover:underline"
-                                            @click="router.get(`/projects/${project.id}`)"
+                                            @click="
+                                                router.get(
+                                                    `/projects/${project.id}`,
+                                                )
+                                            "
                                         >
                                             {{ project.name }}
                                         </button>
-                                        <p class="text-xs text-muted-foreground">
+                                        <p
+                                            class="text-xs text-muted-foreground"
+                                        >
                                             {{ project.client }}
                                         </p>
                                     </td>
@@ -655,18 +682,33 @@ onBeforeUnmount(() => {
                                         </span>
                                     </td>
                                     <td class="py-3 pr-3">
-                                        {{ formatValue(project.rapTotal, 'currency') }}
+                                        {{
+                                            formatValue(
+                                                project.rapTotal,
+                                                'currency',
+                                            )
+                                        }}
                                     </td>
                                     <td class="py-3 pr-3">
-                                        {{ formatValue(project.realizedCost, 'currency') }}
+                                        {{
+                                            formatValue(
+                                                project.realizedCost,
+                                                'currency',
+                                            )
+                                        }}
                                     </td>
                                     <td class="py-3 pr-3 text-muted-foreground">
-                                        {{ project.warnings[0]?.message ?? '-' }}
+                                        {{
+                                            project.warnings[0]?.message ?? '-'
+                                        }}
                                     </td>
                                 </tr>
                                 <tr v-if="problemProjects.length === 0">
-                                    <td colspan="5" class="py-6 text-center text-muted-foreground">
-                                        No problem projects.
+                                    <td
+                                        colspan="5"
+                                        class="py-6 text-center text-muted-foreground"
+                                    >
+                                        Belum ada proyek bermasalah.
                                     </td>
                                 </tr>
                             </tbody>
@@ -678,36 +720,45 @@ onBeforeUnmount(() => {
                     class="rounded-2xl border border-sidebar-border/70 bg-background/90 p-4 shadow-sm"
                 >
                     <h2 class="text-sm font-semibold text-foreground">
-                        Recent Projects / Progress
+                        Recent Progress / BAMC
                     </h2>
                     <div class="mt-3 space-y-2">
                         <button
-                            v-for="project in recentProjects"
-                            :key="project.id"
+                            v-for="progress in recentProgress"
+                            :key="progress.id"
                             class="flex w-full items-center justify-between gap-3 rounded-xl border border-sidebar-border/70 bg-muted/20 px-3 py-2 text-left"
-                            @click="router.get(`/projects/${project.id}`)"
+                            @click="
+                                router.get(`/projects/${progress.projectId}`)
+                            "
                         >
                             <span class="min-w-0">
-                                <span class="block truncate text-sm font-medium text-foreground">
-                                    {{ project.name }}
+                                <span
+                                    class="block truncate text-sm font-medium text-foreground"
+                                >
+                                    {{ progress.projectName }}
                                 </span>
                                 <span class="text-xs text-muted-foreground">
-                                    {{ project.approvedProgress }}% approved |
-                                    {{ project.endDate ?? '-' }}
+                                    {{ progress.client }} |
+                                    {{ progress.date ?? '-' }}
                                 </span>
                             </span>
                             <span
                                 class="shrink-0 rounded-full px-2 py-1 text-xs font-medium"
-                                :class="statusClass(project.status)"
+                                :class="
+                                    progress.approved
+                                        ? statusClass('On Track')
+                                        : statusClass('Warning')
+                                "
                             >
-                                {{ project.status }}
+                                {{ progress.percent }}%
+                                {{ progress.approved ? 'approved' : 'draft' }}
                             </span>
                         </button>
                         <div
-                            v-if="recentProjects.length === 0"
+                            v-if="recentProgress.length === 0"
                             class="rounded-xl border border-dashed border-sidebar-border/70 p-6 text-center text-sm text-muted-foreground"
                         >
-                            No data yet.
+                            Belum ada data progress.
                         </div>
                     </div>
                 </div>
@@ -721,17 +772,11 @@ onBeforeUnmount(() => {
                 >
                     <div>
                         <p class="text-sm font-medium text-foreground">
-                            Drag your widgets into place
+                            Tampilan analitik
                         </p>
                         <p class="mt-1 text-sm text-muted-foreground">
-                            Widget order, visibility, chart type, and data
-                            source are saved in SQL for
-                            {{ userName }}
-                            and mirrored to
-                            <code class="rounded bg-muted px-1.5 py-0.5 text-xs"
-                                >localStorage</code
-                            >
-                            as a fallback.
+                            Pilih ringkasan operasional yang paling relevan
+                            untuk review manajemen.
                         </p>
                     </div>
 
@@ -741,7 +786,7 @@ onBeforeUnmount(() => {
                         <p
                             class="text-xs font-semibold tracking-[0.2em] text-muted-foreground uppercase"
                         >
-                            Filter widgets
+                            Filter Ringkasan
                         </p>
                         <div class="mt-3 flex flex-wrap gap-2">
                             <label

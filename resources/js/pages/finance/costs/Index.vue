@@ -92,7 +92,7 @@ const fields = [
     <CrudPrototypePage
         head-title="Cost Realization"
         title="Cost Realization"
-        description="Track realized project costs with simple create, edit, and delete actions."
+        description="Record project spending so management can compare realized costs against RAP."
         :breadcrumbs="breadcrumbs"
         :rows="props.records"
         :columns="columns"
@@ -107,7 +107,7 @@ const fields = [
         :upload-connection-options="uploadConnectionOptions"
         :pagination="props.pagination"
         create-label="New Cost Entry"
-        :note="`Showing ${props.pagination.total} realized cost record(s)`"
+        :note="`${props.pagination.total} realized cost entries recorded`"
     >
         <template #cell-amount="{ value }">
             {{

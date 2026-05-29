@@ -26,7 +26,7 @@ const props = defineProps<{
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Progress Update', href: '/progress-updates' },
+    { title: 'Progress / BAMC', href: '/progress-updates' },
 ];
 
 const uploadConnectionOptions = computed(() =>
@@ -120,9 +120,9 @@ const fields = [
 
 <template>
     <CrudPrototypePage
-        head-title="Progress Update"
-        title="Progress Update"
-        description="Prototype progress reporting page backed by the existing progress_reports table."
+        head-title="Progress / BAMC"
+        title="Progress / BAMC"
+        description="Record physical progress milestones and client/internal approvals used for official billing."
         :breadcrumbs="breadcrumbs"
         :rows="props.records"
         :columns="columns"
@@ -136,8 +136,8 @@ const fields = [
         :uploaded-documents="props.uploadedDocuments"
         :upload-connection-options="uploadConnectionOptions"
         :pagination="props.pagination"
-        create-label="New Progress Update"
-        :note="`Showing ${props.pagination.total} progress report(s)`"
+        create-label="New Progress Report"
+        :note="`${props.pagination.total} progress reports recorded`"
     >
         <template #cell-approved_by_client="{ value }">
             {{ value === '1' || value === 1 ? 'Yes' : 'No' }}

@@ -46,6 +46,18 @@ All seeded demo users use `password`.
 
 See [docs/STRUCTURE.md](docs/STRUCTURE.md) for folder layout, route groups, Inertia page names, and where business status logic lives.
 
+## OCR Helpers
+
+OCR is optional and disabled by default. The app remains fully usable with manual input when no OCR provider is configured.
+
+```env
+OCR_PROVIDER=none
+```
+
+Reviewable OCR helpers are available only in project documents, RAB/RAP, Progress/BAMC, cost realization, and invoice flows. They create draft suggestions that must be reviewed before applying.
+
+See [docs/OCR.md](docs/OCR.md) for provider configuration, fallback behavior, limitations, and safety rules.
+
 ## Useful Commands
 
 ```bash
@@ -58,4 +70,4 @@ vendor/bin/pint --dirty
 
 ## Notes
 
-Experimental OCR/AI extraction and billing test pages are kept for compatibility, but they are not part of the normal MVP sidebar path.
+Experimental AI extraction and billing test pages are kept for compatibility, but they are not part of the normal MVP sidebar path.

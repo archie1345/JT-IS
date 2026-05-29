@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
+import { computed, nextTick, reactive, ref } from 'vue';
 import { FileText, Palette, Printer } from 'lucide-vue-next';
 import InvoicePrintPreview from '@/components/invoice/InvoicePrintPreview.vue';
 import CrudPrototypePage from '@/components/prototype/CrudPrototypePage.vue';
@@ -39,7 +39,9 @@ const props = defineProps<{
     };
 }>();
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Billing', href: '/invoices' }];
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Invoices', href: '/invoices' },
+];
 const selectedInvoiceId = ref(
     props.records.length > 0 ? String(props.records[0].id) : '',
 );
@@ -121,7 +123,7 @@ const fields = [
         name: 'description',
         label: 'Description',
         type: 'textarea',
-        placeholder: 'Billing notes or scope',
+        placeholder: 'Invoice notes, billing milestone, or work scope',
     },
 ] as const;
 
@@ -139,7 +141,7 @@ const invoiceLineItems = computed(() =>
                   description:
                       selectedInvoice.value.description ||
                       selectedInvoice.value.project_name ||
-                      'Project billing',
+                      'Project invoice',
                   projectName: selectedInvoice.value.project_name,
                   quantity: 1,
                   unitPrice: selectedInvoice.value.amount,
@@ -151,7 +153,9 @@ const invoiceLineItems = computed(() =>
 const invoiceSubtotal = computed(() =>
     Number(selectedInvoice.value?.amount ?? 0),
 );
-const invoiceTax = computed(() => Number(selectedInvoice.value?.tax_amount ?? 0));
+const invoiceTax = computed(() =>
+    Number(selectedInvoice.value?.tax_amount ?? 0),
+);
 const invoiceTotal = computed(() => invoiceSubtotal.value + invoiceTax.value);
 
 const openInvoiceModal = () => {
@@ -162,16 +166,17 @@ const openInvoiceModal = () => {
     isInvoiceModalOpen.value = true;
 };
 
-const printInvoice = () => {
+const printInvoice = async () => {
+    await nextTick();
     window.print();
 };
 </script>
 
 <template>
     <CrudPrototypePage
-        head-title="Billing"
-        title="Billing"
-        description="Simple invoice CRUD prototype using the existing invoices table."
+        head-title="Invoices"
+        title="Invoices"
+        description="Manage project billing against approved progress and track due dates for receivables."
         :breadcrumbs="breadcrumbs"
         :rows="props.records"
         :columns="columns"
@@ -186,7 +191,7 @@ const printInvoice = () => {
         :upload-connection-options="uploadConnectionOptions"
         :pagination="props.pagination"
         create-label="New Invoice"
-        :note="`Showing ${props.pagination.total} invoice record(s)`"
+        :note="`${props.pagination.total} invoices recorded`"
     >
         <template #toolbar-actions>
             <div
@@ -200,7 +205,7 @@ const printInvoice = () => {
                     @click="openInvoiceModal"
                 >
                     <FileText class="size-4" />
-                    Make Invoice
+                    Preview Invoice
                 </Button>
                 <Button
                     variant="outline"
@@ -226,16 +231,16 @@ const printInvoice = () => {
             class="max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto sm:max-w-5xl"
         >
             <DialogHeader class="no-print">
-                <DialogTitle>Make Invoice</DialogTitle>
+                <DialogTitle>Invoice Preview</DialogTitle>
                 <DialogDescription>
-                    Pick a billing record, preview the template, then print or
+                    Pick an invoice record, preview the template, then print or
                     save it as PDF.
                 </DialogDescription>
             </DialogHeader>
 
             <div class="no-print grid gap-4 sm:grid-cols-[1fr_auto_auto]">
                 <div class="space-y-1.5">
-                    <Label for="billing_invoice_source">Billing Record</Label>
+                    <Label for="billing_invoice_source">Invoice Record</Label>
                     <select
                         id="billing_invoice_source"
                         v-model="selectedInvoiceId"
@@ -259,11 +264,11 @@ const printInvoice = () => {
                     @click="isTemplateModalOpen = true"
                 >
                     <Palette class="size-4" />
-                    Change Template
+                    Edit Template
                 </Button>
                 <Button class="self-end" @click="printInvoice">
                     <Printer class="size-4" />
-                    Create PDF
+                    Print / Save PDF
                 </Button>
             </div>
 
@@ -298,7 +303,7 @@ const printInvoice = () => {
             <DialogHeader>
                 <DialogTitle>Invoice Template</DialogTitle>
                 <DialogDescription>
-                    Change the printable invoice style used from Billing.
+                    Change the printable style used for invoice previews.
                 </DialogDescription>
             </DialogHeader>
 

@@ -66,7 +66,8 @@ const template = computed(() => ({
     paperColor: '#ffffff',
     borderColor: '#d1d5db',
     footerText: '',
-    bankDetails: 'Bank Mandiri\nAccount Name: PT. Jasa Tirta Energi\nAccount No: 000-000-0000',
+    bankDetails:
+        'Bank Mandiri\nAccount Name: PT. Jasa Tirta Energi\nAccount No: 000-000-0000',
     notes: 'Please include the invoice number on the payment reference. Thank you for your business.',
     showBankDetails: true,
     showNotes: true,
@@ -83,7 +84,9 @@ const invoiceStyle = computed(() => ({
 </script>
 
 <template>
-    <section class="invoice-print-area overflow-x-auto rounded-lg bg-muted/30 p-3">
+    <section
+        class="invoice-print-area overflow-x-auto rounded-lg bg-muted/30 p-3"
+    >
         <div
             class="invoice-sheet mx-auto flex min-h-[297mm] w-[210mm] flex-col bg-white text-[#111827] shadow-lg"
             :style="invoiceStyle"
@@ -110,29 +113,37 @@ const invoiceStyle = computed(() => ({
                             <h1 class="mt-3 text-4xl font-semibold">
                                 {{ template.title }}
                             </h1>
-                            <p class="mt-3 max-w-sm text-xs leading-relaxed text-white/80">
+                            <p
+                                class="mt-3 max-w-sm text-xs leading-relaxed text-white/80"
+                            >
                                 Jl. Surabaya No. 2A, Malang, Indonesia<br />
                                 finance@jasatirtaenergi.co.id | +62 341 000 000
                             </p>
                         </div>
                     </div>
-                    <div class="min-w-48 rounded-lg bg-white/10 p-4 text-right text-sm">
-                        <p class="text-xs uppercase text-white/70">
+                    <div
+                        class="max-w-64 min-w-48 rounded-lg bg-white/10 p-4 text-right text-sm"
+                    >
+                        <p class="text-xs text-white/70 uppercase">
                             Invoice No.
                         </p>
-                        <p class="font-semibold">{{ props.invoiceNumber }}</p>
-                        <p class="mt-3 text-xs uppercase text-white/70">
+                        <p class="invoice-wrap font-semibold">
+                            {{ props.invoiceNumber }}
+                        </p>
+                        <p class="mt-3 text-xs text-white/70 uppercase">
                             Invoice Date
                         </p>
                         <p>{{ props.invoiceDate || '-' }}</p>
-                        <p class="mt-3 text-xs uppercase text-white/70">
+                        <p class="mt-3 text-xs text-white/70 uppercase">
                             Due Date
                         </p>
                         <p>{{ props.dueDate || '-' }}</p>
-                        <p class="mt-3 text-xs uppercase text-white/70">
+                        <p class="mt-3 text-xs text-white/70 uppercase">
                             Status
                         </p>
-                        <p class="capitalize">{{ props.status || 'pending' }}</p>
+                        <p class="capitalize">
+                            {{ props.status || 'pending' }}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -149,10 +160,10 @@ const invoiceStyle = computed(() => ({
                         <p class="text-xs font-medium uppercase opacity-60">
                             Bill To
                         </p>
-                        <p class="mt-2 text-lg font-semibold">
+                        <p class="invoice-wrap mt-2 text-lg font-semibold">
                             {{ props.billTo || '-' }}
                         </p>
-                        <p class="mt-1 opacity-75">
+                        <p class="invoice-wrap mt-1 opacity-75">
                             {{ props.projectName || 'Project billing' }}
                         </p>
                     </div>
@@ -163,7 +174,7 @@ const invoiceStyle = computed(() => ({
                         <p class="text-xs font-medium uppercase opacity-60">
                             Billing Summary
                         </p>
-                        <p class="mt-2 opacity-75">
+                        <p class="invoice-wrap mt-2 opacity-75">
                             {{ props.description || 'Project billing' }}
                         </p>
                         <p class="mt-2 capitalize opacity-75">
@@ -172,7 +183,10 @@ const invoiceStyle = computed(() => ({
                     </div>
                 </div>
 
-                <div v-if="props.variant === 'summary'" class="grid gap-6 sm:grid-cols-2">
+                <div
+                    v-if="props.variant === 'summary'"
+                    class="grid gap-6 sm:grid-cols-2"
+                >
                     <div
                         class="rounded-lg border p-4"
                         :style="{ borderColor: 'var(--invoice-border)' }"
@@ -181,7 +195,7 @@ const invoiceStyle = computed(() => ({
                             From
                         </p>
                         <p class="mt-2 font-semibold">PT. Jasa Tirta Energi</p>
-                        <p class="mt-1 opacity-75">
+                        <p class="invoice-wrap mt-1 opacity-75">
                             Jl. Surabaya No. 2A, Malang, Indonesia
                         </p>
                         <p class="opacity-75">NPWP: 00.000.000.0-000.000</p>
@@ -218,7 +232,28 @@ const invoiceStyle = computed(() => ({
                     class="overflow-hidden rounded-lg border"
                     :style="{ borderColor: 'var(--invoice-border)' }"
                 >
-                    <table class="w-full border-collapse">
+                    <table class="w-full table-fixed border-collapse">
+                        <colgroup>
+                            <col
+                                :style="{
+                                    width:
+                                        props.variant === 'summary'
+                                            ? '34%'
+                                            : '38%',
+                                }"
+                            />
+                            <col
+                                v-if="props.variant === 'summary'"
+                                style="width: 26%"
+                            />
+                            <col style="width: 10%" />
+                            <col
+                                v-if="props.variant === 'detail'"
+                                style="width: 12%"
+                            />
+                            <col style="width: 15%" />
+                            <col style="width: 15%" />
+                        </colgroup>
                         <thead
                             :style="{
                                 background: 'var(--invoice-accent)',
@@ -226,26 +261,30 @@ const invoiceStyle = computed(() => ({
                             }"
                         >
                             <tr>
-                                <th class="px-4 py-3 text-left">
+                                <th class="px-4 py-3 text-left align-top">
                                     Description
                                 </th>
                                 <th
                                     v-if="props.variant === 'summary'"
-                                    class="px-4 py-3 text-left"
+                                    class="px-4 py-3 text-left align-top"
                                 >
                                     Project
                                 </th>
-                                <th class="px-4 py-3 text-right">Qty</th>
+                                <th class="px-4 py-3 text-right align-top">
+                                    Qty
+                                </th>
                                 <th
                                     v-if="props.variant === 'detail'"
-                                    class="px-4 py-3 text-left"
+                                    class="px-4 py-3 text-left align-top"
                                 >
                                     Unit
                                 </th>
-                                <th class="px-4 py-3 text-right">
+                                <th class="px-4 py-3 text-right align-top">
                                     Unit Price
                                 </th>
-                                <th class="px-4 py-3 text-right">Amount</th>
+                                <th class="px-4 py-3 text-right align-top">
+                                    Amount
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -253,44 +292,52 @@ const invoiceStyle = computed(() => ({
                                 v-for="(item, index) in props.lineItems"
                                 :key="item.id ?? index"
                                 class="border-b"
-                                :style="{ borderColor: 'var(--invoice-border)' }"
+                                :style="{
+                                    borderColor: 'var(--invoice-border)',
+                                }"
                             >
-                                <td class="px-4 py-3">
-                                    <p class="font-medium">
+                                <td class="px-4 py-3 align-top">
+                                    <p class="invoice-wrap font-medium">
                                         {{ item.description || '-' }}
                                     </p>
                                     <p
                                         v-if="item.category"
-                                        class="text-xs opacity-60"
+                                        class="invoice-wrap text-xs opacity-60"
                                     >
                                         {{ item.category }}
                                     </p>
                                 </td>
                                 <td
                                     v-if="props.variant === 'summary'"
-                                    class="px-4 py-3"
+                                    class="invoice-wrap px-4 py-3 align-top"
                                 >
-                                    {{ item.projectName || props.projectName || '-' }}
+                                    {{
+                                        item.projectName ||
+                                        props.projectName ||
+                                        '-'
+                                    }}
                                 </td>
-                                <td class="px-4 py-3 text-right">
+                                <td class="px-4 py-3 text-right align-top">
                                     {{ item.quantity ?? 1 }}
                                 </td>
                                 <td
                                     v-if="props.variant === 'detail'"
-                                    class="px-4 py-3"
+                                    class="invoice-wrap px-4 py-3 align-top"
                                 >
                                     {{ item.unit || '-' }}
                                 </td>
-                                <td class="px-4 py-3 text-right">
+                                <td class="px-4 py-3 text-right align-top">
                                     {{ formatCurrency(item.unitPrice) }}
                                 </td>
-                                <td class="px-4 py-3 text-right">
+                                <td class="px-4 py-3 text-right align-top">
                                     {{ formatCurrency(item.totalPrice) }}
                                 </td>
                             </tr>
                             <tr v-if="props.lineItems.length === 0">
                                 <td
-                                    :colspan="props.variant === 'summary' ? 5 : 5"
+                                    :colspan="
+                                        props.variant === 'summary' ? 5 : 5
+                                    "
                                     class="px-4 py-8 text-center opacity-60"
                                 >
                                     No invoice line items yet.
@@ -302,15 +349,24 @@ const invoiceStyle = computed(() => ({
 
                 <div class="grid gap-6 sm:grid-cols-[1fr_18rem]">
                     <div class="space-y-4">
-                        <div v-if="template.showBankDetails && props.variant === 'summary'">
+                        <div
+                            v-if="
+                                template.showBankDetails &&
+                                props.variant === 'summary'
+                            "
+                        >
                             <p class="font-medium">Bank Details</p>
-                            <p class="mt-1 whitespace-pre-line opacity-75">
+                            <p
+                                class="invoice-wrap mt-1 whitespace-pre-line opacity-75"
+                            >
                                 {{ template.bankDetails }}
                             </p>
                         </div>
                         <div v-if="template.showNotes">
                             <p class="font-medium">Notes</p>
-                            <p class="mt-1 whitespace-pre-line opacity-75">
+                            <p
+                                class="invoice-wrap mt-1 whitespace-pre-line opacity-75"
+                            >
                                 {{ template.notes }}
                             </p>
                         </div>
@@ -319,18 +375,24 @@ const invoiceStyle = computed(() => ({
                     <div class="space-y-2">
                         <div class="flex justify-between gap-4">
                             <span>Subtotal</span>
-                            <span>{{ formatCurrency(props.subtotal) }}</span>
+                            <span class="shrink-0">{{
+                                formatCurrency(props.subtotal)
+                            }}</span>
                         </div>
                         <div class="flex justify-between gap-4">
                             <span>Tax</span>
-                            <span>{{ formatCurrency(props.tax) }}</span>
+                            <span class="shrink-0">{{
+                                formatCurrency(props.tax)
+                            }}</span>
                         </div>
                         <div
                             class="mt-3 flex justify-between gap-4 border-t pt-3 text-base font-semibold"
                             :style="{ borderColor: 'var(--invoice-border)' }"
                         >
                             <span>Total</span>
-                            <span>{{ formatCurrency(props.total) }}</span>
+                            <span class="shrink-0">{{
+                                formatCurrency(props.total)
+                            }}</span>
                         </div>
                     </div>
                 </div>
@@ -344,9 +406,13 @@ const invoiceStyle = computed(() => ({
                         :style="{ borderColor: 'var(--invoice-border)' }"
                     >
                         <p class="font-medium">
-                            {{ props.variant === 'summary' ? 'Approval' : 'Notes' }}
+                            {{
+                                props.variant === 'summary'
+                                    ? 'Approval'
+                                    : 'Notes'
+                            }}
                         </p>
-                        <p class="mt-2 leading-relaxed opacity-75">
+                        <p class="invoice-wrap mt-2 leading-relaxed opacity-75">
                             {{
                                 props.variant === 'summary'
                                     ? 'This invoice is issued for the project scope stated above and is valid without a physical stamp when printed from the system.'
@@ -380,6 +446,24 @@ const invoiceStyle = computed(() => ({
 </template>
 
 <style>
+.invoice-sheet {
+    color: var(--invoice-text);
+    background: var(--invoice-paper);
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+}
+
+.invoice-sheet,
+.invoice-sheet * {
+    box-sizing: border-box;
+}
+
+.invoice-wrap {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
 .invoice-sheet :where(div, section):has(> table) {
     overflow-x: visible !important;
 }
@@ -392,7 +476,15 @@ const invoiceStyle = computed(() => ({
 @media print {
     @page {
         size: A4;
-        margin: 0;
+        margin: 10mm;
+    }
+
+    html,
+    body {
+        width: 210mm;
+        min-height: 297mm;
+        margin: 0 !important;
+        background: white !important;
     }
 
     body * {
@@ -405,16 +497,24 @@ const invoiceStyle = computed(() => ({
     }
 
     .invoice-print-area {
-        position: absolute;
-        inset: 0;
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100% !important;
+        min-height: 100% !important;
+        padding: 0 !important;
         overflow: visible !important;
-        background: white;
+        border-radius: 0 !important;
+        background: white !important;
     }
 
     .invoice-sheet {
-        width: 210mm;
-        min-height: 297mm;
+        width: 190mm !important;
+        min-height: 277mm !important;
+        margin: 0 auto !important;
         box-shadow: none !important;
+        page-break-after: avoid;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
     }
 
     .no-print {

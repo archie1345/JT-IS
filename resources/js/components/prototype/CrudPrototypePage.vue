@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, useSlots } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { ExternalLink, Pencil, Trash2 } from 'lucide-vue-next';
+import { ExternalLink, Trash2 } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
 import DocumentUploadPanel from '@/components/shared/DocumentUploadPanel.vue';
 import DataTable, {
@@ -238,7 +238,7 @@ const goToPage = (page: number) => {
 
     <AppLayout :breadcrumbs="props.breadcrumbs">
         <div
-            class="flex min-h-[calc(100vh-8rem)] flex-1 flex-col gap-3 rounded-xl p-2 sm:gap-4 sm:p-4"
+            class="flex min-h-[calc(100vh-8rem)] min-w-0 flex-1 flex-col gap-3 rounded-xl p-2 sm:gap-4 sm:p-4"
         >
             <DataTable
                 :rows="props.rows"
@@ -251,38 +251,11 @@ const goToPage = (page: number) => {
                 @create="openCreate"
             >
                 <template #toolbar-actions>
-                    <div
-                        v-if="props.pagination"
-                        class="flex w-full items-center gap-2 text-sm sm:w-auto"
-                    >
-                        <span class="whitespace-nowrap text-muted-foreground">
-                            Show
-                        </span>
-                        <div class="w-24">
-                            <OptionSelect
-                                v-model="rowsPerPageValue"
-                                :options="rowsPerPageSelectOptions"
-                                trigger-id="rows_per_page"
-                                placeholder="Rows"
-                            />
-                        </div>
-                        <span class="whitespace-nowrap text-muted-foreground">
-                            rows
-                        </span>
-                    </div>
-
                     <slot name="toolbar-actions" />
                 </template>
 
                 <template #actions="{ row }">
                     <div class="flex justify-end gap-1">
-                        <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            @click="openEdit(row as Row)"
-                        >
-                            <Pencil class="size-4" />
-                        </Button>
                         <Button
                             v-if="props.detailUrlBase"
                             variant="ghost"
@@ -319,13 +292,35 @@ const goToPage = (page: number) => {
 
             <div
                 v-if="props.pagination"
-                class="flex flex-col gap-2 rounded-xl border border-sidebar-border/70 bg-background/80 px-3 py-2 text-sm shadow-sm sm:flex-row sm:items-center sm:justify-between"
+                class="flex flex-col gap-3 rounded-xl border border-sidebar-border/70 bg-background/80 px-3 py-2 text-xs shadow-sm sm:flex-row sm:items-center sm:justify-between sm:text-sm"
             >
-                <span class="text-muted-foreground">
-                    Page {{ props.pagination.currentPage }} of
-                    {{ props.pagination.lastPage }} -
-                    {{ props.pagination.total }} total entries
-                </span>
+                <div
+                    class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2"
+                >
+                    <div class="flex items-center gap-2">
+                        <span class="whitespace-nowrap text-muted-foreground">
+                            Show
+                        </span>
+                        <div class="w-20 sm:w-24">
+                            <OptionSelect
+                                v-model="rowsPerPageValue"
+                                :options="rowsPerPageSelectOptions"
+                                trigger-id="rows_per_page"
+                                placeholder="Rows"
+                            />
+                        </div>
+                        <span class="whitespace-nowrap text-muted-foreground">
+                            rows
+                        </span>
+                    </div>
+
+                    <span class="text-muted-foreground">
+                        Page {{ props.pagination.currentPage }} of
+                        {{ props.pagination.lastPage }} -
+                        {{ props.pagination.total }} total entries
+                    </span>
+                </div>
+
                 <div class="flex gap-2">
                     <Button
                         type="button"
@@ -353,7 +348,7 @@ const goToPage = (page: number) => {
 
             <section
                 v-if="props.uploadComponentType"
-                class="rounded-2xl border border-sidebar-border/70 bg-background/80 p-3 shadow-sm sm:p-5"
+                class="min-w-0 overflow-hidden rounded-xl border border-sidebar-border/70 bg-background/80 p-3 shadow-sm sm:rounded-2xl sm:p-5"
             >
                 <DocumentUploadPanel
                     :project-id="props.uploadProjectId"
@@ -369,14 +364,14 @@ const goToPage = (page: number) => {
 
         <Dialog v-model:open="isOpen">
             <DialogContent
-                class="max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto sm:max-w-2xl"
+                class="flex max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] !max-w-2xl flex-col overflow-hidden p-4 sm:p-6"
             >
-                <DialogHeader>
+                <DialogHeader class="shrink-0">
                     <DialogTitle>{{ dialogTitle }}</DialogTitle>
                 </DialogHeader>
 
                 <form
-                    class="grid gap-4 py-2 sm:grid-cols-2"
+                    class="grid min-h-0 min-w-0 flex-1 gap-4 overflow-x-hidden overflow-y-auto py-2 pr-1 sm:grid-cols-2"
                     @submit.prevent="submit"
                 >
                     <RecordFieldInput
@@ -387,7 +382,7 @@ const goToPage = (page: number) => {
                         :error="form.errors[field.name]"
                     />
 
-                    <DialogFooter class="sm:col-span-2">
+                    <DialogFooter class="shrink-0 sm:col-span-2">
                         <Button
                             type="button"
                             variant="outline"

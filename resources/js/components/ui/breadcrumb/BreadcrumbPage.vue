@@ -13,7 +13,7 @@ const props = defineProps<{
     role="link"
     aria-disabled="true"
     aria-current="page"
-    :class="cn('text-foreground font-normal', props.class)"
+    :class="cn('block max-w-[min(32rem,58vw)] truncate text-foreground font-normal', props.class)"
   >
     <slot />
   </span>

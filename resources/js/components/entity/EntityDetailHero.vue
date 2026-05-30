@@ -25,52 +25,86 @@ const emit = defineEmits<{
 </script>
 
 <template>
-    <section class="rounded-2xl border border-sidebar-border/70 bg-background p-5 shadow-sm">
-        <div class="flex flex-wrap items-start justify-between gap-4">
-            <div class="min-w-0">
+    <section
+        class="min-w-0 overflow-hidden rounded-xl border border-sidebar-border/70 bg-background p-3 shadow-sm sm:rounded-2xl sm:p-5"
+    >
+        <div class="flex min-w-0 flex-wrap items-start justify-between gap-4">
+            <div class="min-w-0 flex-1">
                 <slot name="back">
                     <button
                         type="button"
                         class="mb-3 inline-flex items-center text-sm text-muted-foreground transition hover:text-foreground"
                         @click="emit('back')"
                     >
-                        <component :is="backIcon" v-if="backIcon" class="mr-2 size-4" />
+                        <component
+                            :is="backIcon"
+                            v-if="backIcon"
+                            class="mr-2 size-4"
+                        />
                         {{ backLabel }}
                     </button>
                 </slot>
 
-                <h1 class="text-3xl font-semibold tracking-tight text-foreground">{{ title }}</h1>
-                <p class="mt-2 text-sm text-muted-foreground">{{ description }}</p>
+                <h1
+                    class="text-2xl font-semibold tracking-tight break-words text-foreground sm:text-3xl"
+                >
+                    {{ title }}
+                </h1>
+                <p class="mt-2 text-sm break-words text-muted-foreground">
+                    {{ description }}
+                </p>
             </div>
 
             <slot name="badge">
-                <div class="rounded-xl px-3 py-1.5 text-sm font-medium" :class="badgeClass">
+                <div
+                    class="rounded-xl px-3 py-1.5 text-sm font-medium"
+                    :class="badgeClass"
+                >
                     {{ badgeText }}
                 </div>
             </slot>
         </div>
 
-        <div class="mt-5 flex flex-wrap items-start justify-between gap-4">
-            <div class="min-w-0">
-                <p v-if="titlePrefix" class="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+        <div class="mt-5 flex min-w-0 flex-col items-start gap-4">
+            <div class="min-w-0 flex-1">
+                <p
+                    v-if="titlePrefix"
+                    class="text-xs tracking-[0.2em] text-muted-foreground uppercase"
+                >
                     {{ titlePrefix }}
                 </p>
                 <slot name="title-input" />
                 <slot name="title-meta" />
             </div>
 
-            <div v-if="metricLabel || $slots.metric" class="rounded-2xl border border-sidebar-border/70 bg-muted/30 px-4 py-3">
+            <div
+                v-if="metricLabel || $slots.metric"
+                class="w-full min-w-0 rounded-xl border border-sidebar-border/70 bg-muted/30 px-3 py-3 sm:w-auto sm:rounded-2xl sm:px-4"
+            >
                 <slot name="metric">
-                    <p class="text-xs text-muted-foreground">{{ metricLabel }}</p>
-                    <p class="text-3xl font-semibold text-foreground">{{ metricValue }}</p>
-                    <p v-if="metricDescription" class="text-xs text-muted-foreground">{{ metricDescription }}</p>
+                    <p class="text-xs text-muted-foreground">
+                        {{ metricLabel }}
+                    </p>
+                    <p
+                        class="text-2xl font-semibold break-words text-foreground sm:text-3xl"
+                    >
+                        {{ metricValue }}
+                    </p>
+                    <p
+                        v-if="metricDescription"
+                        class="text-xs text-muted-foreground"
+                    >
+                        {{ metricDescription }}
+                    </p>
                 </slot>
             </div>
         </div>
 
         <div v-if="progressLabel || $slots.progress" class="mt-5">
             <slot name="progress">
-                <div class="mb-2 flex items-center justify-between text-xs text-muted-foreground">
+                <div
+                    class="mb-2 flex items-center justify-between text-xs text-muted-foreground"
+                >
                     <span>{{ progressLabel }}</span>
                     <span>{{ progressValue }}</span>
                 </div>
@@ -84,7 +118,11 @@ const emit = defineEmits<{
             </slot>
         </div>
 
-        <div v-if="$slots.summary" class="mt-5" :class="summaryGridClass ?? 'grid gap-4 md:grid-cols-2'">
+        <div
+            v-if="$slots.summary"
+            class="mt-5 min-w-0"
+            :class="summaryGridClass ?? 'grid gap-4 md:grid-cols-2'"
+        >
             <slot name="summary" />
         </div>
     </section>

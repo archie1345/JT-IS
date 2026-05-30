@@ -264,6 +264,10 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
                     ->name('destroy');
             });
 
+        Route::get('invoices/{invoice}/preview', [InvoicesController::class, 'preview'])
+            ->middleware('permission:page.invoices.view')
+            ->name('invoices.preview');
+
         Route::resource('invoices', InvoicesController::class)
             ->only(['index', 'store', 'show', 'update', 'destroy'])
             ->middlewareFor(['index', 'show'], 'permission:page.invoices.view')

@@ -110,8 +110,10 @@ watch(
 
 <template>
     <Dialog :open="isOpen" @update:open="isOpen = $event">
-        <DialogContent class="sm:max-w-md">
-            <DialogHeader class="flex items-center justify-center">
+        <DialogContent
+            class="flex max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] flex-col overflow-hidden p-4 sm:max-w-md sm:p-6"
+        >
+            <DialogHeader class="flex shrink-0 items-center justify-center">
                 <div
                     class="mb-3 w-auto rounded-full border border-border bg-card p-0.5 shadow-sm"
                 >
@@ -148,7 +150,7 @@ watch(
             </DialogHeader>
 
             <div
-                class="relative flex w-auto flex-col items-center justify-center space-y-5"
+                class="relative flex min-h-0 w-auto min-w-0 flex-1 flex-col items-center justify-center space-y-5 overflow-x-hidden overflow-y-auto pr-1"
             >
                 <template v-if="!showVerificationStep">
                     <AlertError v-if="errors?.length" :errors="errors" />
@@ -157,7 +159,7 @@ watch(
                             class="relative mx-auto flex max-w-md items-center overflow-hidden"
                         >
                             <div
-                                class="relative mx-auto aspect-square w-64 overflow-hidden rounded-lg border border-border"
+                                class="relative mx-auto aspect-square w-64 max-w-full overflow-hidden rounded-lg border border-border"
                             >
                                 <div
                                     v-if="!qrCodeSvg"
@@ -217,7 +219,7 @@ watch(
                                         type="text"
                                         readonly
                                         :value="manualSetupKey"
-                                        class="h-full w-full bg-background p-3 text-foreground"
+                                        class="h-full w-full min-w-0 bg-background p-3 text-foreground"
                                     />
                                     <button
                                         @click="copy(manualSetupKey || '')"

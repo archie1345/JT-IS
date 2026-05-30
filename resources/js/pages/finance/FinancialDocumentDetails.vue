@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { computed, nextTick, ref } from 'vue';
+import { computed, ref } from 'vue';
 import {
     ArrowLeft,
     FileText,
     Pencil,
     Plus,
-    Printer,
     Save,
     Trash2,
 } from 'lucide-vue-next';
@@ -15,7 +14,6 @@ import EntityDetailHero from '@/components/entity/EntityDetailHero.vue';
 import EntityMetricCard from '@/components/entity/EntityMetricCard.vue';
 import EntityPageSection from '@/components/entity/EntityPageSection.vue';
 import InputError from '@/components/InputError.vue';
-import InvoicePrintPreview from '@/components/invoice/InvoicePrintPreview.vue';
 import DocumentUploadPanel from '@/components/shared/DocumentUploadPanel.vue';
 import ProjectOCRScanner from '@/components/ProjectOCRScanner.vue';
 import RecordFieldInput from '@/components/prototype/RecordFieldInput.vue';
@@ -103,7 +101,6 @@ const props = defineProps<{
 }>();
 
 const isItemOpen = ref(false);
-const isPdfOpen = ref(false);
 const editingItemId = ref<null | number>(null);
 const selectedSource = ref('');
 const deletingItemId = ref<null | number>(null);
@@ -190,17 +187,6 @@ const scannerSummary = computed(() => {
         ? `Detected ${detected.join(', ')}.`
         : 'OCR finished, but no structured fields were detected.';
 });
-const invoicePrintLineItems = computed(() =>
-    props.items.map((item) => ({
-        id: item.id,
-        category: item.category,
-        description: item.description,
-        quantity: item.quantity,
-        unit: item.unit,
-        unitPrice: item.unitPrice,
-        totalPrice: item.totalPrice,
-    })),
-);
 
 const backToList = () => router.get(props.indexUrl);
 const refreshPage = () => router.reload();
@@ -392,9 +378,8 @@ const destroyItem = (item: FinancialItem) => {
     });
 };
 
-const printInvoice = async () => {
-    await nextTick();
-    window.print();
+const openInvoicePreview = () => {
+    window.open(`/invoices/${props.record.id}/preview`, '_blank', 'noopener');
 };
 </script>
 
@@ -403,7 +388,7 @@ const printInvoice = async () => {
 
     <AppLayout :breadcrumbs="props.breadcrumbs">
         <div
-            class="flex min-h-[calc(100vh-8rem)] flex-1 flex-col gap-3 rounded-xl p-2 sm:gap-4 sm:p-4"
+            class="flex min-h-[calc(100vh-8rem)] min-w-0 flex-1 flex-col gap-3 rounded-xl p-2 sm:gap-4 sm:p-4"
         >
             <EntityDetailHero
                 back-label="Back"
@@ -425,7 +410,7 @@ const printInvoice = async () => {
                 </template>
             </EntityDetailHero>
 
-            <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <section class="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <EntityMetricCard
                     label="Items"
                     :value="props.summary.itemCount"
@@ -450,13 +435,13 @@ const printInvoice = async () => {
                 />
             </section>
 
-            <section class="grid gap-4">
+            <section class="grid min-w-0 gap-4">
                 <EntityPageSection
                     title="Record Fields"
                     :description="`Edit the header fields for this ${props.recordLabel.toLowerCase()} document.`"
                 >
                     <form
-                        class="grid gap-4 sm:grid-cols-2"
+                        class="grid min-w-0 gap-4 sm:grid-cols-2"
                         @submit.prevent="submitHeader"
                     >
                         <RecordFieldInput
@@ -474,7 +459,7 @@ const printInvoice = async () => {
                                 v-if="props.kind === 'invoice'"
                                 type="button"
                                 variant="outline"
-                                @click="isPdfOpen = true"
+                                @click="openInvoicePreview"
                             >
                                 <FileText class="mr-2 size-4" />
                                 Make PDF
@@ -494,17 +479,19 @@ const printInvoice = async () => {
                     title="Uploaded Files"
                     :description="`Files attached to this ${props.recordLabel.toLowerCase()} record.`"
                 >
-                    <div class="mb-4 grid gap-3 lg:grid-cols-[22rem_1fr]">
+                    <div
+                        class="mb-4 grid min-w-0 gap-3 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]"
+                    >
                         <ProjectOCRScanner
                             @data-extracted="handleScannerData"
                         />
                         <div
-                            class="rounded-xl border border-sidebar-border/70 bg-background p-4 shadow-xs dark:border-sidebar-border"
+                            class="min-w-0 rounded-xl border border-sidebar-border/70 bg-background p-3 shadow-xs sm:p-4 dark:border-sidebar-border"
                         >
                             <div
-                                class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+                                class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
                             >
-                                <div>
+                                <div class="min-w-0">
                                     <p class="text-sm font-medium">
                                         OCR Scanner Result
                                     </p>
@@ -537,28 +524,32 @@ const printInvoice = async () => {
 
                             <div
                                 v-if="scannerData"
-                                class="mt-4 grid gap-3 text-sm sm:grid-cols-2"
+                                class="mt-4 grid min-w-0 gap-3 text-xs sm:grid-cols-2 sm:text-sm"
                             >
-                                <div class="rounded-md bg-muted/40 px-3 py-2">
+                                <div
+                                    class="min-w-0 rounded-md bg-muted/40 px-3 py-2"
+                                >
                                     <span
                                         class="block text-xs text-muted-foreground"
                                     >
                                         Reference
                                     </span>
-                                    <span class="font-medium">
+                                    <span class="block truncate font-medium">
                                         {{
                                             scannerData.metadata.doc_number ||
                                             '-'
                                         }}
                                     </span>
                                 </div>
-                                <div class="rounded-md bg-muted/40 px-3 py-2">
+                                <div
+                                    class="min-w-0 rounded-md bg-muted/40 px-3 py-2"
+                                >
                                     <span
                                         class="block text-xs text-muted-foreground"
                                     >
                                         Amount
                                     </span>
-                                    <span class="font-medium">
+                                    <span class="block truncate font-medium">
                                         {{
                                             formatCurrency(
                                                 scannerData.metadata
@@ -567,20 +558,24 @@ const printInvoice = async () => {
                                         }}
                                     </span>
                                 </div>
-                                <div class="rounded-md bg-muted/40 px-3 py-2">
+                                <div
+                                    class="min-w-0 rounded-md bg-muted/40 px-3 py-2"
+                                >
                                     <span
                                         class="block text-xs text-muted-foreground"
                                     >
                                         Project / Description
                                     </span>
-                                    <span class="font-medium">
+                                    <span class="block font-medium break-words">
                                         {{
                                             scannerData.metadata.project_name ||
                                             '-'
                                         }}
                                     </span>
                                 </div>
-                                <div class="rounded-md bg-muted/40 px-3 py-2">
+                                <div
+                                    class="min-w-0 rounded-md bg-muted/40 px-3 py-2"
+                                >
                                     <span
                                         class="block text-xs text-muted-foreground"
                                     >
@@ -624,9 +619,11 @@ const printInvoice = async () => {
                     :description="`Break this ${props.recordLabel.toLowerCase()} into billable or realized line items.`"
                 >
                     <div
-                        class="flex flex-wrap items-center justify-between gap-3 border-b border-sidebar-border/70 px-3 py-3 sm:px-5 sm:py-4"
+                        class="flex min-w-0 flex-wrap items-center justify-between gap-3 border-b border-sidebar-border/70 px-3 py-3 sm:px-5 sm:py-4"
                     >
-                        <p class="text-sm text-muted-foreground">
+                        <p
+                            class="min-w-0 text-xs text-muted-foreground sm:text-sm"
+                        >
                             Pick from this project's RAB/RAP items or add a
                             manual line.
                         </p>
@@ -636,112 +633,141 @@ const printInvoice = async () => {
                         </Button>
                     </div>
 
-                    <div class="table-scrollbar overflow-x-scroll">
-                        <table class="min-w-[72rem] text-sm">
-                            <thead
-                                class="bg-muted/40 text-left text-muted-foreground"
-                            >
-                                <tr>
-                                    <th class="px-4 py-3 font-medium">
-                                        Source
-                                    </th>
-                                    <th class="px-4 py-3 font-medium">
-                                        Description
-                                    </th>
-                                    <th
-                                        v-if="props.kind === 'cost'"
-                                        class="px-4 py-3 font-medium"
-                                    >
-                                        Vendor
-                                    </th>
-                                    <th class="px-4 py-3 font-medium">Qty</th>
-                                    <th class="px-4 py-3 font-medium">Unit</th>
-                                    <th class="px-4 py-3 font-medium">
-                                        Unit Price
-                                    </th>
-                                    <th class="px-4 py-3 font-medium">
-                                        Amount
-                                    </th>
-                                    <th
-                                        class="px-4 py-3 text-right font-medium"
-                                    >
-                                        Action
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr
-                                    v-for="item in props.items"
-                                    :key="item.id"
-                                    class="border-t border-sidebar-border/70 align-top"
+                    <div class="relative min-w-0 overflow-x-hidden">
+                        <div
+                            class="table-scrollbar max-w-full overflow-x-auto pb-2"
+                        >
+                            <table class="w-max min-w-full text-xs sm:text-sm">
+                                <thead
+                                    class="sticky top-0 z-10 bg-muted/95 text-left text-muted-foreground backdrop-blur"
                                 >
-                                    <td
-                                        class="px-4 py-3 text-muted-foreground uppercase"
-                                    >
-                                        {{ item.sourceType || 'manual' }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <p
-                                            v-if="item.category"
-                                            class="mb-1 text-xs text-muted-foreground"
+                                    <tr>
+                                        <th
+                                            class="min-w-[8rem] px-3 py-2.5 font-medium sm:min-w-[9rem] sm:px-4 sm:py-3"
                                         >
-                                            {{ item.category }}
-                                        </p>
-                                        {{ item.description || '-' }}
-                                    </td>
-                                    <td
-                                        v-if="props.kind === 'cost'"
-                                        class="px-4 py-3"
+                                            Source
+                                        </th>
+                                        <th
+                                            class="min-w-[16rem] px-3 py-2.5 font-medium sm:min-w-[20rem] sm:px-4 sm:py-3"
+                                        >
+                                            Description
+                                        </th>
+                                        <th
+                                            v-if="props.kind === 'cost'"
+                                            class="min-w-[10rem] px-3 py-2.5 font-medium sm:min-w-[12rem] sm:px-4 sm:py-3"
+                                        >
+                                            Vendor
+                                        </th>
+                                        <th
+                                            class="min-w-[5rem] px-3 py-2.5 font-medium sm:min-w-[6rem] sm:px-4 sm:py-3"
+                                        >
+                                            Qty
+                                        </th>
+                                        <th
+                                            class="min-w-[5rem] px-3 py-2.5 font-medium sm:min-w-[6rem] sm:px-4 sm:py-3"
+                                        >
+                                            Unit
+                                        </th>
+                                        <th
+                                            class="min-w-[9rem] px-3 py-2.5 font-medium sm:min-w-[10rem] sm:px-4 sm:py-3"
+                                        >
+                                            Unit Price
+                                        </th>
+                                        <th
+                                            class="min-w-[9rem] px-3 py-2.5 font-medium sm:min-w-[10rem] sm:px-4 sm:py-3"
+                                        >
+                                            Amount
+                                        </th>
+                                        <th
+                                            class="min-w-[6rem] px-3 py-2.5 text-right font-medium sm:min-w-[7rem] sm:px-4 sm:py-3"
+                                        >
+                                            Action
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr
+                                        v-for="item in props.items"
+                                        :key="item.id"
+                                        class="border-t border-sidebar-border/70 align-top"
                                     >
-                                        {{ item.vendor || '-' }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        {{ item.quantity }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        {{ item.unit || '-' }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        {{ formatCurrency(item.unitPrice) }}
-                                    </td>
-                                    <td class="px-4 py-3 font-medium">
-                                        {{ formatCurrency(item.totalPrice) }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div class="flex justify-end gap-1">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon-sm"
-                                                @click="openEditItem(item)"
+                                        <td
+                                            class="px-3 py-3 text-muted-foreground uppercase sm:px-4"
+                                        >
+                                            {{ item.sourceType || 'manual' }}
+                                        </td>
+                                        <td class="px-3 py-3 sm:px-4">
+                                            <p
+                                                v-if="item.category"
+                                                class="mb-1 text-xs text-muted-foreground"
                                             >
-                                                <Pencil class="size-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon-sm"
-                                                class="text-destructive"
-                                                :disabled="
-                                                    deletingItemId === item.id
-                                                "
-                                                @click="destroyItem(item)"
-                                            >
-                                                <Trash2 class="size-4" />
-                                            </Button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr v-if="props.items.length === 0">
-                                    <td
-                                        :colspan="props.kind === 'cost' ? 8 : 7"
-                                        class="px-4 py-8 text-center text-sm text-muted-foreground"
-                                    >
-                                        No items yet. Add rows from the
-                                        project's RAB/RAP to start
-                                        reconciliation.
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                                {{ item.category }}
+                                            </p>
+                                            <span class="break-words">
+                                                {{ item.description || '-' }}
+                                            </span>
+                                        </td>
+                                        <td
+                                            v-if="props.kind === 'cost'"
+                                            class="px-3 py-3 sm:px-4"
+                                        >
+                                            {{ item.vendor || '-' }}
+                                        </td>
+                                        <td class="px-3 py-3 sm:px-4">
+                                            {{ item.quantity }}
+                                        </td>
+                                        <td class="px-3 py-3 sm:px-4">
+                                            {{ item.unit || '-' }}
+                                        </td>
+                                        <td class="px-3 py-3 sm:px-4">
+                                            {{ formatCurrency(item.unitPrice) }}
+                                        </td>
+                                        <td
+                                            class="px-3 py-3 font-medium sm:px-4"
+                                        >
+                                            {{
+                                                formatCurrency(item.totalPrice)
+                                            }}
+                                        </td>
+                                        <td class="px-3 py-3 sm:px-4">
+                                            <div class="flex justify-end gap-1">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon-sm"
+                                                    @click="openEditItem(item)"
+                                                >
+                                                    <Pencil class="size-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon-sm"
+                                                    class="text-destructive"
+                                                    :disabled="
+                                                        deletingItemId ===
+                                                        item.id
+                                                    "
+                                                    @click="destroyItem(item)"
+                                                >
+                                                    <Trash2 class="size-4" />
+                                                </Button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="props.items.length === 0">
+                                        <td
+                                            :colspan="
+                                                props.kind === 'cost' ? 8 : 7
+                                            "
+                                            class="px-4 py-8 text-center text-sm text-muted-foreground"
+                                        >
+                                            No items yet. Add rows from the
+                                            project's RAB/RAP to start
+                                            reconciliation.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </EntityPageSection>
             </section>
@@ -749,9 +775,9 @@ const printInvoice = async () => {
 
         <Dialog v-model:open="isItemOpen">
             <DialogContent
-                class="max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto sm:max-w-2xl"
+                class="flex max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] !max-w-2xl flex-col overflow-hidden p-4 sm:p-6"
             >
-                <DialogHeader>
+                <DialogHeader class="shrink-0">
                     <DialogTitle>{{ itemDialogTitle }}</DialogTitle>
                     <DialogDescription>
                         Link a project budget item or enter a manual line.
@@ -759,15 +785,15 @@ const printInvoice = async () => {
                 </DialogHeader>
 
                 <form
-                    class="grid gap-4 py-2 sm:grid-cols-2"
+                    class="grid min-h-0 min-w-0 flex-1 gap-4 overflow-x-hidden overflow-y-auto py-2 pr-1 sm:grid-cols-2"
                     @submit.prevent="submitItem"
                 >
-                    <div class="space-y-2 sm:col-span-2">
+                    <div class="min-w-0 space-y-2 sm:col-span-2">
                         <Label for="source_item">Pick RAB/RAP Item</Label>
                         <select
                             id="source_item"
                             v-model="selectedSource"
-                            class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                            class="h-10 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm"
                             @change="applyBudgetItem"
                         >
                             <option value="">Manual item</option>
@@ -783,17 +809,17 @@ const printInvoice = async () => {
                         </select>
                     </div>
 
-                    <div class="space-y-2">
+                    <div class="min-w-0 space-y-2">
                         <Label for="category">Category</Label>
                         <Input id="category" v-model="itemForm.category" />
                         <InputError :message="itemForm.errors.category" />
                     </div>
-                    <div v-if="props.kind === 'cost'" class="space-y-2">
+                    <div v-if="props.kind === 'cost'" class="min-w-0 space-y-2">
                         <Label for="vendor">Vendor / Payee</Label>
                         <Input id="vendor" v-model="itemForm.vendor" />
                         <InputError :message="itemForm.errors.vendor" />
                     </div>
-                    <div class="space-y-2 sm:col-span-2">
+                    <div class="min-w-0 space-y-2 sm:col-span-2">
                         <Label for="description">Description</Label>
                         <Input
                             id="description"
@@ -801,7 +827,7 @@ const printInvoice = async () => {
                         />
                         <InputError :message="itemForm.errors.description" />
                     </div>
-                    <div class="space-y-2">
+                    <div class="min-w-0 space-y-2">
                         <Label for="quantity">Quantity</Label>
                         <Input
                             id="quantity"
@@ -812,12 +838,12 @@ const printInvoice = async () => {
                         />
                         <InputError :message="itemForm.errors.quantity" />
                     </div>
-                    <div class="space-y-2">
+                    <div class="min-w-0 space-y-2">
                         <Label for="unit">Unit</Label>
                         <Input id="unit" v-model="itemForm.unit" />
                         <InputError :message="itemForm.errors.unit" />
                     </div>
-                    <div class="space-y-2">
+                    <div class="min-w-0 space-y-2">
                         <Label for="unit_price">Unit Price</Label>
                         <Input
                             id="unit_price"
@@ -828,7 +854,7 @@ const printInvoice = async () => {
                         />
                         <InputError :message="itemForm.errors.unit_price" />
                     </div>
-                    <div class="space-y-2">
+                    <div class="min-w-0 space-y-2">
                         <Label for="total_price">Total Price</Label>
                         <Input
                             id="total_price"
@@ -842,17 +868,17 @@ const printInvoice = async () => {
                         </p>
                         <InputError :message="itemForm.errors.total_price" />
                     </div>
-                    <div class="space-y-2 sm:col-span-2">
+                    <div class="min-w-0 space-y-2 sm:col-span-2">
                         <Label for="notes">Notes</Label>
                         <textarea
                             id="notes"
                             v-model="itemForm.notes"
-                            class="flex min-h-24 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs"
+                            class="flex min-h-24 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs"
                         />
                         <InputError :message="itemForm.errors.notes" />
                     </div>
 
-                    <DialogFooter class="sm:col-span-2">
+                    <DialogFooter class="shrink-0 sm:col-span-2">
                         <Button
                             type="button"
                             variant="outline"
@@ -864,39 +890,6 @@ const printInvoice = async () => {
                         </Button>
                     </DialogFooter>
                 </form>
-            </DialogContent>
-        </Dialog>
-
-        <Dialog v-if="props.kind === 'invoice'" v-model:open="isPdfOpen">
-            <DialogContent
-                class="max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto sm:max-w-5xl"
-            >
-                <DialogHeader class="no-print">
-                    <DialogTitle>Invoice PDF</DialogTitle>
-                    <DialogDescription
-                        >Preview this billing record, then print or save it as
-                        PDF.</DialogDescription
-                    >
-                </DialogHeader>
-                <div class="no-print flex justify-end">
-                    <Button @click="printInvoice">
-                        <Printer class="size-4" />
-                        Create PDF
-                    </Button>
-                </div>
-                <InvoicePrintPreview
-                    :bill-to="props.record.client_name"
-                    :description="props.record.description"
-                    :due-date="headerForm.due_date"
-                    :invoice-date="headerForm.invoice_date"
-                    :invoice-number="documentTitle"
-                    :line-items="invoicePrintLineItems"
-                    :project-name="props.record.project_name"
-                    :status="headerForm.status"
-                    :subtotal="props.summary.subtotal"
-                    :tax="props.summary.tax"
-                    :total="props.summary.total"
-                />
             </DialogContent>
         </Dialog>
     </AppLayout>

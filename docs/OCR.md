@@ -43,6 +43,7 @@ Google Document AI is intentionally not required for the MVP demo.
 ## Safety Rules
 
 - Missing OCR configuration returns a friendly message: `OCR belum dikonfigurasi. Silakan input manual atau hubungi admin.`
+- When OCR is not configured, the upload panel skips automatic OCR and shows a manual-input notice instead.
 - OCR never silently overwrites financial or project data.
 - RAB/RAP OCR rows are applied only after the user opens the review table and clicks apply.
 - Progress OCR does not auto-approve internal/client approval flags.

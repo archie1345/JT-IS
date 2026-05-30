@@ -191,6 +191,54 @@ class InvoicesController extends CrudResourceController
         ]);
     }
 
+    public function preview(Invoice $invoice): Response
+    {
+        $invoice->load([
+            'items',
+            'project:id,client_id,name',
+            'project.client:id,name',
+        ]);
+
+        $items = $invoice->items()
+            ->orderBy('id')
+            ->get()
+            ->map(fn ($item): array => [
+                'id' => $item->id,
+                'category' => $item->category,
+                'description' => $item->description,
+                'quantity' => (float) ($item->quantity ?? 0),
+                'unit' => $item->unit,
+                'unitPrice' => (float) ($item->unit_price ?? 0),
+                'totalPrice' => (float) ($item->total_price ?? 0),
+            ])
+            ->all();
+
+        if ($items === []) {
+            $items = [[
+                'description' => $invoice->description
+                    ?: $invoice->project?->name
+                    ?: 'Project invoice',
+                'projectName' => $invoice->project?->name,
+                'quantity' => 1,
+                'unitPrice' => (float) ($invoice->amount ?? 0),
+                'totalPrice' => (float) ($invoice->amount ?? 0),
+            ]];
+        }
+
+        $subtotal = array_sum(array_map(
+            fn (array $item): float => (float) ($item['totalPrice'] ?? 0),
+            $items,
+        ));
+
+        return Inertia::render('finance/invoices/Preview', [
+            'invoice' => $this->transformRecord($invoice, request()),
+            'lineItems' => $items,
+            'subtotal' => $subtotal,
+            'tax' => (float) ($invoice->tax_amount ?? 0),
+            'total' => $subtotal + (float) ($invoice->tax_amount ?? 0),
+        ]);
+    }
+
     protected function budgetItemOptions(int $projectId): array
     {
         $rabItems = Rab::query()

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { router, useForm } from '@inertiajs/vue3';
+import { router, useForm, usePage } from '@inertiajs/vue3';
 import {
     FileSearch,
     FileText,
@@ -39,6 +39,15 @@ type ConnectionOption = {
     projectId?: null | number;
 };
 
+type SharedOcrProps = {
+    features?: {
+        ocr?: {
+            configured?: boolean;
+            unavailableMessage?: string;
+        };
+    };
+};
+
 const props = withDefaults(
     defineProps<{
         projectId?: null | number;
@@ -64,9 +73,11 @@ const props = withDefaults(
     },
 );
 
+const page = usePage<SharedOcrProps>();
 const input = ref<HTMLInputElement | null>(null);
 const applyStatus = ref<null | string>(null);
 const applyError = ref<null | string>(null);
+const ocrNotice = ref<null | string>(null);
 const isApplying = ref(false);
 const isPreviewOpen = ref(false);
 const {
@@ -231,6 +242,14 @@ const uploadUrl = computed(() =>
     selectedProjectId.value
         ? `/projects/${selectedProjectId.value}/documents`
         : '',
+);
+const ocrConfigured = computed(
+    () => page.props.features?.ocr?.configured ?? true,
+);
+const ocrUnavailableMessage = computed(
+    () =>
+        page.props.features?.ocr?.unavailableMessage ??
+        'OCR belum aktif. Dokumen tetap bisa diunggah, lanjutkan input manual.',
 );
 
 watch(selectedConnection, (connection) => {
@@ -399,6 +418,7 @@ const removePreviewBudgetItem = (index: number) => {
 const runOcr = async (file: File) => {
     applyStatus.value = null;
     applyError.value = null;
+    ocrNotice.value = null;
 
     try {
         await extractOcrFile(file);
@@ -476,9 +496,29 @@ const applyExtraction = async () => {
 const setFiles = (files: File[]) => {
     form.documents = files;
     resetOcr();
+    ocrNotice.value = null;
+
+    if (files[0] && ocrConfigured.value) {
+        void runOcr(files[0]);
+        return;
+    }
 
     if (files[0]) {
-        void runOcr(files[0]);
+        ocrNotice.value = ocrUnavailableMessage.value;
+    }
+};
+
+const clearSelectedFiles = () => {
+    form.reset('documents');
+    form.ocr_text = '';
+    form.ocr_engine = '';
+    applyStatus.value = null;
+    applyError.value = null;
+    ocrNotice.value = null;
+    resetOcr();
+
+    if (input.value) {
+        input.value.value = '';
     }
 };
 
@@ -509,6 +549,7 @@ const upload = () => {
             form.reset('documents');
             form.ocr_text = '';
             form.ocr_engine = '';
+            ocrNotice.value = null;
             resetOcr();
             if (input.value) {
                 input.value.value = '';
@@ -530,16 +571,21 @@ const removeDocument = (document: UploadedDocument) => {
 </script>
 
 <template>
-    <div class="space-y-4">
+    <div class="min-w-0 space-y-4 overflow-hidden">
         <div
-            class="rounded-lg border border-sidebar-border/70 bg-background p-4 shadow-xs dark:border-sidebar-border"
+            class="min-w-0 rounded-lg border border-sidebar-border/70 bg-background p-3 shadow-xs sm:p-4 dark:border-sidebar-border"
         >
-            <div class="flex items-center gap-2">
-                <FileSearch class="size-4 text-muted-foreground" />
-                <h3 class="text-sm font-medium">{{ props.title }}</h3>
+            <div class="flex min-w-0 items-center gap-2">
+                <FileSearch class="size-4 shrink-0 text-muted-foreground" />
+                <h3 class="min-w-0 text-sm font-medium break-words">
+                    {{ props.title }}
+                </h3>
             </div>
 
-            <label v-if="canChooseProject" class="mt-4 block space-y-1.5">
+            <label
+                v-if="canChooseProject"
+                class="mt-4 block min-w-0 space-y-1.5"
+            >
                 <span class="text-xs font-medium text-muted-foreground"
                     >Proyek</span
                 >
@@ -550,7 +596,10 @@ const removeDocument = (document: UploadedDocument) => {
                 />
             </label>
 
-            <label v-if="canChooseConnection" class="mt-4 block space-y-1.5">
+            <label
+                v-if="canChooseConnection"
+                class="mt-4 block min-w-0 space-y-1.5"
+            >
                 <span class="text-xs font-medium text-muted-foreground"
                     >Hubungkan ke</span
                 >
@@ -561,7 +610,7 @@ const removeDocument = (document: UploadedDocument) => {
                 />
             </label>
 
-            <label class="mt-4 block space-y-1.5">
+            <label class="mt-4 block min-w-0 space-y-1.5">
                 <span class="text-xs font-medium text-muted-foreground"
                     >Jenis Dokumen</span
                 >
@@ -573,7 +622,7 @@ const removeDocument = (document: UploadedDocument) => {
             </label>
 
             <label
-                class="mt-4 flex min-h-48 cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-sidebar-border/80 bg-muted/20 px-5 py-8 text-center transition hover:bg-muted/40 dark:border-sidebar-border"
+                class="mt-4 flex min-h-40 min-w-0 cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-sidebar-border/80 bg-muted/20 px-4 py-6 text-center transition hover:bg-muted/40 sm:min-h-48 sm:px-5 sm:py-8 dark:border-sidebar-border"
                 @dragover.prevent
                 @drop.prevent="handleDrop"
             >
@@ -593,8 +642,12 @@ const removeDocument = (document: UploadedDocument) => {
                     />
                     <Upload v-else class="size-5 text-muted-foreground" />
                 </span>
-                <span class="text-sm font-medium">{{ statusText }}</span>
-                <span class="max-w-sm text-xs text-muted-foreground">
+                <span class="text-sm font-medium break-words">
+                    {{ statusText }}
+                </span>
+                <span
+                    class="max-w-sm text-xs break-words text-muted-foreground"
+                >
                     {{ props.description }}
                 </span>
             </label>
@@ -604,33 +657,45 @@ const removeDocument = (document: UploadedDocument) => {
                     form.documents.length > 0 ||
                     form.processing ||
                     form.errors.documents ||
+                    ocrNotice ||
                     hasOcrState
                 "
-                class="mt-4 space-y-3"
+                class="mt-4 min-w-0 space-y-3"
             >
                 <div
                     v-if="selectedFileNames"
-                    class="rounded-md border border-sidebar-border/60 px-3 py-2 text-sm dark:border-sidebar-border"
+                    class="flex min-w-0 items-start justify-between gap-3 rounded-md border border-sidebar-border/60 px-3 py-2 text-sm dark:border-sidebar-border"
                 >
-                    <span class="block text-xs text-muted-foreground"
-                        >File dipilih</span
-                    >
-                    <span class="mt-0.5 block font-medium break-words">
-                        {{ selectedFileNames }}
+                    <span class="min-w-0">
+                        <span class="block text-xs text-muted-foreground">
+                            File dipilih
+                        </span>
+                        <span class="mt-0.5 block font-medium break-words">
+                            {{ selectedFileNames }}
+                        </span>
                     </span>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        class="shrink-0 text-muted-foreground"
+                        @click="clearSelectedFiles"
+                    >
+                        <Trash2 class="size-4" />
+                    </Button>
                 </div>
 
                 <div
                     v-if="form.processing || isReadingFile || readerStatus"
-                    class="rounded-md bg-muted/40 px-3 py-2"
+                    class="min-w-0 rounded-md bg-muted/40 px-3 py-2"
                 >
-                    <div class="flex items-center gap-2 text-sm">
+                    <div class="flex min-w-0 items-center gap-2 text-sm">
                         <LoaderCircle
                             v-if="form.processing || isReadingFile"
                             class="size-4 animate-spin text-muted-foreground"
                         />
                         <ScanText v-else class="size-4 text-muted-foreground" />
-                        <span>{{
+                        <span class="min-w-0 break-words">{{
                             form.processing
                                 ? 'Menyimpan dokumen ke proyek...'
                                 : (readerStatus ?? 'OCR siap digunakan')
@@ -658,9 +723,16 @@ const removeDocument = (document: UploadedDocument) => {
                     {{ uploadError }}
                 </p>
 
+                <p
+                    v-if="ocrNotice"
+                    class="rounded-md border border-sidebar-border/60 bg-muted/30 px-3 py-2 text-sm text-muted-foreground dark:border-sidebar-border"
+                >
+                    {{ ocrNotice }}
+                </p>
+
                 <div
                     v-if="ocrPreview"
-                    class="rounded-md border border-sidebar-border/60 px-3 py-2 text-sm dark:border-sidebar-border"
+                    class="min-w-0 rounded-md border border-sidebar-border/60 px-3 py-2 text-sm dark:border-sidebar-border"
                 >
                     <span class="block text-xs text-muted-foreground"
                         >Preview teks OCR</span
@@ -674,7 +746,7 @@ const removeDocument = (document: UploadedDocument) => {
 
                 <div
                     v-if="ocrText"
-                    class="rounded-md border border-sidebar-border/60 px-3 py-2 text-sm dark:border-sidebar-border"
+                    class="min-w-0 rounded-md border border-sidebar-border/60 px-3 py-2 text-sm dark:border-sidebar-border"
                 >
                     <span class="block text-xs text-muted-foreground"
                         >Draft hasil OCR</span
@@ -725,35 +797,37 @@ const removeDocument = (document: UploadedDocument) => {
         </div>
 
         <div
-            class="rounded-lg border border-sidebar-border/70 bg-background p-4 shadow-xs dark:border-sidebar-border"
+            class="min-w-0 rounded-lg border border-sidebar-border/70 bg-background p-3 shadow-xs sm:p-4 dark:border-sidebar-border"
         >
-            <div class="flex items-center gap-2">
-                <FileText class="size-4 text-muted-foreground" />
+            <div class="flex min-w-0 items-center gap-2">
+                <FileText class="size-4 shrink-0 text-muted-foreground" />
                 <h3 class="text-sm font-medium">Dokumen Proyek</h3>
             </div>
 
-            <div class="mt-4 grid gap-2">
+            <div class="mt-4 grid min-w-0 gap-2">
                 <div
                     v-for="document in props.documents"
                     :key="document.id"
-                    class="flex flex-col gap-3 rounded-md border border-sidebar-border/60 px-3 py-2 sm:flex-row sm:items-center sm:justify-between dark:border-sidebar-border"
+                    class="flex min-w-0 flex-col gap-3 rounded-md border border-sidebar-border/60 px-3 py-2 sm:flex-row sm:items-center sm:justify-between dark:border-sidebar-border"
                 >
                     <a
                         :href="document.url"
                         target="_blank"
                         rel="noreferrer"
-                        class="flex min-w-0 items-start gap-3"
+                        class="flex min-w-0 flex-1 items-start gap-3 overflow-hidden"
                     >
                         <FileText
                             class="mt-0.5 size-4 shrink-0 text-muted-foreground"
                         />
-                        <span class="min-w-0">
+                        <span class="min-w-0 flex-1 overflow-hidden">
                             <span
-                                class="block truncate text-sm font-medium text-foreground"
+                                class="block max-w-full text-sm font-medium break-all whitespace-normal text-foreground"
                             >
                                 {{ document.originalName }}
                             </span>
-                            <span class="block text-xs text-muted-foreground">
+                            <span
+                                class="block max-w-full text-xs break-words whitespace-normal text-muted-foreground"
+                            >
                                 {{
                                     document.projectName
                                         ? `${document.projectName} / `
@@ -796,37 +870,43 @@ const removeDocument = (document: UploadedDocument) => {
 
         <Dialog v-model:open="isPreviewOpen">
             <DialogContent
-                class="max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto sm:max-w-4xl"
+                class="flex max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] !max-w-6xl flex-col overflow-hidden p-4 sm:p-6"
             >
-                <DialogHeader>
+                <DialogHeader class="shrink-0">
                     <DialogTitle>Review Draft Hasil OCR</DialogTitle>
                 </DialogHeader>
 
-                <div class="space-y-5">
+                <div
+                    class="min-h-0 flex-1 space-y-5 overflow-x-hidden overflow-y-auto pr-1"
+                >
                     <section
                         v-if="projectUpdatePreview.length > 0"
-                        class="space-y-3"
+                        class="min-w-0 space-y-3"
                     >
                         <h4 class="text-sm font-medium">Field proyek</h4>
-                        <div class="grid gap-3 sm:grid-cols-2">
+
+                        <div class="grid min-w-0 gap-3 lg:grid-cols-2">
                             <label
                                 v-for="field in projectUpdatePreview"
                                 :key="field.label"
-                                class="space-y-1.5"
+                                class="min-w-0 space-y-1.5"
                             >
                                 <span
                                     class="text-xs font-medium text-muted-foreground"
-                                    >{{ field.label }}</span
                                 >
+                                    {{ field.label }}
+                                </span>
+
                                 <textarea
                                     v-if="field.label === 'Lokasi'"
                                     v-model="previewProjectUpdates[field.key]"
-                                    class="min-h-24 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs"
+                                    class="min-h-24 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs"
                                 />
+
                                 <input
                                     v-else
                                     v-model="previewProjectUpdates[field.key]"
-                                    class="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+                                    class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
                                 />
                             </label>
                         </div>
@@ -834,16 +914,18 @@ const removeDocument = (document: UploadedDocument) => {
 
                     <section
                         v-if="metadataPreview.length > 0"
-                        class="grid gap-3 sm:grid-cols-2"
+                        class="grid min-w-0 gap-3 sm:grid-cols-2"
                     >
                         <label
                             v-if="effectiveComponentType === 'progress_report'"
-                            class="space-y-1.5"
+                            class="min-w-0 space-y-1.5"
                         >
                             <span
                                 class="text-xs font-medium text-muted-foreground"
-                                >Persentase Progress</span
                             >
+                                Persentase Progress
+                            </span>
+
                             <input
                                 v-model="previewProgressPercent"
                                 type="text"
@@ -852,7 +934,7 @@ const removeDocument = (document: UploadedDocument) => {
                                 min="0"
                                 max="100"
                                 step="0.01"
-                                class="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+                                class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
                                 @input="handleProgressPercentInput"
                             />
                         </label>
@@ -862,18 +944,20 @@ const removeDocument = (document: UploadedDocument) => {
                                 effectiveComponentType === 'invoice' ||
                                 effectiveComponentType === 'project_cost'
                             "
-                            class="space-y-1.5"
+                            class="min-w-0 space-y-1.5"
                         >
                             <span
                                 class="text-xs font-medium text-muted-foreground"
-                                >Nilai</span
                             >
+                                Nilai
+                            </span>
+
                             <input
                                 v-model="previewAmount"
                                 type="number"
                                 min="0"
                                 step="0.01"
-                                class="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+                                class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
                             />
                         </label>
                     </section>
@@ -884,84 +968,105 @@ const removeDocument = (document: UploadedDocument) => {
                                 effectiveComponentType === 'rap') &&
                             previewBudgetItems.length > 0
                         "
-                        class="space-y-3"
+                        class="min-w-0 space-y-3"
                     >
                         <h4 class="text-sm font-medium">Baris anggaran</h4>
-                        <div class="overflow-x-auto rounded-md border">
-                            <table class="min-w-[54rem] text-sm">
-                                <thead class="bg-muted/50 text-left text-xs">
+
+                        <div
+                            class="max-h-[38dvh] max-w-full overflow-auto rounded-md border border-sidebar-border/60 dark:border-sidebar-border"
+                        >
+                            <table class="min-w-[60rem] table-fixed text-sm">
+                                <thead
+                                    class="sticky top-0 z-10 bg-muted text-left text-xs"
+                                >
                                     <tr>
-                                        <th class="px-3 py-2">Uraian</th>
-                                        <th class="px-3 py-2">Bagian</th>
-                                        <th class="px-3 py-2">Qty</th>
-                                        <th class="px-3 py-2">Unit</th>
-                                        <th class="px-3 py-2">Unit Price</th>
-                                        <th class="px-3 py-2">Total</th>
-                                        <th class="px-3 py-2"></th>
+                                        <th class="w-[20rem] px-3 py-2">
+                                            Uraian
+                                        </th>
+                                        <th class="w-[11rem] px-3 py-2">
+                                            Bagian
+                                        </th>
+                                        <th class="w-[7rem] px-3 py-2">Qty</th>
+                                        <th class="w-[7rem] px-3 py-2">Unit</th>
+                                        <th class="w-[10rem] px-3 py-2">
+                                            Unit Price
+                                        </th>
+                                        <th class="w-[10rem] px-3 py-2">
+                                            Total
+                                        </th>
+                                        <th class="w-[5rem] px-3 py-2"></th>
                                     </tr>
                                 </thead>
+
                                 <tbody>
                                     <tr
                                         v-for="(
                                             item, index
                                         ) in previewBudgetItems"
                                         :key="`${item.description}-${index}`"
-                                        class="border-t align-top"
+                                        class="border-t border-sidebar-border/50 align-top"
                                     >
                                         <td class="px-3 py-2">
                                             <textarea
                                                 v-model="item.description"
-                                                class="min-h-16 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm"
+                                                class="min-h-12 w-full min-w-0 resize-y rounded-md border border-input bg-transparent px-2 py-1 text-sm"
                                             />
                                         </td>
+
                                         <td class="px-3 py-2">
                                             <input
                                                 v-model="item.sub_category"
-                                                class="h-9 w-36 rounded-md border border-input bg-transparent px-2 text-sm"
+                                                class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-2 text-sm"
                                             />
                                         </td>
+
                                         <td class="px-3 py-2">
                                             <input
                                                 v-model="item.quantity"
                                                 type="number"
                                                 step="0.01"
-                                                class="h-9 w-24 rounded-md border border-input bg-transparent px-2 text-sm"
+                                                class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-2 text-sm"
                                             />
                                         </td>
+
                                         <td class="px-3 py-2">
                                             <input
                                                 v-model="item.unit"
-                                                class="h-9 w-20 rounded-md border border-input bg-transparent px-2 text-sm"
+                                                class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-2 text-sm"
                                             />
                                         </td>
+
                                         <td class="px-3 py-2">
                                             <input
                                                 v-model="item.unit_price"
                                                 type="number"
                                                 step="0.01"
-                                                class="h-9 w-32 rounded-md border border-input bg-transparent px-2 text-sm"
+                                                class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-2 text-sm"
                                             />
                                         </td>
+
                                         <td class="px-3 py-2">
                                             <input
                                                 v-model="item.total_price"
                                                 type="number"
                                                 step="0.01"
-                                                class="h-9 w-32 rounded-md border border-input bg-transparent px-2 text-sm"
+                                                class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-2 text-sm"
                                             />
                                         </td>
+
                                         <td class="px-3 py-2">
                                             <Button
                                                 type="button"
                                                 variant="ghost"
-                                                size="sm"
+                                                size="icon-sm"
+                                                class="text-destructive"
                                                 @click="
                                                     removePreviewBudgetItem(
                                                         index,
                                                     )
                                                 "
                                             >
-                                                Hapus
+                                                <Trash2 class="size-4" />
                                             </Button>
                                         </td>
                                     </tr>
@@ -983,7 +1088,7 @@ const removeDocument = (document: UploadedDocument) => {
                     </p>
                 </div>
 
-                <DialogFooter>
+                <DialogFooter class="mt-4 shrink-0">
                     <Button
                         type="button"
                         variant="outline"
@@ -991,6 +1096,7 @@ const removeDocument = (document: UploadedDocument) => {
                     >
                         Batal
                     </Button>
+
                     <Button
                         type="button"
                         :disabled="isApplying"

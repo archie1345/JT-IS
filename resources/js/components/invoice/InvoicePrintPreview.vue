@@ -85,7 +85,7 @@ const invoiceStyle = computed(() => ({
 
 <template>
     <section
-        class="invoice-print-area overflow-x-auto rounded-lg bg-muted/30 p-3"
+        class="invoice-print-area max-w-full overflow-x-auto rounded-lg bg-muted/30 p-3"
     >
         <div
             class="invoice-sheet mx-auto flex min-h-[297mm] w-[210mm] flex-col bg-white text-[#111827] shadow-lg"
@@ -101,10 +101,13 @@ const invoiceStyle = computed(() => ({
                 <div class="flex items-start justify-between gap-8">
                     <div class="flex items-start gap-4">
                         <div
-                            class="flex size-16 shrink-0 items-center justify-center rounded-lg bg-white text-2xl font-bold"
-                            :style="{ color: 'var(--invoice-accent)' }"
+                            class="flex size-16 shrink-0 items-center justify-center rounded-lg bg-white p-2"
                         >
-                            JTE
+                            <img
+                                src="/assets/svg/JTE_Logo_only.svg"
+                                alt="JTE"
+                                class="max-h-full max-w-full object-contain"
+                            />
                         </div>
                         <div>
                             <p class="text-sm tracking-[0.2em] uppercase">

@@ -366,7 +366,7 @@ onBeforeUnmount(() => {
 
 <template>
     <div
-        class="flex flex-1 flex-col gap-3 rounded-xl p-2 sm:gap-4 sm:p-4"
+        class="flex min-w-0 flex-1 flex-col gap-3 rounded-xl p-2 sm:gap-4 sm:p-4"
         :class="
             props.stretchToViewport
                 ? 'min-h-[calc(100vh-8rem)] overflow-visible sm:h-[calc(100vh-8rem)] sm:overflow-hidden'
@@ -374,36 +374,36 @@ onBeforeUnmount(() => {
         "
     >
         <section
-            class="flex min-h-0 flex-1 flex-col rounded-xl border border-sidebar-border/70 bg-background/80 p-2 shadow-sm sm:rounded-2xl sm:p-5"
+            class="flex min-h-0 min-w-0 flex-1 flex-col rounded-xl border border-sidebar-border/70 bg-background/80 p-2 shadow-sm sm:rounded-2xl sm:p-5"
         >
             <div
-                class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-sidebar-border/70 bg-background shadow-sm"
+                class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-sidebar-border/70 bg-background shadow-sm sm:rounded-2xl"
             >
                 <div
                     class="flex flex-wrap items-center justify-between gap-3 border-b border-sidebar-border/70 px-3 py-3 sm:px-5 sm:py-4"
                 >
-                    <div>
+                    <div class="min-w-0">
                         <h2
-                            class="text-base font-semibold text-foreground sm:text-lg"
+                            class="text-base font-semibold break-words text-foreground sm:text-lg"
                         >
                             {{ props.title }}
                         </h2>
                         <p
                             v-if="props.description"
-                            class="text-xs text-muted-foreground sm:text-sm"
+                            class="text-xs break-words text-muted-foreground sm:text-sm"
                         >
                             {{ props.description }}
                         </p>
                         <p
                             v-if="props.note"
-                            class="text-[11px] text-muted-foreground sm:text-xs"
+                            class="text-[11px] break-words text-muted-foreground sm:text-xs"
                         >
                             {{ props.note }}
                         </p>
                     </div>
 
                     <div
-                        class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3"
+                        class="flex w-full min-w-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3"
                     >
                         <div class="relative w-full sm:min-w-64">
                             <Search
@@ -475,7 +475,9 @@ onBeforeUnmount(() => {
                 <div
                     class="relative min-h-80 min-w-0 flex-1 overflow-x-hidden overflow-y-auto sm:min-h-0"
                 >
-                    <div class="table-scrollbar w-full overflow-x-scroll pb-2">
+                    <div
+                        class="table-scrollbar max-w-full overflow-x-auto pb-2"
+                    >
                         <table class="w-max min-w-full text-xs sm:text-sm">
                             <thead
                                 class="sticky top-0 z-10 bg-muted/95 text-left text-muted-foreground backdrop-blur"

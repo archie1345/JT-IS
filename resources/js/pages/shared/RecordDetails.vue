@@ -1,20 +1,12 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { ArrowLeft, FileText, Printer, Save } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { ArrowLeft, FileText, Save } from 'lucide-vue-next';
+import { computed } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import EntityPageSection from '@/components/entity/EntityPageSection.vue';
-import InvoicePrintPreview from '@/components/invoice/InvoicePrintPreview.vue';
 import DocumentUploadPanel from '@/components/shared/DocumentUploadPanel.vue';
 import RecordFieldInput from '@/components/prototype/RecordFieldInput.vue';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
 import type { BreadcrumbItem } from '@/types';
 import type { UploadedDocument } from '@/types/project';
 
@@ -62,37 +54,9 @@ const form = useForm<Record<string, number | string>>(
         ]),
     ),
 );
-const isPdfModalOpen = ref(false);
 const isInvoiceRecord = computed(
     () => props.upload?.componentType === 'invoice',
 );
-const invoiceRecord = computed(() => ({
-    id: props.record.id,
-    project_name: props.record.project_name,
-    client_name: props.record.client_name,
-    invoice_number: form.invoice_number || props.record.invoice_number,
-    amount: form.amount || props.record.amount,
-    tax_amount: form.tax_amount || props.record.tax_amount,
-    invoice_date: form.invoice_date || props.record.invoice_date,
-    due_date: form.due_date || props.record.due_date,
-    status: form.status || props.record.status,
-    description: form.description || props.record.description,
-}));
-const invoiceAmount = computed(() => Number(invoiceRecord.value.amount ?? 0));
-const invoiceTax = computed(() => Number(invoiceRecord.value.tax_amount ?? 0));
-const invoiceTotal = computed(() => invoiceAmount.value + invoiceTax.value);
-const invoiceLineItems = computed(() => [
-    {
-        description:
-            invoiceRecord.value.description ||
-            invoiceRecord.value.project_name ||
-            'Project billing',
-        projectName: invoiceRecord.value.project_name,
-        quantity: 1,
-        unitPrice: invoiceRecord.value.amount,
-        totalPrice: invoiceRecord.value.amount,
-    },
-]);
 
 const backToList = () => {
     router.get(props.indexUrl);
@@ -109,8 +73,8 @@ const submit = () => {
     });
 };
 
-const printInvoice = () => {
-    window.print();
+const openInvoicePreview = () => {
+    window.open(`/invoices/${props.record.id}/preview`, '_blank', 'noopener');
 };
 </script>
 
@@ -118,9 +82,11 @@ const printInvoice = () => {
     <Head :title="props.title" />
 
     <AppLayout :breadcrumbs="props.breadcrumbs">
-        <div class="flex flex-1 flex-col gap-4 rounded-xl p-4">
+        <div
+            class="flex min-w-0 flex-1 flex-col gap-3 rounded-xl p-2 sm:gap-4 sm:p-4"
+        >
             <section
-                class="rounded-2xl border border-sidebar-border/70 bg-background p-5 shadow-sm"
+                class="min-w-0 overflow-hidden rounded-xl border border-sidebar-border/70 bg-background p-3 shadow-sm sm:rounded-2xl sm:p-5"
             >
                 <Button
                     variant="ghost"
@@ -131,24 +97,26 @@ const printInvoice = () => {
                     Back
                 </Button>
                 <div
-                    class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+                    class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
                 >
-                    <div>
-                        <h1 class="text-3xl font-semibold tracking-tight">
+                    <div class="min-w-0">
+                        <h1
+                            class="text-2xl font-semibold tracking-tight break-words sm:text-3xl"
+                        >
                             {{ props.title }}
                         </h1>
                         <p
                             v-if="props.subtitle"
-                            class="mt-2 text-sm text-muted-foreground"
+                            class="mt-2 text-xs break-words text-muted-foreground sm:text-sm"
                         >
                             {{ props.subtitle }}
                         </p>
                     </div>
-                    <div class="flex flex-col gap-2 sm:flex-row">
+                    <div class="flex shrink-0 flex-col gap-2 sm:flex-row">
                         <Button
                             v-if="isInvoiceRecord"
                             variant="outline"
-                            @click="isPdfModalOpen = true"
+                            @click="openInvoicePreview"
                         >
                             <FileText class="mr-2 size-4" />
                             Make PDF
@@ -161,13 +129,15 @@ const printInvoice = () => {
                 </div>
             </section>
 
-            <section class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_24rem]">
+            <section
+                class="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]"
+            >
                 <EntityPageSection
                     title="Record Fields"
                     description="Edit the fields captured from the source document."
                 >
                     <form
-                        class="grid gap-4 sm:grid-cols-2"
+                        class="grid min-w-0 gap-4 sm:grid-cols-2"
                         @submit.prevent="submit"
                     >
                         <RecordFieldInput
@@ -178,7 +148,7 @@ const printInvoice = () => {
                             :error="form.errors[field.name]"
                         />
 
-                        <div class="flex justify-end sm:col-span-2">
+                        <div class="flex min-w-0 justify-end sm:col-span-2">
                             <Button type="submit" :disabled="form.processing">
                                 <Save class="mr-2 size-4" />
                                 Save Changes
@@ -203,46 +173,5 @@ const printInvoice = () => {
                 </EntityPageSection>
             </section>
         </div>
-
-        <Dialog v-model:open="isPdfModalOpen">
-            <DialogContent
-                class="max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto sm:max-w-5xl"
-            >
-                <DialogHeader class="no-print">
-                    <DialogTitle>Invoice PDF</DialogTitle>
-                    <DialogDescription>
-                        Preview this billing record, then print or save it as
-                        PDF.
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div class="no-print flex justify-end">
-                    <Button @click="printInvoice">
-                        <Printer class="size-4" />
-                        Create PDF
-                    </Button>
-                </div>
-
-                <InvoicePrintPreview
-                    :bill-to="invoiceRecord.client_name"
-                    :description="invoiceRecord.description"
-                    :due-date="invoiceRecord.due_date"
-                    :invoice-date="invoiceRecord.invoice_date"
-                    :invoice-number="
-                        String(
-                            invoiceRecord.invoice_number ||
-                                `Invoice #${invoiceRecord.id}`,
-                        )
-                    "
-                    :line-items="invoiceLineItems"
-                    :project-name="invoiceRecord.project_name"
-                    :status="invoiceRecord.status"
-                    :subtotal="invoiceAmount"
-                    :tax="invoiceTax"
-                    :total="invoiceTotal"
-                    variant="summary"
-                />
-            </DialogContent>
-        </Dialog>
     </AppLayout>
 </template>

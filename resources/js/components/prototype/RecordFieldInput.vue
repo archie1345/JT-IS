@@ -77,10 +77,12 @@ const handleInput = (event: Event) => {
 
 <template>
     <div
-        class="space-y-2"
+        class="min-w-0 space-y-2"
         :class="props.field.type === 'textarea' ? 'sm:col-span-2' : ''"
     >
-        <Label :for="props.field.name">{{ props.field.label }}</Label>
+        <Label :for="props.field.name" class="break-words">
+            {{ props.field.label }}
+        </Label>
 
         <OptionSelect
             v-if="props.field.type === 'select'"
@@ -98,7 +100,7 @@ const handleInput = (event: Event) => {
             v-model="model"
             :placeholder="props.field.placeholder"
             :required="props.field.required"
-            class="flex min-h-32 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs"
+            class="flex min-h-32 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs"
         />
 
         <Input
@@ -113,6 +115,7 @@ const handleInput = (event: Event) => {
             :max="props.field.max"
             :step="props.field.step"
             :required="props.field.required"
+            class="w-full min-w-0 text-sm"
             @input="handleInput"
         />
 

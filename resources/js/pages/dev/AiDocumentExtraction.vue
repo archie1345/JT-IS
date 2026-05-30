@@ -590,7 +590,7 @@ const handleDrop = (event: DragEvent) => {
                         </div>
                     </div>
 
-                    <div class="grid gap-2 lg:min-w-[42rem]">
+                    <div class="grid min-w-0 gap-2 lg:min-w-[42rem]">
                         <label class="flex items-center gap-2 text-sm">
                             <input
                                 v-model="autoCreateProject"
@@ -602,11 +602,11 @@ const handleDrop = (event: DragEvent) => {
                         </label>
 
                         <div
-                            class="grid gap-2 sm:grid-cols-[minmax(12rem,1fr)_minmax(10rem,0.8fr)_8rem_auto]"
+                            class="grid min-w-0 gap-2 sm:grid-cols-[minmax(12rem,1fr)_minmax(10rem,0.8fr)_8rem_auto]"
                         >
                             <select
                                 v-model="selectedProjectId"
-                                class="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                class="h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                                 @change="autoCreateProject = false"
                             >
                                 <option value="">Select project</option>
@@ -621,7 +621,7 @@ const handleDrop = (event: DragEvent) => {
 
                             <select
                                 v-model="selectedClientId"
-                                class="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                class="h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                                 :disabled="!autoCreateProject"
                             >
                                 <option value="">No client</option>
@@ -636,7 +636,7 @@ const handleDrop = (event: DragEvent) => {
 
                             <select
                                 v-model="budgetKind"
-                                class="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                class="h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                             >
                                 <option value="rab">RAB</option>
                                 <option value="rap">RAP</option>
@@ -679,10 +679,12 @@ const handleDrop = (event: DragEvent) => {
                     </p>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full text-sm">
+                <div
+                    class="max-w-full overflow-auto rounded-b-lg border-sidebar-border/60 dark:border-sidebar-border"
+                >
+                    <table class="min-w-[64rem] text-sm">
                         <thead
-                            class="border-b border-sidebar-border/70 bg-muted/50 text-left text-xs text-muted-foreground uppercase dark:border-sidebar-border"
+                            class="sticky top-0 z-10 border-b border-sidebar-border/70 bg-muted text-left text-xs text-muted-foreground uppercase dark:border-sidebar-border"
                         >
                             <tr>
                                 <th class="min-w-[22rem] px-4 py-3 font-medium">

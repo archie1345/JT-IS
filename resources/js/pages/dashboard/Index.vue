@@ -155,6 +155,15 @@ const valueFormatOptions: Array<{ value: ValueFormat; label: string }> = [
 ];
 
 const defaultWidgetIds = defaultWidgets.map((widget) => widget.id);
+const fixedDashboardSections = [
+    { id: 'summary-metrics', title: 'Executive summary' },
+    { id: 'problem-projects', title: 'Problem projects' },
+    { id: 'recent-progress', title: 'Recent progress / BAMC' },
+] as const;
+const fixedDashboardSectionIds = fixedDashboardSections.map(
+    (section) => section.id,
+);
+const defaultVisibleIds = [...fixedDashboardSectionIds, ...defaultWidgetIds];
 const isChartType = (value: unknown): value is ChartType =>
     chartTypeOptions.some((option) => option.value === value);
 const isValueFormat = (value: unknown): value is ValueFormat =>
@@ -165,7 +174,7 @@ const isDataSource = (value: unknown): value is string =>
 const page = usePage<DashboardPageProps>();
 const dashboardList = ref<HTMLElement | null>(null);
 const widgets = ref<DashboardWidget[]>([...defaultWidgets]);
-const visibleWidgetIds = ref<string[]>([...defaultWidgetIds]);
+const visibleWidgetIds = ref<string[]>([...defaultVisibleIds]);
 const widgetSettings = ref<Record<string, WidgetSetting>>({});
 const openSettingsWidgetId = ref<string | null>(null);
 const userId = computed(() => page.props.auth?.user?.id ?? 'guest');
@@ -216,7 +225,7 @@ const normalizeWidgetIds = (widgetIds: string[] | null | undefined) => {
     }
 
     const validIds = widgetIds.filter((widgetId) =>
-        defaultWidgetIds.includes(widgetId),
+        defaultVisibleIds.includes(widgetId),
     );
 
     return validIds.length > 0 ? Array.from(new Set(validIds)) : null;
@@ -267,7 +276,7 @@ const getSavedLayout = (): StoredDashboardLayout | null => {
     if (Array.isArray(sqlLayout)) {
         return {
             order: normalizeWidgetIds(sqlLayout) ?? [...defaultWidgetIds],
-            visible: [...defaultWidgetIds],
+            visible: [...defaultVisibleIds],
         };
     }
 
@@ -279,7 +288,7 @@ const getSavedLayout = (): StoredDashboardLayout | null => {
         return {
             order: normalizeWidgetIds(sqlLayout.order) ?? [...defaultWidgetIds],
             visible: normalizeWidgetIds(sqlLayout.visible) ?? [
-                ...defaultWidgetIds,
+                ...defaultVisibleIds,
             ],
             settings: sqlLayout.settings,
         };
@@ -305,7 +314,7 @@ const getSavedLayout = (): StoredDashboardLayout | null => {
                 order: normalizeWidgetIds(parsedLayout) ?? [
                     ...defaultWidgetIds,
                 ],
-                visible: [...defaultWidgetIds],
+                visible: [...defaultVisibleIds],
             };
         }
 
@@ -314,7 +323,7 @@ const getSavedLayout = (): StoredDashboardLayout | null => {
                 ...defaultWidgetIds,
             ],
             visible: normalizeWidgetIds(parsedLayout.visible) ?? [
-                ...defaultWidgetIds,
+                ...defaultVisibleIds,
             ],
             settings: parsedLayout.settings,
         };
@@ -335,7 +344,7 @@ const hydrateWidgets = () => {
     widgets.value = savedLayout?.order
         ? orderWidgets(savedLayout.order)
         : [...defaultWidgets];
-    visibleWidgetIds.value = savedLayout?.visible ?? [...defaultWidgetIds];
+    visibleWidgetIds.value = savedLayout?.visible ?? [...defaultVisibleIds];
     widgetSettings.value = normalizeSettings(savedLayout?.settings);
 };
 
@@ -406,13 +415,23 @@ const toggleWidgetVisibility = (widgetId: string) => {
     } else {
         visibleWidgetIds.value = [...visibleWidgetIds.value, widgetId].sort(
             (left, right) =>
-                defaultWidgetIds.indexOf(left) -
-                defaultWidgetIds.indexOf(right),
+                defaultVisibleIds.indexOf(left) -
+                defaultVisibleIds.indexOf(right),
         );
     }
 
     queuePersist();
 };
+
+const isSectionVisible = (sectionId: string) =>
+    visibleWidgetIds.value.includes(sectionId);
+const hasAnyVisibleDashboardSection = computed(
+    () =>
+        visibleWidgets.value.length > 0 ||
+        fixedDashboardSectionIds.some((sectionId) =>
+            isSectionVisible(sectionId),
+        ),
+);
 
 const widgetData = (widgetId: string): DashboardPoint[] => {
     const source =
@@ -599,134 +618,285 @@ onBeforeUnmount(() => {
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div
-            class="flex min-h-[calc(100vh-8rem)] flex-1 flex-col gap-3 rounded-xl p-2 sm:gap-4 sm:p-4"
+            class="flex min-h-[calc(100vh-8rem)] min-w-0 flex-1 flex-col gap-3 overflow-hidden rounded-xl p-2 sm:gap-4 sm:p-4"
         >
-            <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+            <div
+                class="min-w-0 overflow-hidden rounded-xl border border-sidebar-border/70 bg-background/70 p-3 sm:rounded-2xl sm:p-4 dark:border-sidebar-border"
+            >
+                <div
+                    class="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"
+                >
+                    <div class="min-w-0">
+                        <p class="text-sm font-medium text-foreground">
+                            Tampilan analitik
+                        </p>
+                        <p
+                            class="mt-1 text-xs break-words text-muted-foreground sm:text-sm"
+                        >
+                            Pilih ringkasan operasional yang paling relevan
+                            untuk review manajemen.
+                        </p>
+                    </div>
+
+                    <div
+                        class="min-w-0 rounded-xl border border-sidebar-border/70 bg-background/80 p-3 lg:min-w-80 dark:border-sidebar-border"
+                    >
+                        <p
+                            class="text-xs font-semibold tracking-[0.2em] text-muted-foreground uppercase"
+                        >
+                            Filter Ringkasan
+                        </p>
+                        <div class="mt-3 flex min-w-0 flex-wrap gap-2">
+                            <label
+                                v-for="section in fixedDashboardSections"
+                                :key="`filter-${section.id}`"
+                                class="inline-flex max-w-full cursor-pointer items-center gap-2 rounded-full border px-2.5 py-2 text-xs transition-colors sm:px-3 sm:text-sm"
+                                :class="
+                                    visibleWidgetIds.includes(section.id)
+                                        ? 'border-foreground/20 bg-foreground text-background'
+                                        : 'border-sidebar-border/70 bg-background text-foreground dark:border-sidebar-border'
+                                "
+                            >
+                                <input
+                                    type="checkbox"
+                                    class="sr-only"
+                                    :checked="
+                                        visibleWidgetIds.includes(section.id)
+                                    "
+                                    :disabled="
+                                        visibleWidgetIds.length === 1 &&
+                                        visibleWidgetIds.includes(section.id)
+                                    "
+                                    @change="toggleWidgetVisibility(section.id)"
+                                />
+                                <span
+                                    class="size-2.5 rounded-full"
+                                    :class="
+                                        visibleWidgetIds.includes(section.id)
+                                            ? 'bg-background'
+                                            : 'bg-muted-foreground/50'
+                                    "
+                                />
+                                <span class="truncate">{{
+                                    section.title
+                                }}</span>
+                            </label>
+                            <label
+                                v-for="widget in defaultWidgets"
+                                :key="`filter-${widget.id}`"
+                                class="inline-flex max-w-full cursor-pointer items-center gap-2 rounded-full border px-2.5 py-2 text-xs transition-colors sm:px-3 sm:text-sm"
+                                :class="
+                                    visibleWidgetIds.includes(widget.id)
+                                        ? 'border-foreground/20 bg-foreground text-background'
+                                        : 'border-sidebar-border/70 bg-background text-foreground dark:border-sidebar-border'
+                                "
+                            >
+                                <input
+                                    type="checkbox"
+                                    class="sr-only"
+                                    :checked="
+                                        visibleWidgetIds.includes(widget.id)
+                                    "
+                                    :disabled="
+                                        visibleWidgetIds.length === 1 &&
+                                        visibleWidgetIds.includes(widget.id)
+                                    "
+                                    @change="toggleWidgetVisibility(widget.id)"
+                                />
+                                <span
+                                    class="size-2.5 rounded-full"
+                                    :class="
+                                        visibleWidgetIds.includes(widget.id)
+                                            ? 'bg-background'
+                                            : 'bg-muted-foreground/50'
+                                    "
+                                />
+                                <span class="truncate">{{ widget.title }}</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <section
+                v-if="isSectionVisible('summary-metrics')"
+                class="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-6"
+            >
                 <div
                     v-for="point in mvpSummary"
                     :key="point.label"
-                    class="rounded-xl border border-sidebar-border/70 bg-background/90 p-4 shadow-sm"
+                    class="min-w-0 overflow-hidden rounded-xl border border-sidebar-border/70 bg-background/90 p-3 shadow-sm sm:p-4"
                 >
-                    <p class="text-xs text-muted-foreground">
+                    <p class="text-xs break-words text-muted-foreground">
                         {{ point.label }}
                     </p>
-                    <p class="mt-2 text-xl font-semibold text-foreground">
+                    <p
+                        class="mt-2 text-lg font-semibold break-words text-foreground sm:text-xl"
+                    >
                         {{ formatValue(point.value ?? 0, pointFormat(point)) }}
                     </p>
                 </div>
             </section>
 
             <section
-                class="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]"
+                v-if="
+                    isSectionVisible('problem-projects') ||
+                    isSectionVisible('recent-progress')
+                "
+                class="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]"
             >
                 <div
-                    class="rounded-2xl border border-sidebar-border/70 bg-background/90 p-4 shadow-sm"
+                    v-if="isSectionVisible('problem-projects')"
+                    class="min-w-0 overflow-hidden rounded-xl border border-sidebar-border/70 bg-background/90 p-3 shadow-sm sm:rounded-2xl sm:p-4"
                 >
-                    <div class="mb-3 flex items-center justify-between gap-3">
-                        <div>
-                            <h2 class="text-sm font-semibold text-foreground">
+                    <div
+                        class="mb-3 flex min-w-0 items-center justify-between gap-3"
+                    >
+                        <div class="min-w-0">
+                            <h2
+                                class="text-xl font-semibold break-words text-foreground sm:text-2xl"
+                            >
                                 Proyek Bermasalah
                             </h2>
-                            <p class="text-sm text-muted-foreground">
+                            <p
+                                class="text-xs break-words text-muted-foreground sm:text-sm"
+                            >
                                 Peringatan dini dari deviasi biaya, pembayaran,
                                 dan progress.
                             </p>
                         </div>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full text-sm">
-                            <thead class="text-left text-muted-foreground">
-                                <tr>
-                                    <th class="py-2 pr-3 font-medium">
-                                        Proyek
-                                    </th>
-                                    <th class="py-2 pr-3 font-medium">
-                                        Status
-                                    </th>
-                                    <th class="py-2 pr-3 font-medium">RAP</th>
-                                    <th class="py-2 pr-3 font-medium">Biaya</th>
-                                    <th class="py-2 pr-3 font-medium">
-                                        Peringatan
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr
-                                    v-for="project in problemProjects"
-                                    :key="project.id"
-                                    class="border-t border-sidebar-border/70"
+                    <div class="relative min-w-0 overflow-x-hidden">
+                        <div
+                            class="table-scrollbar max-w-full overflow-x-auto rounded-md border border-sidebar-border/60 pb-2 dark:border-sidebar-border"
+                        >
+                            <table class="w-max min-w-full text-xs sm:text-sm">
+                                <thead
+                                    class="sticky top-0 z-10 bg-muted/95 text-left text-xs text-muted-foreground backdrop-blur"
                                 >
-                                    <td class="py-3 pr-3">
-                                        <button
-                                            class="text-left font-medium text-foreground hover:underline"
-                                            @click="
-                                                router.get(
-                                                    `/projects/${project.id}`,
-                                                )
-                                            "
+                                    <tr>
+                                        <th
+                                            class="min-w-[16rem] px-3 py-2 font-medium"
                                         >
-                                            {{ project.name }}
-                                        </button>
-                                        <p
-                                            class="text-xs text-muted-foreground"
+                                            Proyek
+                                        </th>
+                                        <th
+                                            class="min-w-[7rem] px-3 py-2 font-medium"
                                         >
-                                            {{ project.client }}
-                                        </p>
-                                    </td>
-                                    <td class="py-3 pr-3">
-                                        <span
-                                            class="inline-flex rounded-full px-2 py-1 text-xs font-medium"
-                                            :class="statusClass(project.status)"
+                                            Status
+                                        </th>
+                                        <th
+                                            class="min-w-[9rem] px-3 py-2 font-medium"
                                         >
-                                            {{ project.status }}
-                                        </span>
-                                    </td>
-                                    <td class="py-3 pr-3">
-                                        {{
-                                            formatValue(
-                                                project.rapTotal,
-                                                'currency',
-                                            )
-                                        }}
-                                    </td>
-                                    <td class="py-3 pr-3">
-                                        {{
-                                            formatValue(
-                                                project.realizedCost,
-                                                'currency',
-                                            )
-                                        }}
-                                    </td>
-                                    <td class="py-3 pr-3 text-muted-foreground">
-                                        {{
-                                            project.warnings[0]?.message ?? '-'
-                                        }}
-                                    </td>
-                                </tr>
-                                <tr v-if="problemProjects.length === 0">
-                                    <td
-                                        colspan="5"
-                                        class="py-6 text-center text-muted-foreground"
+                                            RAP
+                                        </th>
+                                        <th
+                                            class="min-w-[9rem] px-3 py-2 font-medium"
+                                        >
+                                            Biaya
+                                        </th>
+                                        <th
+                                            class="min-w-[14rem] px-3 py-2 font-medium"
+                                        >
+                                            Peringatan
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr
+                                        v-for="project in problemProjects"
+                                        :key="project.id"
+                                        class="border-t border-sidebar-border/70"
                                     >
-                                        Belum ada proyek bermasalah.
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                        <td class="px-3 py-3">
+                                            <button
+                                                class="max-w-[15rem] truncate text-left font-medium text-foreground hover:underline"
+                                                :title="project.name"
+                                                @click="
+                                                    router.get(
+                                                        `/projects/${project.id}`,
+                                                    )
+                                                "
+                                            >
+                                                {{ project.name }}
+                                            </button>
+                                            <p
+                                                class="max-w-[15rem] truncate text-xs text-muted-foreground"
+                                            >
+                                                {{ project.client }}
+                                            </p>
+                                        </td>
+                                        <td class="px-3 py-3">
+                                            <span
+                                                class="inline-flex rounded-full px-2 py-1 text-xs font-medium"
+                                                :class="
+                                                    statusClass(project.status)
+                                                "
+                                            >
+                                                {{ project.status }}
+                                            </span>
+                                        </td>
+                                        <td class="px-3 py-3">
+                                            {{
+                                                formatValue(
+                                                    project.rapTotal,
+                                                    'currency',
+                                                )
+                                            }}
+                                        </td>
+                                        <td class="px-3 py-3">
+                                            {{
+                                                formatValue(
+                                                    project.realizedCost,
+                                                    'currency',
+                                                )
+                                            }}
+                                        </td>
+                                        <td
+                                            class="px-3 py-3 text-muted-foreground"
+                                        >
+                                            <span
+                                                class="block max-w-[13rem] truncate"
+                                                :title="
+                                                    project.warnings[0]
+                                                        ?.message ?? '-'
+                                                "
+                                            >
+                                                {{
+                                                    project.warnings[0]
+                                                        ?.message ?? '-'
+                                                }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="problemProjects.length === 0">
+                                        <td
+                                            colspan="5"
+                                            class="px-3 py-6 text-center text-muted-foreground"
+                                        >
+                                            Belum ada proyek bermasalah.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
                 <div
-                    class="rounded-2xl border border-sidebar-border/70 bg-background/90 p-4 shadow-sm"
+                    v-if="isSectionVisible('recent-progress')"
+                    class="min-w-0 overflow-hidden rounded-xl border border-sidebar-border/70 bg-background/90 p-3 shadow-sm sm:rounded-2xl sm:p-4"
                 >
-                    <h2 class="text-sm font-semibold text-foreground">
+                    <h2
+                        class="text-xl font-semibold break-words text-foreground sm:text-2xl"
+                    >
                         Recent Progress / BAMC
                     </h2>
-                    <div class="mt-3 space-y-2">
+                    <div class="mt-3 min-w-0 space-y-2">
                         <button
                             v-for="progress in recentProgress"
                             :key="progress.id"
-                            class="flex w-full items-center justify-between gap-3 rounded-xl border border-sidebar-border/70 bg-muted/20 px-3 py-2 text-left"
+                            class="flex w-full min-w-0 flex-col items-start justify-between gap-2 rounded-xl border border-sidebar-border/70 bg-muted/20 px-3 py-2 text-left sm:flex-row sm:items-center sm:gap-3"
                             @click="
                                 router.get(`/projects/${progress.projectId}`)
                             "
@@ -734,10 +904,14 @@ onBeforeUnmount(() => {
                             <span class="min-w-0">
                                 <span
                                     class="block truncate text-sm font-medium text-foreground"
+                                    :title="progress.projectName"
                                 >
                                     {{ progress.projectName }}
                                 </span>
-                                <span class="text-xs text-muted-foreground">
+                                <span
+                                    class="block truncate text-xs text-muted-foreground"
+                                    :title="`${progress.client} | ${progress.date ?? '-'}`"
+                                >
                                     {{ progress.client }} |
                                     {{ progress.date ?? '-' }}
                                 </span>
@@ -765,84 +939,22 @@ onBeforeUnmount(() => {
             </section>
 
             <div
-                class="rounded-2xl border border-sidebar-border/70 bg-background/70 p-4 dark:border-sidebar-border"
-            >
-                <div
-                    class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"
-                >
-                    <div>
-                        <p class="text-sm font-medium text-foreground">
-                            Tampilan analitik
-                        </p>
-                        <p class="mt-1 text-sm text-muted-foreground">
-                            Pilih ringkasan operasional yang paling relevan
-                            untuk review manajemen.
-                        </p>
-                    </div>
-
-                    <div
-                        class="rounded-xl border border-sidebar-border/70 bg-background/80 p-3 lg:min-w-80 dark:border-sidebar-border"
-                    >
-                        <p
-                            class="text-xs font-semibold tracking-[0.2em] text-muted-foreground uppercase"
-                        >
-                            Filter Ringkasan
-                        </p>
-                        <div class="mt-3 flex flex-wrap gap-2">
-                            <label
-                                v-for="widget in defaultWidgets"
-                                :key="`filter-${widget.id}`"
-                                class="inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-2 text-sm transition-colors"
-                                :class="
-                                    visibleWidgetIds.includes(widget.id)
-                                        ? 'border-foreground/20 bg-foreground text-background'
-                                        : 'border-sidebar-border/70 bg-background text-foreground dark:border-sidebar-border'
-                                "
-                            >
-                                <input
-                                    type="checkbox"
-                                    class="sr-only"
-                                    :checked="
-                                        visibleWidgetIds.includes(widget.id)
-                                    "
-                                    :disabled="
-                                        visibleWidgetIds.length === 1 &&
-                                        visibleWidgetIds.includes(widget.id)
-                                    "
-                                    @change="toggleWidgetVisibility(widget.id)"
-                                />
-                                <span
-                                    class="size-2.5 rounded-full"
-                                    :class="
-                                        visibleWidgetIds.includes(widget.id)
-                                            ? 'bg-background'
-                                            : 'bg-muted-foreground/50'
-                                    "
-                                />
-                                <span>{{ widget.title }}</span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div
-                v-if="visibleWidgets.length === 0"
+                v-if="!hasAnyVisibleDashboardSection"
                 class="rounded-2xl border border-dashed border-sidebar-border/70 bg-background/70 p-8 text-center text-sm text-muted-foreground dark:border-sidebar-border"
             >
                 No widgets are visible. Turn one back on from the filter above.
             </div>
 
             <div
-                v-else
+                v-if="visibleWidgets.length > 0"
                 ref="dashboardList"
-                class="grid grid-cols-1 gap-4 xl:grid-cols-2"
+                class="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2"
             >
                 <section
                     v-for="widget in visibleWidgets"
                     :key="widget.id"
                     :data-widget-id="widget.id"
-                    class="dashboard-card group overflow-hidden rounded-2xl border border-sidebar-border/70 bg-background/90 shadow-sm dark:border-sidebar-border"
+                    class="dashboard-card group min-w-0 overflow-hidden rounded-xl border border-sidebar-border/70 bg-background/90 shadow-sm sm:rounded-2xl dark:border-sidebar-border"
                 >
                     <div
                         class="border-b border-sidebar-border/70 p-3 sm:p-4 dark:border-sidebar-border"

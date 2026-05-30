@@ -43,7 +43,9 @@ const passwordInput = useTemplateRef('passwordInput');
                         >Delete account</Button
                     >
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent
+                    class="flex max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] flex-col overflow-hidden p-4 sm:max-w-lg sm:p-6"
+                >
                     <Form
                         :action="ProfileController.destroy()"
                         method="delete"
@@ -52,10 +54,10 @@ const passwordInput = useTemplateRef('passwordInput');
                         :options="{
                             preserveScroll: true,
                         }"
-                        class="space-y-6"
+                        class="min-h-0 flex-1 space-y-6 overflow-x-hidden overflow-y-auto pr-1"
                         v-slot="{ errors, processing, reset, clearErrors }"
                     >
-                        <DialogHeader class="space-y-3">
+                        <DialogHeader class="shrink-0 space-y-3">
                             <DialogTitle
                                 >Are you sure you want to delete your
                                 account?</DialogTitle
@@ -83,7 +85,7 @@ const passwordInput = useTemplateRef('passwordInput');
                             <InputError :message="errors.password" />
                         </div>
 
-                        <DialogFooter class="gap-2">
+                        <DialogFooter class="shrink-0 gap-2">
                             <DialogClose as-child>
                                 <Button
                                     variant="secondary"

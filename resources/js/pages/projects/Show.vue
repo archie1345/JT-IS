@@ -327,54 +327,15 @@ const getCurrentLocation = () => {
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div
-            class="flex min-h-[calc(100vh-8rem)] flex-1 flex-col gap-4 rounded-xl p-4"
+            class="flex min-h-[calc(100vh-8rem)] min-w-0 flex-1 flex-col gap-3 rounded-xl p-2 sm:gap-4 sm:p-4"
         >
             <section
-                class="flex min-h-0 flex-1 flex-col gap-4 rounded-2xl border border-sidebar-border/70 bg-background/80 p-5 shadow-sm"
+                class="flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-hidden rounded-xl border border-sidebar-border/70 bg-background/80 p-3 shadow-sm sm:rounded-2xl sm:p-5"
             >
-                <div class="flex items-start justify-between gap-4">
-                    <div>
-                        <Button
-                            variant="ghost"
-                            class="mb-3 pl-0 text-muted-foreground"
-                            @click="backToProjects"
-                        >
-                            <ArrowLeft class="mr-2 size-4" />
-                            Back to Projects
-                        </Button>
-                        <h1
-                            class="text-3xl font-semibold tracking-tight text-foreground"
-                        >
-                            {{
-                                isCreateMode
-                                    ? 'Create Project'
-                                    : 'Project Detail'
-                            }}
-                        </h1>
-                        <p class="text-sm text-muted-foreground">
-                            {{
-                                isCreateMode
-                                    ? 'Fill in the project data and save it to the database.'
-                                    : 'Edit the project details and save your updates to the database.'
-                            }}
-                        </p>
-                    </div>
-
-                    <Badge
-                        :class="
-                            getMvpStatusClass(
-                                props.project.mvpStatus ?? 'On Track',
-                            )
-                        "
-                    >
-                        {{ props.project.mvpStatus ?? 'On Track' }}
-                    </Badge>
-                </div>
-
                 <div
-                    class="grid min-h-0 flex-1 gap-4 lg:grid-cols-[1.3fr_0.95fr]"
+                    class="grid min-h-0 min-w-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]"
                 >
-                    <div class="flex min-h-0 flex-col gap-4">
+                    <div class="flex min-h-0 min-w-0 flex-col gap-4">
                         <EntityDetailHero
                             back-label="Back to Projects"
                             title="Project Detail"
@@ -389,7 +350,6 @@ const getCurrentLocation = () => {
                                     props.project.mvpStatus ?? 'On Track',
                                 )
                             "
-                            title-prefix="Project Title"
                             metric-label="BAMC Progress"
                             :metric-value="`${progressDisplayValue}%`"
                             :metric-description="progressLabel"
@@ -410,18 +370,27 @@ const getCurrentLocation = () => {
                                 </Button>
                             </template>
                             <template #title-input>
-                                <Input
-                                    v-model="form.name"
-                                    class="mt-2 max-w-2xl text-2xl font-semibold"
-                                    placeholder="Project name"
-                                />
-                                <InputError
-                                    :message="form.errors.name"
-                                    class="mt-2"
-                                />
+                                <div class="rounded-xl bg-muted/30 p-4">
+                                    <p
+                                        class="text-xs tracking-[0.18em] text-muted-foreground uppercase"
+                                    >
+                                        Project Title
+                                    </p>
+                                    <p
+                                        class="mt-1 text-sm font-medium break-words text-foreground"
+                                    >
+                                        {{ form.name || 'Untitled project' }}
+                                    </p>
+                                </div>
                             </template>
                             <template #title-meta>
-                                <p class="mt-2 text-sm text-muted-foreground">
+                                <p
+                                    class="mt-2 max-w-full truncate text-sm text-muted-foreground"
+                                    :title="
+                                        selectedClient?.name ??
+                                        'Choose a client to connect this project.'
+                                    "
+                                >
                                     {{
                                         selectedClient?.name ??
                                         'Choose a client to connect this project.'
@@ -436,7 +405,7 @@ const getCurrentLocation = () => {
                                         Client
                                     </p>
                                     <p
-                                        class="mt-1 text-sm font-medium text-foreground"
+                                        class="mt-1 text-sm font-medium break-words text-foreground"
                                     >
                                         {{ form.client_id || '-' }}
                                     </p>
@@ -449,7 +418,7 @@ const getCurrentLocation = () => {
                                         Contract No.
                                     </p>
                                     <p
-                                        class="mt-1 text-sm font-medium text-foreground"
+                                        class="mt-1 text-sm font-medium break-words text-foreground"
                                     >
                                         {{ form.contract_number || '-' }}
                                     </p>
@@ -462,7 +431,7 @@ const getCurrentLocation = () => {
                                         Value
                                     </p>
                                     <p
-                                        class="mt-1 text-sm font-medium text-foreground"
+                                        class="mt-1 text-sm font-medium break-words text-foreground"
                                     >
                                         {{
                                             formatCurrency(
@@ -479,7 +448,7 @@ const getCurrentLocation = () => {
                                         Location
                                     </p>
                                     <p
-                                        class="mt-1 text-sm font-medium text-foreground"
+                                        class="mt-1 text-sm font-medium break-words text-foreground"
                                     >
                                         {{ form.location || '-' }}
                                     </p>
@@ -630,8 +599,10 @@ const getCurrentLocation = () => {
                                     class="z-10 h-[260px] w-full rounded-xl border border-sidebar-border/70 bg-muted/20"
                                 ></div>
 
-                                <div class="grid grid-cols-2 gap-4">
-                                    <label class="space-y-2">
+                                <div
+                                    class="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2"
+                                >
+                                    <label class="min-w-0 space-y-2">
                                         <span
                                             class="text-xs font-semibold text-muted-foreground uppercase"
                                             >Latitude</span
@@ -646,7 +617,7 @@ const getCurrentLocation = () => {
                                             :message="form.errors.latitude"
                                         />
                                     </label>
-                                    <label class="space-y-2">
+                                    <label class="min-w-0 space-y-2">
                                         <span
                                             class="text-xs font-semibold text-muted-foreground uppercase"
                                             >Longitude</span
@@ -666,10 +637,23 @@ const getCurrentLocation = () => {
                         </EntityPageSection>
                     </div>
 
-                    <div class="flex min-h-0 flex-col gap-4">
+                    <div class="flex min-h-0 min-w-0 flex-col gap-4">
                         <EntityPageSection title="Settings" :icon="FileText">
-                            <div class="grid gap-4">
-                                <label class="space-y-2">
+                            <div class="grid min-w-0 gap-4">
+                                <label class="min-w-0 space-y-2">
+                                    <span
+                                        class="text-sm font-medium text-foreground"
+                                        >Project Title</span
+                                    >
+                                    <Input
+                                        v-model="form.name"
+                                        class="w-full min-w-0"
+                                        placeholder="Project name"
+                                    />
+                                    <InputError :message="form.errors.name" />
+                                </label>
+
+                                <label class="min-w-0 space-y-2">
                                     <span
                                         class="text-sm font-medium text-foreground"
                                         >Client</span
@@ -683,7 +667,7 @@ const getCurrentLocation = () => {
                                     />
                                 </label>
 
-                                <label class="space-y-2">
+                                <label class="min-w-0 space-y-2">
                                     <span
                                         class="text-sm font-medium text-foreground"
                                         >Contract Number</span
@@ -697,7 +681,7 @@ const getCurrentLocation = () => {
                                     />
                                 </label>
 
-                                <label class="space-y-2">
+                                <label class="min-w-0 space-y-2">
                                     <span
                                         class="text-sm font-medium text-foreground"
                                         >Contract Value</span
@@ -713,13 +697,14 @@ const getCurrentLocation = () => {
                                     />
                                 </label>
 
-                                <label class="space-y-2">
+                                <label class="min-w-0 space-y-2">
                                     <span
                                         class="text-sm font-medium text-foreground"
                                         >Location Title</span
                                     >
                                     <Input
                                         v-model="form.location"
+                                        class="min-w-0"
                                         placeholder="General project area"
                                     />
                                     <InputError
@@ -727,8 +712,8 @@ const getCurrentLocation = () => {
                                     />
                                 </label>
 
-                                <div class="grid gap-4 sm:grid-cols-2">
-                                    <label class="space-y-2">
+                                <div class="grid min-w-0 gap-4 sm:grid-cols-2">
+                                    <label class="min-w-0 space-y-2">
                                         <span
                                             class="text-sm font-medium text-foreground"
                                             >Start Date</span
@@ -742,7 +727,7 @@ const getCurrentLocation = () => {
                                         />
                                     </label>
 
-                                    <label class="space-y-2">
+                                    <label class="min-w-0 space-y-2">
                                         <span
                                             class="text-sm font-medium text-foreground"
                                             >End Date</span
@@ -757,7 +742,7 @@ const getCurrentLocation = () => {
                                     </label>
                                 </div>
 
-                                <label class="space-y-2">
+                                <label class="min-w-0 space-y-2">
                                     <span
                                         class="text-sm font-medium text-foreground"
                                         >Project Status</span
@@ -789,7 +774,7 @@ const getCurrentLocation = () => {
                                     <InputError :message="form.errors.status" />
                                 </label>
 
-                                <label class="space-y-2">
+                                <label class="min-w-0 space-y-2">
                                     <span
                                         class="text-sm font-medium text-foreground"
                                         >Payment Status</span

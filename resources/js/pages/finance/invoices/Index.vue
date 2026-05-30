@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { computed, nextTick, reactive, ref } from 'vue';
-import { FileText, Palette, Printer } from 'lucide-vue-next';
-import InvoicePrintPreview from '@/components/invoice/InvoicePrintPreview.vue';
+import { computed, reactive, ref } from 'vue';
+import { FileText, Palette } from 'lucide-vue-next';
 import CrudPrototypePage from '@/components/prototype/CrudPrototypePage.vue';
 import type { SpreadsheetColumn } from '@/components/shared/DataTable.vue';
 import { Button } from '@/components/ui/button';
@@ -45,7 +44,6 @@ const breadcrumbs: BreadcrumbItem[] = [
 const selectedInvoiceId = ref(
     props.records.length > 0 ? String(props.records[0].id) : '',
 );
-const isInvoiceModalOpen = ref(false);
 const isTemplateModalOpen = ref(false);
 
 const template = reactive({
@@ -127,48 +125,14 @@ const fields = [
     },
 ] as const;
 
-const selectedInvoice = computed(
-    () =>
-        props.records.find(
-            (record) => String(record.id) === selectedInvoiceId.value,
-        ) ?? props.records[0],
-);
+const openInvoicePreview = () => {
+    const invoiceId = selectedInvoiceId.value || props.records[0]?.id;
 
-const invoiceLineItems = computed(() =>
-    selectedInvoice.value
-        ? [
-              {
-                  description:
-                      selectedInvoice.value.description ||
-                      selectedInvoice.value.project_name ||
-                      'Project invoice',
-                  projectName: selectedInvoice.value.project_name,
-                  quantity: 1,
-                  unitPrice: selectedInvoice.value.amount,
-                  totalPrice: selectedInvoice.value.amount,
-              },
-          ]
-        : [],
-);
-const invoiceSubtotal = computed(() =>
-    Number(selectedInvoice.value?.amount ?? 0),
-);
-const invoiceTax = computed(() =>
-    Number(selectedInvoice.value?.tax_amount ?? 0),
-);
-const invoiceTotal = computed(() => invoiceSubtotal.value + invoiceTax.value);
-
-const openInvoiceModal = () => {
-    if (!selectedInvoiceId.value && props.records[0]?.id) {
-        selectedInvoiceId.value = String(props.records[0].id);
+    if (!invoiceId) {
+        return;
     }
 
-    isInvoiceModalOpen.value = true;
-};
-
-const printInvoice = async () => {
-    await nextTick();
-    window.print();
+    window.open(`/invoices/${invoiceId}/preview`, '_blank', 'noopener');
 };
 </script>
 
@@ -202,7 +166,7 @@ const printInvoice = async () => {
                     variant="outline"
                     class="w-full text-sm sm:w-auto"
                     :disabled="props.records.length === 0"
-                    @click="openInvoiceModal"
+                    @click="openInvoicePreview"
                 >
                     <FileText class="size-4" />
                     Preview Invoice
@@ -226,100 +190,42 @@ const printInvoice = async () => {
         </template>
     </CrudPrototypePage>
 
-    <Dialog v-model:open="isInvoiceModalOpen">
-        <DialogContent
-            class="max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto sm:max-w-5xl"
-        >
-            <DialogHeader class="no-print">
-                <DialogTitle>Invoice Preview</DialogTitle>
-                <DialogDescription>
-                    Pick an invoice record, preview the template, then print or
-                    save it as PDF.
-                </DialogDescription>
-            </DialogHeader>
-
-            <div class="no-print grid gap-4 sm:grid-cols-[1fr_auto_auto]">
-                <div class="space-y-1.5">
-                    <Label for="billing_invoice_source">Invoice Record</Label>
-                    <select
-                        id="billing_invoice_source"
-                        v-model="selectedInvoiceId"
-                        class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                    >
-                        <option
-                            v-for="record in props.records"
-                            :key="String(record.id)"
-                            :value="String(record.id)"
-                        >
-                            {{
-                                record.invoice_number || `Invoice #${record.id}`
-                            }}
-                            - {{ record.project_name || 'Untitled project' }}
-                        </option>
-                    </select>
-                </div>
-                <Button
-                    variant="outline"
-                    class="self-end"
-                    @click="isTemplateModalOpen = true"
-                >
-                    <Palette class="size-4" />
-                    Edit Template
-                </Button>
-                <Button class="self-end" @click="printInvoice">
-                    <Printer class="size-4" />
-                    Print / Save PDF
-                </Button>
-            </div>
-
-            <InvoicePrintPreview
-                v-if="selectedInvoice"
-                :bill-to="selectedInvoice.client_name"
-                :description="selectedInvoice.description"
-                :due-date="selectedInvoice.due_date"
-                :invoice-date="selectedInvoice.invoice_date"
-                :invoice-number="
-                    String(
-                        selectedInvoice.invoice_number ||
-                            `Invoice #${selectedInvoice.id}`,
-                    )
-                "
-                :line-items="invoiceLineItems"
-                :project-name="selectedInvoice.project_name"
-                :status="selectedInvoice.status"
-                :subtotal="invoiceSubtotal"
-                :tax="invoiceTax"
-                :template="template"
-                :total="invoiceTotal"
-                variant="summary"
-            />
-        </DialogContent>
-    </Dialog>
-
     <Dialog v-model:open="isTemplateModalOpen">
         <DialogContent
-            class="max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto sm:max-w-2xl"
+            class="flex max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] !max-w-2xl flex-col overflow-hidden p-4 sm:p-6"
         >
-            <DialogHeader>
-                <DialogTitle>Invoice Template</DialogTitle>
-                <DialogDescription>
-                    Change the printable style used for invoice previews.
-                </DialogDescription>
+            <DialogHeader class="shrink-0">
+                <div class="mb-2 flex items-center gap-3">
+                    <img
+                        src="/assets/svg/JTE_Logo_only.svg"
+                        alt="JTE"
+                        class="size-10 rounded-md bg-white p-1"
+                    />
+                    <div>
+                        <DialogTitle>Invoice Template</DialogTitle>
+                        <DialogDescription>
+                            Change the printable style used for invoice
+                            previews.
+                        </DialogDescription>
+                    </div>
+                </div>
             </DialogHeader>
 
-            <div class="grid gap-4 py-2 sm:grid-cols-2">
-                <div class="space-y-1.5">
+            <div
+                class="grid min-h-0 flex-1 gap-4 overflow-x-hidden overflow-y-auto py-2 pr-1 sm:grid-cols-2"
+            >
+                <div class="min-w-0 space-y-1.5">
                     <Label for="invoice_template_title">Title</Label>
                     <Input
                         id="invoice_template_title"
                         v-model="template.title"
                     />
                 </div>
-                <div class="space-y-1.5">
+                <div class="min-w-0 space-y-1.5">
                     <Label for="invoice_footer">Footer Text</Label>
                     <Input id="invoice_footer" v-model="template.footerText" />
                 </div>
-                <div class="space-y-1.5">
+                <div class="min-w-0 space-y-1.5">
                     <Label for="invoice_accent">Accent Color</Label>
                     <Input
                         id="invoice_accent"
@@ -327,7 +233,7 @@ const printInvoice = async () => {
                         type="color"
                     />
                 </div>
-                <div class="space-y-1.5">
+                <div class="min-w-0 space-y-1.5">
                     <Label for="invoice_text">Text Color</Label>
                     <Input
                         id="invoice_text"
@@ -335,7 +241,7 @@ const printInvoice = async () => {
                         type="color"
                     />
                 </div>
-                <div class="space-y-1.5">
+                <div class="min-w-0 space-y-1.5">
                     <Label for="invoice_paper">Paper Color</Label>
                     <Input
                         id="invoice_paper"
@@ -343,7 +249,7 @@ const printInvoice = async () => {
                         type="color"
                     />
                 </div>
-                <div class="space-y-1.5">
+                <div class="min-w-0 space-y-1.5">
                     <Label for="invoice_border">Border Color</Label>
                     <Input
                         id="invoice_border"
@@ -363,25 +269,25 @@ const printInvoice = async () => {
                     <input v-model="template.showSignature" type="checkbox" />
                     Show signature
                 </label>
-                <div class="space-y-1.5 sm:col-span-2">
+                <div class="min-w-0 space-y-1.5 sm:col-span-2">
                     <Label for="invoice_bank">Bank Details</Label>
                     <textarea
                         id="invoice_bank"
                         v-model="template.bankDetails"
-                        class="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        class="min-h-24 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm"
                     ></textarea>
                 </div>
-                <div class="space-y-1.5 sm:col-span-2">
+                <div class="min-w-0 space-y-1.5 sm:col-span-2">
                     <Label for="invoice_notes">Notes</Label>
                     <textarea
                         id="invoice_notes"
                         v-model="template.notes"
-                        class="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        class="min-h-24 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm"
                     ></textarea>
                 </div>
             </div>
 
-            <DialogFooter>
+            <DialogFooter class="mt-4 shrink-0">
                 <Button @click="isTemplateModalOpen = false">
                     Apply Template
                 </Button>

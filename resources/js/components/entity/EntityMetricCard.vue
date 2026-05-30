@@ -7,9 +7,24 @@ defineProps<{
 </script>
 
 <template>
-    <div class="rounded-xl border border-sidebar-border/70 bg-background p-4 shadow-sm">
-        <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">{{ label }}</p>
-        <p class="mt-2 text-2xl font-semibold text-foreground">{{ value }}</p>
-        <p v-if="description" class="mt-1 text-xs text-muted-foreground">{{ description }}</p>
+    <div
+        class="min-w-0 overflow-hidden rounded-xl border border-sidebar-border/70 bg-background p-3 shadow-sm sm:p-4"
+    >
+        <p
+            class="text-[11px] break-words text-muted-foreground uppercase sm:text-xs"
+        >
+            {{ label }}
+        </p>
+        <p
+            class="mt-2 text-xl font-semibold break-words text-foreground sm:text-2xl"
+        >
+            {{ value }}
+        </p>
+        <p
+            v-if="description"
+            class="mt-1 text-xs break-words text-muted-foreground"
+        >
+            {{ description }}
+        </p>
     </div>
 </template>

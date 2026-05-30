@@ -20,6 +20,7 @@ import {
     Dialog,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
@@ -62,12 +63,14 @@ const isFormOpen = ref(false);
 
 const form = useForm({ ...defaultForm });
 
-const selectedUser = computed(() =>
-    props.users.find((u) => u.id === selectedUserId.value) ?? null,
+const selectedUser = computed(
+    () => props.users.find((u) => u.id === selectedUserId.value) ?? null,
 );
 
-const selectedClient = computed(() =>
-    props.clients.find((c) => String(c.id) === String(form.client_id)) ?? null,
+const selectedClient = computed(
+    () =>
+        props.clients.find((c) => String(c.id) === String(form.client_id)) ??
+        null,
 );
 
 const isEditing = computed(() => selectedUserId.value !== null);
@@ -207,14 +210,19 @@ watch(
 </script>
 
 <template>
-    <section class="flex flex-col gap-4 rounded-2xl border border-sidebar-border/70 bg-background/80 p-5 shadow-sm">
+    <section
+        class="flex flex-col gap-4 rounded-2xl border border-sidebar-border/70 bg-background/80 p-5 shadow-sm"
+    >
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
-                <h1 class="text-3xl font-semibold tracking-tight text-foreground">
+                <h1
+                    class="text-3xl font-semibold tracking-tight text-foreground"
+                >
                     Account Management
                 </h1>
                 <p class="text-sm text-muted-foreground">
-                    Create and edit client, employee, and admin accounts from one place.
+                    Create and edit client, employee, and admin accounts from
+                    one place.
                 </p>
             </div>
 
@@ -224,21 +232,53 @@ watch(
         </div>
 
         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <div class="rounded-xl border border-sidebar-border/70 bg-background p-4 shadow-sm">
-                <p class="text-xs tracking-[0.18em] text-muted-foreground uppercase">Total</p>
-                <p class="mt-2 text-2xl font-semibold text-foreground">{{ props.stats.total }}</p>
+            <div
+                class="rounded-xl border border-sidebar-border/70 bg-background p-4 shadow-sm"
+            >
+                <p
+                    class="text-xs tracking-[0.18em] text-muted-foreground uppercase"
+                >
+                    Total
+                </p>
+                <p class="mt-2 text-2xl font-semibold text-foreground">
+                    {{ props.stats.total }}
+                </p>
             </div>
-            <div class="rounded-xl border border-sidebar-border/70 bg-background p-4 shadow-sm">
-                <p class="text-xs tracking-[0.18em] text-muted-foreground uppercase">Admin</p>
-                <p class="mt-2 text-2xl font-semibold text-foreground">{{ props.stats.admin }}</p>
+            <div
+                class="rounded-xl border border-sidebar-border/70 bg-background p-4 shadow-sm"
+            >
+                <p
+                    class="text-xs tracking-[0.18em] text-muted-foreground uppercase"
+                >
+                    Admin
+                </p>
+                <p class="mt-2 text-2xl font-semibold text-foreground">
+                    {{ props.stats.admin }}
+                </p>
             </div>
-            <div class="rounded-xl border border-sidebar-border/70 bg-background p-4 shadow-sm">
-                <p class="text-xs tracking-[0.18em] text-muted-foreground uppercase">Employee</p>
-                <p class="mt-2 text-2xl font-semibold text-foreground">{{ props.stats.employee }}</p>
+            <div
+                class="rounded-xl border border-sidebar-border/70 bg-background p-4 shadow-sm"
+            >
+                <p
+                    class="text-xs tracking-[0.18em] text-muted-foreground uppercase"
+                >
+                    Employee
+                </p>
+                <p class="mt-2 text-2xl font-semibold text-foreground">
+                    {{ props.stats.employee }}
+                </p>
             </div>
-            <div class="rounded-xl border border-sidebar-border/70 bg-background p-4 shadow-sm">
-                <p class="text-xs tracking-[0.18em] text-muted-foreground uppercase">Client</p>
-                <p class="mt-2 text-2xl font-semibold text-foreground">{{ props.stats.client }}</p>
+            <div
+                class="rounded-xl border border-sidebar-border/70 bg-background p-4 shadow-sm"
+            >
+                <p
+                    class="text-xs tracking-[0.18em] text-muted-foreground uppercase"
+                >
+                    Client
+                </p>
+                <p class="mt-2 text-2xl font-semibold text-foreground">
+                    {{ props.stats.client }}
+                </p>
             </div>
         </div>
 
@@ -259,7 +299,10 @@ watch(
         >
             <template #cell-userTypeLabel="{ value, row }">
                 <div class="flex flex-col gap-1">
-                    <Badge :class="roleBadgeClass(getUserRow(row).userType)" class="w-fit whitespace-nowrap">
+                    <Badge
+                        :class="roleBadgeClass(getUserRow(row).userType)"
+                        class="w-fit whitespace-nowrap"
+                    >
                         {{ value }}
                     </Badge>
                     <Badge
@@ -275,7 +318,11 @@ watch(
             <template #cell-clientName="{ value, row }">
                 <span
                     class="inline-flex items-center gap-2"
-                    :class="isClientRow(row) ? 'text-foreground' : 'text-muted-foreground'"
+                    :class="
+                        isClientRow(row)
+                            ? 'text-foreground'
+                            : 'text-muted-foreground'
+                    "
                 >
                     <Building2 class="size-4 text-muted-foreground" />
                     {{ value || '-' }}
@@ -289,56 +336,93 @@ watch(
             </template>
 
             <template #cell-createdAt="{ value }">
-                <span class="text-sm text-muted-foreground">{{ value || '-' }}</span>
+                <span class="text-sm text-muted-foreground">{{
+                    value || '-'
+                }}</span>
             </template>
 
             <template #actions="{ row }">
-                <Button variant="ghost" size="icon-sm" @click.stop="openEditModal(row)">
+                <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    @click.stop="openEditModal(row)"
+                >
                     <PencilLine class="size-4" />
                 </Button>
             </template>
         </DataTable>
 
         <Dialog v-model:open="isFormOpen">
-            <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-                <DialogHeader>
+            <DialogContent
+                class="flex max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] !max-w-2xl flex-col overflow-hidden p-4 sm:p-6"
+            >
+                <DialogHeader class="shrink-0">
                     <DialogTitle class="flex items-center gap-2 text-xl">
                         <UserRoundCog class="size-5 text-muted-foreground" />
                         {{ isEditing ? 'Edit Account' : 'Create Account' }}
                     </DialogTitle>
                     <DialogDescription>
-                        Create admin, employee, or client accounts from one popup.
+                        Create admin, employee, or client accounts from one
+                        popup.
                     </DialogDescription>
                 </DialogHeader>
 
-                <div class="space-y-4">
+                <div
+                    class="min-h-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto pr-1"
+                >
                     <div class="rounded-xl bg-muted/30 p-4">
-                        <p class="text-xs tracking-[0.18em] text-muted-foreground uppercase">Preview</p>
-                        <p class="mt-1 text-lg font-semibold text-foreground">{{ form.name || 'Account name' }}</p>
-                        <p class="text-sm text-muted-foreground">{{ form.email || 'account@email.com' }}</p>
+                        <p
+                            class="text-xs tracking-[0.18em] text-muted-foreground uppercase"
+                        >
+                            Preview
+                        </p>
+                        <p class="mt-1 text-lg font-semibold text-foreground">
+                            {{ form.name || 'Account name' }}
+                        </p>
+                        <p class="text-sm text-muted-foreground">
+                            {{ form.email || 'account@email.com' }}
+                        </p>
                         <div class="mt-3 flex flex-wrap items-center gap-2">
                             <Badge :class="roleBadgeClass(form.user_type)">
                                 {{ roleLabel(form.user_type) }}
                             </Badge>
-                            <Badge v-if="form.user_type === 'employee'" :class="employeeRoleBadgeClass">
-                                {{ employeeRoleLabel(form.employee_role || null) }}
+                            <Badge
+                                v-if="form.user_type === 'employee'"
+                                :class="employeeRoleBadgeClass"
+                            >
+                                {{
+                                    employeeRoleLabel(
+                                        form.employee_role || null,
+                                    )
+                                }}
                             </Badge>
-                            <Badge v-if="form.user_type === 'client'" variant="outline">
-                                {{ selectedClient?.name ?? 'Client linked here' }}
+                            <Badge
+                                v-if="form.user_type === 'client'"
+                                variant="outline"
+                            >
+                                {{
+                                    selectedClient?.name ?? 'Client linked here'
+                                }}
                             </Badge>
                         </div>
                     </div>
 
-                    <label class="space-y-2">
-                        <span class="text-sm font-medium text-foreground">Name</span>
+                    <label class="block min-w-0 space-y-2">
+                        <span class="text-sm font-medium text-foreground"
+                            >Name</span
+                        >
                         <Input v-model="form.name" placeholder="Full name" />
                         <InputError :message="form.errors.name" />
                     </label>
 
-                    <label class="space-y-2">
-                        <span class="text-sm font-medium text-foreground">Email</span>
+                    <label class="block min-w-0 space-y-2">
+                        <span class="text-sm font-medium text-foreground"
+                            >Email</span
+                        >
                         <div class="relative">
-                            <Mail class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                            <Mail
+                                class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                            />
                             <Input
                                 v-model="form.email"
                                 type="email"
@@ -349,11 +433,15 @@ watch(
                         <InputError :message="form.errors.email" />
                     </label>
 
-                    <label class="space-y-2">
+                    <label class="block min-w-0 space-y-2">
                         <span class="text-sm font-medium text-foreground">
                             Password
                             <span class="text-xs text-muted-foreground">
-                                {{ isEditing ? '(leave blank to keep current password)' : '(required)' }}
+                                {{
+                                    isEditing
+                                        ? '(leave blank to keep current password)'
+                                        : '(required)'
+                                }}
                             </span>
                         </span>
                         <Input
@@ -368,8 +456,10 @@ watch(
                         <InputError :message="form.errors.password" />
                     </label>
 
-                    <label class="space-y-2">
-                        <span class="text-sm font-medium text-foreground">Role</span>
+                    <label class="block min-w-0 space-y-2">
+                        <span class="text-sm font-medium text-foreground"
+                            >Role</span
+                        >
                         <Select v-model="form.user_type">
                             <SelectTrigger class="w-full">
                                 <SelectValue placeholder="Choose role" />
@@ -385,13 +475,20 @@ watch(
                             </SelectContent>
                         </Select>
                         <p class="text-xs text-muted-foreground">
-                            Client accounts need a linked client record. Employee accounts can also carry a custom access tag.
+                            Client accounts need a linked client record.
+                            Employee accounts can also carry a custom access
+                            tag.
                         </p>
                         <InputError :message="form.errors.user_type" />
                     </label>
 
-                    <label v-if="form.user_type === 'employee'" class="space-y-2">
-                        <span class="text-sm font-medium text-foreground">Employee Access Tag</span>
+                    <label
+                        v-if="form.user_type === 'employee'"
+                        class="block min-w-0 space-y-2"
+                    >
+                        <span class="text-sm font-medium text-foreground"
+                            >Employee Access Tag</span
+                        >
                         <Input
                             v-model="form.employee_role"
                             list="employee-role-suggestions"
@@ -407,13 +504,20 @@ watch(
                             </option>
                         </datalist>
                         <p class="text-xs text-muted-foreground">
-                            Use tags like <code>marketing</code>, <code>finance</code>, or <code>operational</code>. You can type a custom value too.
+                            Use tags like <code>marketing</code>,
+                            <code>finance</code>, or <code>operational</code>.
+                            You can type a custom value too.
                         </p>
                         <InputError :message="form.errors.employee_role" />
                     </label>
 
-                    <label v-if="form.user_type === 'client'" class="space-y-2">
-                        <span class="text-sm font-medium text-foreground">Linked Client</span>
+                    <label
+                        v-if="form.user_type === 'client'"
+                        class="block min-w-0 space-y-2"
+                    >
+                        <span class="text-sm font-medium text-foreground"
+                            >Linked Client</span
+                        >
                         <Select v-model="form.client_id">
                             <SelectTrigger class="w-full">
                                 <SelectValue placeholder="Choose a client" />
@@ -442,30 +546,53 @@ watch(
                         }}
                     </div>
 
-                    <div class="rounded-xl bg-muted/30 p-4 text-sm text-muted-foreground">
+                    <div
+                        class="rounded-xl bg-muted/30 px-4 py-3 text-sm text-muted-foreground"
+                    >
                         <div class="flex items-center gap-2 text-foreground">
                             <CheckCircle2 class="size-4 text-emerald-500" />
-                            {{ selectedUser ? `Editing ${selectedUser.name}` : 'Ready to create a new account' }}
+                            {{
+                                selectedUser
+                                    ? `Editing ${selectedUser.name}`
+                                    : 'Ready to create a new account'
+                            }}
                         </div>
                         <p class="mt-1">
                             Employee access:
-                            {{ form.user_type === 'employee' ? employeeRoleLabel(form.employee_role || null) : '-' }}
+                            {{
+                                form.user_type === 'employee'
+                                    ? employeeRoleLabel(
+                                          form.employee_role || null,
+                                      )
+                                    : '-'
+                            }}
                         </p>
-                        <p>Selected client: {{ selectedClient?.name ?? '-' }}</p>
-                        <p>This account will be saved into the users table with soft deletes enabled.</p>
+                        <p>
+                            Selected client: {{ selectedClient?.name ?? '-' }}
+                        </p>
                     </div>
                 </div>
 
-                <div class="grid gap-3 sm:grid-cols-2">
-                    <Button variant="outline" type="button" class="w-full" @click="cancelEdit">
+                <DialogFooter class="mt-4 grid shrink-0 gap-3 sm:grid-cols-2">
+                    <Button
+                        variant="outline"
+                        type="button"
+                        class="w-full"
+                        @click="cancelEdit"
+                    >
                         Cancel
                     </Button>
-                    <Button type="button" class="w-full" :disabled="form.processing" @click="submit">
+                    <Button
+                        type="button"
+                        class="w-full"
+                        :disabled="form.processing"
+                        @click="submit"
+                    >
                         <Plus v-if="!isEditing" class="mr-2 size-4" />
                         <Save v-else class="mr-2 size-4" />
                         {{ isEditing ? 'Save Changes' : 'Create Account' }}
                     </Button>
-                </div>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     </section>

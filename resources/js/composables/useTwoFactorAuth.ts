@@ -29,8 +29,6 @@ const fetchJson = async <T>(url: string): Promise<T> => {
     return response.json();
 };
 
-// State declared outside acts as a Global Singleton.
-// Move these inside useTwoFactorAuth() if you want fresh state per component.
 const errors = ref<string[]>([]);
 const manualSetupKey = ref<string | null>(null);
 const qrCodeSvg = ref<string | null>(null);
@@ -88,11 +86,9 @@ export const useTwoFactorAuth = (): UseTwoFactorAuthReturn => {
 
     const fetchSetupData = async (): Promise<void> => {
         clearErrors();
-        
-        // Wait for both to finish. They catch their own errors, so Promise.all won't fail.
+
         await Promise.all([fetchQrCode(), fetchSetupKey()]);
-        
-        // Manual verification: if either failed to load, clear both to maintain consistent UI state.
+
         if (qrCodeSvg.value === null || manualSetupKey.value === null) {
             qrCodeSvg.value = null;
             manualSetupKey.value = null;

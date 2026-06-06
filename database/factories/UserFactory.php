@@ -2,15 +2,12 @@
 
 namespace Database\Factories;
 
-use App\Models\User; // <--- WAJIB ADA INI
-use Spatie\Permission\Models\Role; // <--- WAJIB ADA INI
+use App\Models\User;
+use Spatie\Permission\Models\Role;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
-/**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
- */
 class UserFactory extends Factory
 {
     protected static ?string $password;
@@ -34,7 +31,7 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'user_type' => 'admin',
             'employee_role' => 'System Admin',
-        ])->afterCreating(function (User $user) { // Sekarang 'User' merujuk ke App\Models\User
+        ])->afterCreating(function (User $user) {
             $role = Role::findOrCreate('admin', 'web');
             $user->assignRole($role);
         });

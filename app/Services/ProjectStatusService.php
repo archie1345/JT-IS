@@ -7,9 +7,7 @@ use Illuminate\Support\Carbon;
 
 class ProjectStatusService
 {
-    /**
-     * @return list<array{type: string, level: string, message: string}>
-     */
+
     public function warnings(Project $project): array
     {
         $warnings = [];

@@ -9,19 +9,7 @@ use Spatie\Permission\PermissionRegistrar;
 
 class AccessControl
 {
-    /*
-     * Single source of truth for sidebar navigation, permission keys,
-     * and default role assignments. Update this file when adding or
-     * renaming a sidebar item, page, or CRUD capability.
-     */
-    /**
-     * @return list<array{
-     *     key: string,
-     *     label: string,
-     *     description: string,
-     *     permissions: list<array{name: string, label: string, description: string}>
-     * }>
-     */
+
     public static function permissionGroups(): array
     {
         return [
@@ -97,9 +85,6 @@ class AccessControl
         ];
     }
 
-    /**
-     * @return list<string>
-     */
     public static function permissionNames(): array
     {
         return collect(self::permissionGroups())
@@ -109,9 +94,6 @@ class AccessControl
             ->all();
     }
 
-    /**
-     * @return list<array{value: string, label: string}>
-     */
     public static function employeeRoleSuggestions(): array
     {
         return [
@@ -124,12 +106,6 @@ class AccessControl
         ];
     }
 
-    /**
-     * @return list<array{
-     *     label: null|string,
-     *     items: list<array{title: string, href: string, icon: string, permission: string}>
-     * }>
-     */
     public static function sidebarSections(): array
     {
         return [
@@ -186,9 +162,6 @@ class AccessControl
         ];
     }
 
-    /**
-     * @return list<array{title: string, href: string, icon: string, permission: string}>
-     */
     public static function footerItems(): array
     {
         return [];
@@ -232,10 +205,6 @@ class AccessControl
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
-    /**
-     * @param list<string> $permissions
-     * @return list<string>
-     */
     public static function expandPermissions(array $permissions): array
     {
         $validPermissions = array_flip(self::permissionNames());
@@ -265,9 +234,6 @@ class AccessControl
         return array_values(array_keys($expanded));
     }
 
-    /**
-     * @return list<string>
-     */
     protected static function defaultRoleNames(): array
     {
         return array_values(array_unique([
@@ -278,9 +244,6 @@ class AccessControl
         ]));
     }
 
-    /**
-     * @return array<string, list<string>>
-     */
     protected static function permissionDependencies(): array
     {
         return [
@@ -323,9 +286,6 @@ class AccessControl
         ];
     }
 
-    /**
-     * @return array<string, list<string>>
-     */
     protected static function defaultPermissionsByRole(): array
     {
         return [

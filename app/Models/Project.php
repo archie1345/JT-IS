@@ -26,8 +26,8 @@ class Project extends Model
         'start_date',
         'end_date',
         'location',
-        'latitude',    
-        'longitude',   
+        'latitude',
+        'longitude',
         'status',
     ];
 
@@ -165,9 +165,6 @@ class Project extends Model
             ->exists();
     }
 
-    /**
-     * @return list<array{type: string, level: string, message: string}>
-     */
     public function mvpWarnings(): array
     {
         return app(ProjectStatusService::class)->warnings($this);

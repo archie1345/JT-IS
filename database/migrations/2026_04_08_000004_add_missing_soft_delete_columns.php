@@ -6,11 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Tables that should have a deleted_at column.
-     *
-     * @var list<string>
-     */
+
     private array $tables = [
         'users',
         'clients',
@@ -29,9 +25,6 @@ return new class extends Migration
         'fund_requests',
     ];
 
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         foreach ($this->tables as $table) {
@@ -45,9 +38,6 @@ return new class extends Migration
         }
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         foreach ($this->tables as $table) {

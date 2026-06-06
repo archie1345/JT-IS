@@ -38,9 +38,6 @@ class OcrService
         return false;
     }
 
-    /**
-     * @return array<string, mixed>
-     */
     public function extract(UploadedFile $file): array
     {
         if ($this->isPlainText($file)) {
@@ -80,9 +77,6 @@ class OcrService
         return in_array(strtolower($file->getClientOriginalExtension()), ['txt', 'csv'], true);
     }
 
-    /**
-     * @return array<string, mixed>
-     */
     protected function extractWithHttpProvider(UploadedFile $file): array
     {
         $ocrUrl = rtrim((string) config('ocr.http.url'), '/').'/ocr';
@@ -127,10 +121,6 @@ class OcrService
         );
     }
 
-    /**
-     * @param array<string, mixed> $payload
-     * @return array<string, mixed>
-     */
     protected function withDraftExtractors(array $payload): array
     {
         $text = (string) ($payload['text'] ?? '');

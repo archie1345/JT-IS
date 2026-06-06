@@ -4,9 +4,7 @@ namespace App\Services\Ocr;
 
 class BudgetLineItemExtractor
 {
-    /**
-     * @return list<array<string, mixed>>
-     */
+
     public function extract(string $text): array
     {
         $items = [];

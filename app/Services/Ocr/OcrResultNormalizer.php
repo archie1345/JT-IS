@@ -4,10 +4,7 @@ namespace App\Services\Ocr;
 
 class OcrResultNormalizer
 {
-    /**
-     * @param array<string, mixed> $payload
-     * @return array{engine: string, text: string, pages: array<int, mixed>, confidence: null|float, message: null|string}
-     */
+
     public function normalize(array $payload, string $fallbackEngine): array
     {
         $text = $payload['text'] ?? $payload['ocr_text'] ?? $payload['content'] ?? '';

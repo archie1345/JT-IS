@@ -4,9 +4,7 @@ namespace App\Services\Ocr;
 
 class ProgressDocumentExtractor
 {
-    /**
-     * @return array{document_number: null|string, progress_percent: null|float, report_date: null|string, signatures_detected: array{internal: bool, client: bool}}
-     */
+
     public function extract(string $text): array
     {
         preg_match('/(\d{1,3}(?:[,.]\d{1,2})?)\s*%/', $text, $match);

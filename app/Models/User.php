@@ -15,14 +15,9 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+
     use HasFactory, Notifiable, SoftDeletes, TwoFactorAuthenticatable, HasRoles;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
@@ -32,11 +27,6 @@ class User extends Authenticatable
         'dashboard_layout',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'two_factor_secret',
@@ -44,15 +34,10 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
-            // 'client_id' dihapus karena kolomnya sudah tidak ada di database
+
             'deleted_at' => 'datetime',
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
@@ -67,8 +52,6 @@ class User extends Authenticatable
             $user->syncSidebarRole();
         });
     }
-
-    // Relasi client() dihapus karena User tidak lagi terikat langsung ke Client
 
     public function projectAssignments(): HasMany
     {
@@ -106,12 +89,9 @@ class User extends Authenticatable
         return $this->sidebarRoleNames()[0] ?? null;
     }
 
-    /**
-     * @return list<string>
-     */
     public function sidebarRoleNames(): array
     {
-        // Menyederhanakan match agar hanya memproses admin dan employee
+
         $baseRole = match ($this->user_type) {
             'admin', 'employee' => $this->user_type,
             default => null,

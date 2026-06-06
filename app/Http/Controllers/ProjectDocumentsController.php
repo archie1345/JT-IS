@@ -276,7 +276,6 @@ class ProjectDocumentsController extends Controller
     {
         abort_unless($projectDocument->project()->exists(), 404);
 
-        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
         $disk = Storage::disk('public');
 
         return $disk->response(

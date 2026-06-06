@@ -32,11 +32,7 @@ Route::inertia('/', 'Welcome', [
 ])->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function (): void {
-    /*
-    |--------------------------------------------------------------------------
-    | Dashboard
-    |--------------------------------------------------------------------------
-    */
+
     Route::get('dashboard', DashboardController::class)
         ->middleware('permission:page.dashboard.view')
         ->name('dashboard');
@@ -45,11 +41,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->name('dashboard.layout.store');
 
     Route::middleware(['role:admin|employee'])->group(function (): void {
-        /*
-        |--------------------------------------------------------------------------
-        | Marketing / Pipeline / Tenders
-        |--------------------------------------------------------------------------
-        */
+
         Route::prefix('pipeline')->group(function (): void {
             Route::get('/', [TendersController::class, 'index'])
                 ->middleware('permission:page.pipeline.view')
@@ -75,11 +67,6 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
                 ->name('pipeline.destroy');
         });
 
-        /*
-        |--------------------------------------------------------------------------
-        | Projects
-        |--------------------------------------------------------------------------
-        */
         Route::prefix('projects')->group(function (): void {
             Route::get('/', ProjectsPageController::class)
                 ->middleware('permission:page.projects.view')
@@ -117,11 +104,6 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
             });
         });
 
-        /*
-        |--------------------------------------------------------------------------
-        | Budget: RAB
-        |--------------------------------------------------------------------------
-        */
         Route::prefix('rabs')->group(function (): void {
             Route::get('/', RabsPageController::class)
                 ->middleware('permission:page.rabs.view')
@@ -157,11 +139,6 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
                     ->name('destroy');
             });
 
-        /*
-        |--------------------------------------------------------------------------
-        | Budget: RAP
-        |--------------------------------------------------------------------------
-        */
         Route::prefix('raps')->group(function (): void {
             Route::get('/', RapsPageController::class)
                 ->middleware('permission:page.raps.view')
@@ -197,11 +174,6 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
                     ->name('destroy');
             });
 
-        /*
-        |--------------------------------------------------------------------------
-        | Progress / BAMC
-        |--------------------------------------------------------------------------
-        */
         Route::prefix('progress-updates')->name('progress-updates.')->group(function (): void {
             Route::get('/', [ProgressReportsController::class, 'index'])
                 ->middleware('permission:sidebar.operational.progress.view')
@@ -223,11 +195,6 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
                 ->name('destroy');
         });
 
-        /*
-        |--------------------------------------------------------------------------
-        | Finance: Costs / Invoices
-        |--------------------------------------------------------------------------
-        */
         Route::prefix('project-costs')->name('project-costs.')->group(function (): void {
             Route::get('/', [ProjectCostsController::class, 'index'])
                 ->middleware('permission:sidebar.finance.cost-realization.view')
@@ -295,14 +262,6 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
                     ->name('destroy');
             });
 
-        /*
-        |--------------------------------------------------------------------------
-        | Clients
-        |--------------------------------------------------------------------------
-        |
-        | The /client routes drive the Inertia MVP pages. The /clients-data
-        | resource is kept as a compatibility CRUD endpoint for older UI pieces.
-        */
         Route::prefix('client')->group(function (): void {
             Route::get('/', ClientsPageController::class)
                 ->middleware('permission:page.clients.view')
@@ -326,14 +285,6 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
             ->only(['index', 'store', 'show', 'update', 'destroy'])
             ->names('clients-data');
 
-        /*
-        |--------------------------------------------------------------------------
-        | Dev / Experimental
-        |--------------------------------------------------------------------------
-        |
-        | These routes are retained for compatibility, but they are hidden from
-        | the MVP sidebar and are not part of the capstone demo path.
-        */
         Route::inertia('billing-test', 'dev/BillingTest')
             ->middleware('permission:page.billing-test.view')
             ->name('billing.test');
@@ -355,11 +306,6 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         });
     });
 
-    /*
-    |--------------------------------------------------------------------------
-    | Admin / Users / Permissions
-    |--------------------------------------------------------------------------
-    */
     Route::middleware(['role:admin', 'permission:page.admin.accounts.view'])
         ->prefix('Admin_acc_mgmt')
         ->group(function (): void {

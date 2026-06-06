@@ -1,8 +1,5 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../wayfinder'
-/**
-* @see vendor/laravel/framework/src/Illuminate/Filesystem/FilesystemServiceProvider.php:106
-* @route '/storage/{path}'
-*/
+
 export const upload = (args: { path: string | number } | [path: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: upload.url(args, options),
     method: 'put',
@@ -13,10 +10,6 @@ upload.definition = {
     url: '/storage/{path}',
 } satisfies RouteDefinition<["put"]>
 
-/**
-* @see vendor/laravel/framework/src/Illuminate/Filesystem/FilesystemServiceProvider.php:106
-* @route '/storage/{path}'
-*/
 upload.url = (args: { path: string | number } | [path: string | number ] | string | number, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { path: args }
@@ -39,10 +32,6 @@ upload.url = (args: { path: string | number } | [path: string | number ] | strin
             .replace(/\/+$/, '') + queryParams(options)
 }
 
-/**
-* @see vendor/laravel/framework/src/Illuminate/Filesystem/FilesystemServiceProvider.php:106
-* @route '/storage/{path}'
-*/
 upload.put = (args: { path: string | number } | [path: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: upload.url(args, options),
     method: 'put',

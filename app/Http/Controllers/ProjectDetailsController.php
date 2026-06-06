@@ -37,8 +37,8 @@ class ProjectDetailsController extends Controller
             'start_date' => $data['start_date'] ?? null,
             'end_date' => $data['end_date'] ?? null,
             'location' => $data['location'] ?? null,
-            'latitude' => $data['latitude'] ?? null,   // <-- Ditambahkan
-            'longitude' => $data['longitude'] ?? null, // <-- Ditambahkan
+            'latitude' => $data['latitude'] ?? null,
+            'longitude' => $data['longitude'] ?? null,
             'status' => $data['status'],
         ]);
 
@@ -63,8 +63,8 @@ class ProjectDetailsController extends Controller
             'start_date' => $data['start_date'] ?? null,
             'end_date' => $data['end_date'] ?? null,
             'location' => $data['location'] ?? null,
-            'latitude' => $data['latitude'] ?? null,   // <-- Ditambahkan
-            'longitude' => $data['longitude'] ?? null, // <-- Ditambahkan
+            'latitude' => $data['latitude'] ?? null,
+            'longitude' => $data['longitude'] ?? null,
             'status' => $data['status'],
         ]);
 
@@ -82,8 +82,8 @@ class ProjectDetailsController extends Controller
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'location' => ['nullable', 'string'],
-            'latitude' => ['nullable', 'numeric'],   // <-- Ditambahkan
-            'longitude' => ['nullable', 'numeric'],  // <-- Ditambahkan
+            'latitude' => ['nullable', 'numeric'],
+            'longitude' => ['nullable', 'numeric'],
             'status' => ['required', Rule::in(['planning', 'ongoing', 'completed'])],
             'payment_status' => ['required', Rule::in(['pending', 'partial', 'paid', 'overdue'])],
         ]);
@@ -298,8 +298,8 @@ class ProjectDetailsController extends Controller
                 'contractNumber' => $project->exists ? $project->contract_number : '',
                 'contractValue' => (float) ($project->exists ? $project->contract_value ?? 0 : 0),
                 'location' => $project->exists ? $project->location : '',
-                'latitude' => $project->exists ? (float) $project->latitude : null,   // <-- Ditambahkan
-                'longitude' => $project->exists ? (float) $project->longitude : null, // <-- Ditambahkan
+                'latitude' => $project->exists ? (float) $project->latitude : null,
+                'longitude' => $project->exists ? (float) $project->longitude : null,
                 'startDate' => $project->exists ? optional($project->start_date)->format('Y-m-d') : null,
                 'endDate' => $project->exists ? optional($project->end_date)->format('Y-m-d') : null,
                 'status' => $projectStatus,

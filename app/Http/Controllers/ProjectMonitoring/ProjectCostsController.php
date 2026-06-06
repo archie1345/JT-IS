@@ -62,7 +62,7 @@ class ProjectCostsController extends CrudResourceController
 
     protected function transformRecord(Model $record, Request $request): array
     {
-        /** @var ProjectCost $record */
+
         return [
             'id' => $record->id,
             'project_id' => $record->project_id,

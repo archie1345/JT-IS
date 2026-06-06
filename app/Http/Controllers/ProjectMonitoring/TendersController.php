@@ -67,7 +67,7 @@ class TendersController extends CrudResourceController
 
     protected function transformRecord(Model $record, Request $request): array
     {
-        /** @var Tender $record */
+
         return [
             'id' => $record->id,
             'project_id' => $record->project_id,

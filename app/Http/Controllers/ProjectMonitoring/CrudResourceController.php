@@ -40,12 +40,10 @@ abstract class CrudResourceController extends Controller
     {
         $validated = $this->prepareForStore($request->validate($this->storeRules()), $request);
 
-        // Gunakan Eloquent Create
         $record = $this->modelClass()::create($validated);
 
         $this->afterStore($record, $request);
 
-        // Jika inertia return redirect back
         return redirect()->back()->with('success', 'Data berhasil disimpan.');
     }
 
@@ -62,7 +60,6 @@ abstract class CrudResourceController extends Controller
 
         $record->update($validated);
 
-        // Panggil fungsi pancingan (Hook) untuk Spatie
         $this->afterUpdate($record, $request);
 
         return redirect()->back()->with('success', 'Data berhasil diupdate.');
@@ -71,15 +68,13 @@ abstract class CrudResourceController extends Controller
     public function destroy(int $id)
     {
         $record = $this->modelClass()::findOrFail($id);
-        
-        // Fitur SoftDeletes atau ForceDelete akan ditangani otomatis oleh Model
+
         $record->delete();
         $this->afterDestroy($record);
 
         return redirect()->back()->with('success', 'Data berhasil dihapus.');
     }
 
-    // Fungsi kosong bawaan yang bisa di-override oleh Controller anak
     protected function afterStore($record, Request $request): void {}
     protected function afterUpdate($record, Request $request): void {}
     protected function afterDestroy($record): void {}
@@ -118,7 +113,7 @@ abstract class CrudResourceController extends Controller
             \App\Models\Project::class => 'projects/Index',
             \App\Models\Rab::class => 'budget/rabs/Index',
             \App\Models\Rap::class => 'budget/raps/Index',
-            \App\Models\User::class => 'Admin/Users/Index', // Tambahkan View User
+            \App\Models\User::class => 'Admin/Users/Index',
             default => null,
         };
     }

@@ -4,9 +4,7 @@ namespace App\Services\Ocr;
 
 class InvoiceDocumentExtractor
 {
-    /**
-     * @return array{invoice_number: null|string, invoice_date: null|string, due_date: null|string, amount: null|float}
-     */
+
     public function extract(string $text): array
     {
         preg_match('/(?:invoice|tagihan|no\.?)\s*[:#-]?\s*([A-Z0-9\/.-]{4,80})/i', $text, $match);

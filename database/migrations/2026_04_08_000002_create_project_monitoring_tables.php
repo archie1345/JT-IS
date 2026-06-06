@@ -5,12 +5,10 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    /**
-     * Run the migrations.
-     */
+
     public function up(): void
     {
-        // 1. TABEL INDUK: CLIENTS
+
         Schema::create('clients', function (Blueprint $table) {
             $table->id();
             $table->string('name', 150)->nullable();
@@ -19,7 +17,6 @@ return new class extends Migration {
             $table->softDeletes();
         });
 
-        // 2. TABEL INDUK: PROJECTS
         Schema::create('projects', function (Blueprint $table) {
             $table->id();
             $table->foreignId('client_id')->nullable()->constrained('clients')->nullOnDelete();
@@ -35,7 +32,6 @@ return new class extends Migration {
             $table->index('status', 'idx_project_status');
         });
 
-        // 3. TABEL PENGHUBUNG: PROJECT USERS (Tim Proyek)
         Schema::create('project_users', function (Blueprint $table) {
             $table->id();
             $table->foreignId('project_id')->constrained('projects')->cascadeOnDelete();
@@ -44,18 +40,15 @@ return new class extends Migration {
             $table->softDeletes();
         });
 
-        // 4. TABEL DOKUMEN: PROJECT DOCUMENTS
         Schema::create('project_documents', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('project_id');
 
-            // Metadata "Jangkar"
             $table->string('document_number')->nullable();
-            $table->string('document_type');               
-            $table->decimal('progress_weight', 5, 2)->nullable(); 
-            $table->json('signatories')->nullable();       
+            $table->string('document_type');
+            $table->decimal('progress_weight', 5, 2)->nullable();
+            $table->json('signatories')->nullable();
 
-            // File Data
             $table->string('name', 200);
             $table->string('original_name', 255);
             $table->string('path', 500);
@@ -69,7 +62,6 @@ return new class extends Migration {
                 ->references('id')->on('projects')->onDelete('cascade');
         });
 
-        // 5. TABEL TENDER
         Schema::create('tenders', function (Blueprint $table) {
             $table->id();
             $table->string('title', 200)->nullable();
@@ -79,7 +71,6 @@ return new class extends Migration {
             $table->softDeletes();
         });
 
-        // 6. TABEL RAB (Rencana Anggaran Biaya)
         Schema::create('rabs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('project_id')->constrained('projects')->cascadeOnDelete();
@@ -98,7 +89,6 @@ return new class extends Migration {
             $table->softDeletes();
         });
 
-        // 7. TABEL RAP (Rencana Anggaran Pelaksanaan)
         Schema::create('raps', function (Blueprint $table) {
             $table->id();
             $table->foreignId('project_id')->constrained('projects')->cascadeOnDelete();
@@ -120,7 +110,6 @@ return new class extends Migration {
             $table->softDeletes();
         });
 
-        // 8. TABEL PROGRESS & APPROVAL
         Schema::create('progress_reports', function (Blueprint $table) {
             $table->id();
             $table->foreignId('project_id')->constrained('projects')->cascadeOnDelete();
@@ -140,7 +129,6 @@ return new class extends Migration {
             $table->softDeletes();
         });
 
-        // 9. TABEL KEUANGAN (Costs, Invoices, Payments)
         Schema::create('project_costs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('project_id')->constrained('projects')->cascadeOnDelete();
@@ -169,7 +157,6 @@ return new class extends Migration {
             $table->softDeletes();
         });
 
-        // 10. TABEL FUND REQUESTS
         Schema::create('fund_requests', function (Blueprint $table) {
             $table->id();
             $table->foreignId('project_id')->constrained('projects')->cascadeOnDelete();
@@ -181,12 +168,9 @@ return new class extends Migration {
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        // Urutan drop harus terbalik: Hapus tabel anak dulu, baru tabel induk
+
         Schema::dropIfExists('fund_requests');
         Schema::dropIfExists('payments');
         Schema::dropIfExists('invoices');

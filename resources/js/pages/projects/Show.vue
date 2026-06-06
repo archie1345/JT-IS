@@ -41,7 +41,6 @@ import type {
 
 import { toast } from 'vue-sonner';
 
-// Leaflet Imports
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -133,13 +132,11 @@ const form = useForm({
     payment_status: props.project.paymentStatus,
 });
 
-// Map State
 const mapContainer = shallowRef<HTMLElement | null>(null);
 let map: L.Map;
 let marker: L.Marker;
 
 onMounted(() => {
-    // Fix untuk icon marker Leaflet yang sering hilang di Vite/Vue
     delete (L.Icon.Default.prototype as any)._getIconUrl;
     L.Icon.Default.mergeOptions({
         iconRetinaUrl:
@@ -153,10 +150,8 @@ onMounted(() => {
     const initLat = form.latitude ? Number(form.latitude) : -7.954625;
     const initLng = form.longitude ? Number(form.longitude) : 112.614619;
 
-    // Gunakan nextTick agar Vue memastikan div mapContainer sudah selesai di-render
     nextTick(() => {
         if (mapContainer.value) {
-            // Inisialisasi Map
             map = L.map(mapContainer.value).setView([initLat, initLng], 13);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -168,12 +163,10 @@ onMounted(() => {
                 draggable: true,
             }).addTo(map);
 
-            // JURUS PAMUNGKAS: Paksa map me-render ulang ukurannya setelah 200ms
             setTimeout(() => {
                 map.invalidateSize();
             }, 200);
 
-            // Event Listeners
             marker.on('dragend', (e) => {
                 const position = e.target.getLatLng();
                 form.latitude = position.lat;
@@ -290,15 +283,13 @@ const getCurrentLocation = () => {
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
 
-                // Update form state
                 form.latitude = lat;
                 form.longitude = lng;
 
-                // Update posisi marker dan center map di Leaflet
                 if (map && marker) {
                     const newLatLng = new L.LatLng(lat, lng);
                     marker.setLatLng(newLatLng);
-                    map.setView(newLatLng, 16); // Zoom lebih dekat
+                    map.setView(newLatLng, 16);
                 }
 
                 toast.success('Titik lokasi berhasil diperbarui!');
@@ -919,7 +910,6 @@ const getCurrentLocation = () => {
 </template>
 
 <style scoped>
-/* Penting: Cegah z-index dari Leaflet menutupi dropdown Shadcn / Select */
 .leaflet-container {
     z-index: 10 !important;
 }

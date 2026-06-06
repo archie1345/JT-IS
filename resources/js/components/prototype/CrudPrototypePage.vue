@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, useSlots } from 'vue';
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { ExternalLink, Trash2 } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
 import DocumentUploadPanel from '@/components/shared/DocumentUploadPanel.vue';
@@ -57,6 +57,17 @@ type Pagination = {
     total: number;
 };
 
+type OcrConfig = {
+    configured?: boolean;
+    unavailableMessage?: string;
+};
+
+type SharedOcrProps = {
+    features?: {
+        ocr?: OcrConfig;
+    };
+};
+
 const props = withDefaults(
     defineProps<{
         headTitle: string;
@@ -85,6 +96,8 @@ const props = withDefaults(
         createLabel?: string;
         note?: string;
         pagination?: null | Pagination;
+        ocrConfigured?: boolean;
+        ocrUnavailableMessage?: string;
     }>(),
     {
         createLabel: 'New Record',
@@ -95,17 +108,94 @@ const props = withDefaults(
         projectOptions: () => [],
         uploadConnectionOptions: () => [],
         pagination: null,
+        ocrConfigured: true,
+        ocrUnavailableMessage: 'OCR belum aktif. Dokumen tetap bisa diunggah, lanjutkan input manual.',
     },
 );
+
+const page = usePage<SharedOcrProps>();
+const ocrConfig = computed<OcrConfig>(() => ({
+    configured: props.ocrConfigured ?? page.props.features?.ocr?.configured ?? true,
+    unavailableMessage: props.ocrUnavailableMessage ?? page.props.features?.ocr?.unavailableMessage,
+}));
 
 const isOpen = ref(false);
 const editingId = ref<null | number>(null);
 const deletingId = ref<null | number>(null);
 const slots = useSlots();
 
+/**
+ * OCR-related state for document upload management
+ */
+const ocrState = ref<{
+    isProcessing: boolean;
+    hasError: boolean;
+    errorMessage?: string;
+    processedDocumentCount: number;
+}>({
+    isProcessing: false,
+    hasError: false,
+    processedDocumentCount: 0,
+});
+
+/**
+ * Check if OCR is available for document uploads
+ */
+const isOcrAvailable = computed(
+    () => props.uploadComponentType && ocrConfig.value.configured,
+);
+
+/**
+ * Get OCR configuration message
+ */
+const ocrMessage = computed(() => {
+    if (ocrConfig.value.unavailableMessage && !ocrConfig.value.configured) {
+        return ocrConfig.value.unavailableMessage;
+    }
+    return null;
+});
+
+/**
+ * Check if create button should be shown
+ * Hide for RAB and RAP components
+ */
+const shouldShowCreateButton = computed(() => {
+    return props.uploadComponentType !== 'rab' && props.uploadComponentType !== 'rap';
+});
+
 const blankState = computed<Record<string, FormValue>>(() =>
     Object.fromEntries(props.fields.map((field) => [field.name, ''])),
 );
+
+/**
+ * Helper function to handle OCR processing completion
+ */
+const handleOcrProcessed = (data: {
+    documentId: number;
+    ocrText: string;
+    ocrEngine: string;
+}): void => {
+    ocrState.value.processedDocumentCount += 1;
+};
+
+/**
+ * Helper function to handle OCR errors
+ */
+const handleOcrError = (error: string): void => {
+    ocrState.value.hasError = true;
+    ocrState.value.errorMessage = error;
+};
+
+/**
+ * Reset OCR state after document operations
+ */
+const resetOcrState = (): void => {
+    ocrState.value = {
+        isProcessing: false,
+        hasError: false,
+        processedDocumentCount: 0,
+    };
+};
 
 const form = useForm<Record<string, FormValue>>({ ...blankState.value });
 
@@ -143,6 +233,7 @@ const openEdit = (row: Row) => {
 const closeModal = () => {
     isOpen.value = false;
     resetForm();
+    resetOcrState();
 };
 
 const submit = () => {
@@ -246,7 +337,7 @@ const goToPage = (page: number) => {
                 :title="props.title"
                 :description="props.description"
                 :note="props.note"
-                show-create-button
+                :show-create-button="shouldShowCreateButton"
                 :create-label="props.createLabel"
                 @create="openCreate"
             >

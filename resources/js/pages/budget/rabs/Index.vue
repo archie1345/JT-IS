@@ -136,7 +136,6 @@ const fields = [
         :uploaded-documents="props.uploadedDocuments"
         :upload-connection-options="uploadConnectionOptions"
         :pagination="props.pagination"
-        create-label="New RAB"
         :note="
             props.activeProjectId
                 ? `Showing RAB documents for project ID ${props.activeProjectId}`

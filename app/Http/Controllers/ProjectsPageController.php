@@ -33,7 +33,7 @@ class ProjectsPageController extends Controller
                 'deadline' => optional($project->end_date)->format('Y-m-d'),
                 'paymentStatus' => $project->latestInvoice?->status ?? 'pending',
                 'projectStatus' => $project->status,
-                'mvpStatus' => $project->mvpStatus(),
+                'projectHealthStatus' => $project->projectHealthStatus(),
             ]);
 
         return Inertia::render('projects/Index', [

@@ -107,7 +107,6 @@ const fields = [
         :upload-connection-options="uploadConnectionOptions"
         :pagination="props.pagination"
         create-label="New Cost Entry"
-        :note="`${props.pagination.total} realized cost entries recorded`"
     >
         <template #cell-amount="{ value }">
             {{

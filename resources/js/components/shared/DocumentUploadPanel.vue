@@ -11,6 +11,7 @@ import {
 } from 'lucide-vue-next';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
+import TextPreview from '@/components/shared/TextPreview.vue';
 import {
     Dialog,
     DialogContent,
@@ -154,6 +155,17 @@ const ocrStatusLabel = (document: UploadedDocument) =>
     document.ocrProcessedAt
         ? `OCR diproses${document.ocrEngine ? ` (${document.ocrEngine})` : ''}`
         : 'OCR belum diproses';
+
+const documentSummary = (document: UploadedDocument) =>
+    [
+        document.projectName,
+        document.createdAt ?? 'diunggah',
+        documentTypeLabel(document.documentType),
+        document.size ? `${Math.round(document.size / 1024)} KB` : 'file',
+        ocrStatusLabel(document),
+    ]
+        .filter(Boolean)
+        .join(' / ');
 
 const sanitizePercentInput = (value: string) => {
     const cleaned = value
@@ -578,7 +590,7 @@ const removeDocument = (document: UploadedDocument) => {
             <div class="flex min-w-0 items-center gap-2">
                 <FileSearch class="size-4 shrink-0 text-muted-foreground" />
                 <h3 class="min-w-0 text-sm font-medium break-words">
-                    {{ props.title }}
+                    <TextPreview :text="props.title" :max="64" />
                 </h3>
             </div>
 
@@ -648,7 +660,7 @@ const removeDocument = (document: UploadedDocument) => {
                 <span
                     class="max-w-sm text-xs break-words text-muted-foreground"
                 >
-                    {{ props.description }}
+                    <TextPreview :text="props.description" :max="96" />
                 </span>
             </label>
 
@@ -670,9 +682,11 @@ const removeDocument = (document: UploadedDocument) => {
                         <span class="block text-xs text-muted-foreground">
                             File dipilih
                         </span>
-                        <span class="mt-0.5 block font-medium break-words">
-                            {{ selectedFileNames }}
-                        </span>
+                        <TextPreview
+                            :text="selectedFileNames"
+                            :max="72"
+                            class="mt-0.5 font-medium"
+                        />
                     </span>
                     <Button
                         type="button"
@@ -814,6 +828,7 @@ const removeDocument = (document: UploadedDocument) => {
                         :href="document.url"
                         target="_blank"
                         rel="noreferrer"
+                        :title="`${document.originalName} - ${documentSummary(document)}`"
                         class="flex min-w-0 flex-1 items-start gap-3 overflow-hidden"
                     >
                         <FileText
@@ -823,28 +838,18 @@ const removeDocument = (document: UploadedDocument) => {
                             <span
                                 class="block max-w-full text-sm font-medium break-all whitespace-normal text-foreground"
                             >
-                                {{ document.originalName }}
+                                <TextPreview
+                                    :text="document.originalName"
+                                    :max="64"
+                                />
                             </span>
                             <span
                                 class="block max-w-full text-xs break-words whitespace-normal text-muted-foreground"
                             >
-                                {{
-                                    document.projectName
-                                        ? `${document.projectName} / `
-                                        : ''
-                                }}
-                                {{ document.createdAt ?? 'diunggah' }}
-                                /
-                                {{ documentTypeLabel(document.documentType) }}
-                                /
-                                {{
-                                    document.size
-                                        ? Math.round(document.size / 1024) +
-                                          ' KB'
-                                        : 'file'
-                                }}
-                                /
-                                {{ ocrStatusLabel(document) }}
+                                <TextPreview
+                                    :text="documentSummary(document)"
+                                    :max="96"
+                                />
                             </span>
                         </span>
                     </a>

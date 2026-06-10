@@ -2,7 +2,7 @@
 
 Laravel 12 + Inertia Vue monitoring app for PT Jasa Tirta Energi.
 
-The MVP demo flow is:
+The core monitoring flow is:
 
 Tender / Pipeline -> Won -> Active Project -> RAB/RAP -> Progress/BAMC -> Cost/Invoice/Payment -> Dashboard warning.
 
@@ -35,7 +35,7 @@ All seeded demo users use `password`.
 
 - Dashboard: management summary, warning and critical projects, recent progress.
 - Marketing / Pipeline: tender records and won tender conversion to project.
-- Projects: project summary, documents, MVP status, warnings.
+- Projects: project summary, documents, health status, warnings.
 - RAB/RAP: budget headers and item totals.
 - Progress / BAMC: official progress requires internal and client approval.
 - Finance: cost realization and invoices.
@@ -70,4 +70,4 @@ vendor/bin/pint --dirty
 
 ## Notes
 
-Experimental AI extraction and billing test pages are kept for compatibility, but they are not part of the normal MVP sidebar path.
+Experimental AI extraction and billing test pages are kept for compatibility, but they are not part of the normal monitoring sidebar path.

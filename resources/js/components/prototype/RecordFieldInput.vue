@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
 import OptionSelect from '@/components/prototype/OptionSelect.vue';
+import TextPreview from '@/components/shared/TextPreview.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -81,7 +82,7 @@ const handleInput = (event: Event) => {
         :class="props.field.type === 'textarea' ? 'sm:col-span-2' : ''"
     >
         <Label :for="props.field.name" class="break-words">
-            {{ props.field.label }}
+            <TextPreview :text="props.field.label" :max="48" />
         </Label>
 
         <OptionSelect
@@ -99,6 +100,7 @@ const handleInput = (event: Event) => {
             :id="props.field.name"
             v-model="model"
             :placeholder="props.field.placeholder"
+            :title="props.field.placeholder"
             :required="props.field.required"
             class="flex min-h-32 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs"
         />

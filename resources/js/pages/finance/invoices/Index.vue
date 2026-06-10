@@ -155,7 +155,6 @@ const openInvoicePreview = () => {
         :upload-connection-options="uploadConnectionOptions"
         :pagination="props.pagination"
         create-label="New Invoice"
-        :note="`${props.pagination.total} invoices recorded`"
     >
         <template #toolbar-actions>
             <div

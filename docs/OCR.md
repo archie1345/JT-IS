@@ -38,7 +38,7 @@ GOOGLE_DOCUMENT_AI_PROCESSOR_ID=
 GOOGLE_APPLICATION_CREDENTIALS=
 ```
 
-Google Document AI is intentionally not required for the MVP demo.
+Google Document AI is intentionally not required for the demo flow.
 
 ## Safety Rules
 

@@ -1,6 +1,6 @@
 # Project Structure
 
-JT-IS is organized around the MVP monitoring flow:
+JT-IS is organized around the core monitoring flow:
 
 Marketing / Pipeline -> Won Tender -> Project -> RAB/RAP -> Progress/BAMC -> Costs/Invoices/Payments -> Dashboard warnings.
 
@@ -46,7 +46,7 @@ Inertia pages are grouped by domain under `resources/js/pages`:
 - `finance/costs/Index.vue`, `finance/invoices/Index.vue`, `finance/FinancialDocumentDetails.vue`
 - `clients/Index.vue`, `clients/Show.vue`
 - `admin/UserManagement.vue`
-- `dev/*` for non-MVP experimental pages
+- `dev/*` for experimental pages outside the normal monitoring flow
 - `shared/RecordDetails.vue` for generic record detail screens still used by simple CRUD modules
 
 ## Components
@@ -56,7 +56,7 @@ Inertia pages are grouped by domain under `resources/js/pages`:
 - `resources/js/components/shared`: reusable business components such as the spreadsheet-like data table and document upload panel.
 - `resources/js/components/admin`, `entity`, `invoice`, `prototype`: domain or legacy helper components retained because they are still used.
 
-## MVP Demo Data
+## Demo Data
 
 Demo seed data lives in:
 
@@ -77,4 +77,4 @@ OCR is optional and review-before-apply. Missing OCR configuration returns a fri
 
 ## Experimental Code
 
-Raw AI extraction and billing test routes remain available for compatibility, but they are hidden from the normal MVP sidebar and kept under `resources/js/pages/dev`.
+Raw AI extraction and billing test routes remain available for compatibility, but they are hidden from the normal monitoring sidebar and kept under `resources/js/pages/dev`.

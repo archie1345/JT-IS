@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
-import { Check, Save } from 'lucide-vue-next';
+import { Check, ChevronDown, ChevronRight, Save } from 'lucide-vue-next';
 import { computed, reactive, ref, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,8 @@ const selections = reactive<Record<string, string[]>>({});
 const saving = reactive<Record<string, boolean>>({});
 const searchTerm = ref('');
 const selectedGroup = ref<string>('all');
+const collapsedGroups = ref<Record<string, boolean>>({});
+const isSavingChanges = ref(false);
 
 const syncSelections = () => {
     Object.keys(selections).forEach((key) => {
@@ -31,6 +33,20 @@ const syncSelections = () => {
 };
 
 watch(() => props.roles, syncSelections, { immediate: true, deep: true });
+
+watch(
+    () => props.permissionGroups,
+    (groups) => {
+        const groupKeys = new Set(groups.map((group) => group.key));
+
+        Object.keys(collapsedGroups.value).forEach((key) => {
+            if (!groupKeys.has(key)) {
+                delete collapsedGroups.value[key];
+            }
+        });
+    },
+    { immediate: true, deep: true },
+);
 
 const normalizedSearch = computed(() => searchTerm.value.trim().toLowerCase());
 
@@ -62,16 +78,7 @@ const visibleGroups = computed(() =>
 );
 
 const visibleRoles = computed(() =>
-    props.roles.filter((role) => {
-        if (normalizedSearch.value === '') {
-            return true;
-        }
-
-        return [role.label, role.name]
-            .join(' ')
-            .toLowerCase()
-            .includes(normalizedSearch.value);
-    }),
+    props.roles.filter((role) => role.name !== 'admin'),
 );
 
 const isChecked = (roleName: string, permissionName: string) =>
@@ -112,21 +119,57 @@ const dirtyRoles = computed(() =>
     visibleRoles.value.filter((role) => isDirty(role)),
 );
 
-const saveRole = (role: RolePermissionRow) => {
+const isGroupCollapsed = (groupKey: string) =>
+    collapsedGroups.value[groupKey] ?? false;
+
+const toggleGroup = (groupKey: string) => {
+    collapsedGroups.value[groupKey] = !isGroupCollapsed(groupKey);
+};
+
+type RoleSavePayload = {
+    id: number;
+    name: string;
+    permissions: string[];
+};
+
+const saveQueuedRoles = (roles: RoleSavePayload[], index = 0) => {
+    const role = roles[index];
+
+    if (!role) {
+        isSavingChanges.value = false;
+        return;
+    }
+
     saving[role.name] = true;
 
     router.patch(
         `/Admin_acc_mgmt/roles/${role.id}`,
         {
-            permissions: selections[role.name] ?? [],
+            permissions: role.permissions,
         },
         {
             preserveScroll: true,
             onFinish: () => {
                 saving[role.name] = false;
+                saveQueuedRoles(roles, index + 1);
             },
         },
     );
+};
+
+const saveDirtyRoles = () => {
+    const roles = dirtyRoles.value.map((role) => ({
+        id: role.id,
+        name: role.name,
+        permissions: [...(selections[role.name] ?? [])],
+    }));
+
+    if (roles.length === 0 || isSavingChanges.value) {
+        return;
+    }
+
+    isSavingChanges.value = true;
+    saveQueuedRoles(roles);
 };
 </script>
 
@@ -153,35 +196,6 @@ const saveRole = (role: RolePermissionRow) => {
                     Related permissions are added automatically when saved.
                 </p>
             </div>
-
-            <div
-                class="grid w-full grid-cols-3 gap-2 text-center text-[11px] sm:w-auto sm:min-w-56 sm:text-xs"
-            >
-                <div class="rounded-md border border-sidebar-border/70 p-2">
-                    <span
-                        class="block text-sm font-semibold text-foreground sm:text-base"
-                    >
-                        {{ props.roles.length }}
-                    </span>
-                    <span class="text-muted-foreground">Roles</span>
-                </div>
-                <div class="rounded-md border border-sidebar-border/70 p-2">
-                    <span
-                        class="block text-sm font-semibold text-foreground sm:text-base"
-                    >
-                        {{ props.permissionGroups.length }}
-                    </span>
-                    <span class="text-muted-foreground">Groups</span>
-                </div>
-                <div class="rounded-md border border-sidebar-border/70 p-2">
-                    <span
-                        class="block text-sm font-semibold text-foreground sm:text-base"
-                    >
-                        {{ dirtyRoles.length }}
-                    </span>
-                    <span class="text-muted-foreground">Unsaved</span>
-                </div>
-            </div>
         </div>
 
         <div
@@ -192,34 +206,6 @@ const saveRole = (role: RolePermissionRow) => {
                 placeholder="Search roles, permissions, descriptions"
                 class="min-w-0 text-sm"
             />
-            <div class="flex min-w-0 flex-wrap gap-2">
-                <button
-                    type="button"
-                    class="rounded-md border px-2.5 py-2 text-xs transition sm:px-3 sm:text-sm"
-                    :class="
-                        selectedGroup === 'all'
-                            ? 'border-primary bg-primary text-primary-foreground'
-                            : 'border-sidebar-border/70 bg-background text-muted-foreground hover:text-foreground'
-                    "
-                    @click="selectedGroup = 'all'"
-                >
-                    All
-                </button>
-                <button
-                    v-for="group in props.permissionGroups"
-                    :key="group.key"
-                    type="button"
-                    class="max-w-full rounded-md border px-2.5 py-2 text-xs break-words transition sm:px-3 sm:text-sm"
-                    :class="
-                        selectedGroup === group.key
-                            ? 'border-primary bg-primary text-primary-foreground'
-                            : 'border-sidebar-border/70 bg-background text-muted-foreground hover:text-foreground'
-                    "
-                    @click="selectedGroup = group.key"
-                >
-                    {{ group.label }}
-                </button>
-            </div>
         </div>
 
         <div
@@ -238,16 +224,18 @@ const saveRole = (role: RolePermissionRow) => {
                 </p>
                 <div class="flex min-w-0 flex-wrap gap-2">
                     <Button
-                        v-for="role in visibleRoles"
-                        :key="`save-${role.id}`"
                         type="button"
                         size="sm"
-                        :variant="isDirty(role) ? 'default' : 'outline'"
-                        :disabled="saving[role.name] || !isDirty(role)"
-                        @click="saveRole(role)"
+                        :variant="dirtyRoles.length > 0 ? 'default' : 'outline'"
+                        :disabled="isSavingChanges || dirtyRoles.length === 0"
+                        @click="saveDirtyRoles"
                     >
                         <Save class="mr-2 size-4" />
-                        {{ saving[role.name] ? 'Saving' : role.label }}
+                        {{
+                            isSavingChanges
+                                ? 'Saving'
+                                : `Save Changes (${dirtyRoles.length})`
+                        }}
                     </Button>
                 </div>
             </div>
@@ -296,97 +284,110 @@ const saveRole = (role: RolePermissionRow) => {
                                 <tr>
                                     <td
                                         :colspan="visibleRoles.length + 1"
-                                        class="border-b border-sidebar-border/70 bg-muted/30 px-3 py-2 sm:px-4"
+                                        class="border-b border-sidebar-border/70 bg-muted/35 p-0"
                                     >
-                                        <div
-                                            class="flex flex-wrap items-end justify-between gap-2"
+                                        <button
+                                            type="button"
+                                            class="flex w-full min-w-0 items-center gap-3 px-3 py-3 text-left transition hover:bg-muted/60 sm:px-4"
+                                            :aria-expanded="
+                                                !isGroupCollapsed(group.key)
+                                            "
+                                            @click="toggleGroup(group.key)"
                                         >
-                                            <div>
+                                            <ChevronRight
+                                                v-if="
+                                                    isGroupCollapsed(group.key)
+                                                "
+                                                class="size-4 shrink-0 text-muted-foreground"
+                                            />
+                                            <ChevronDown
+                                                v-else
+                                                class="size-4 shrink-0 text-muted-foreground"
+                                            />
+                                            <div class="min-w-0">
                                                 <p
-                                                    class="text-xs font-medium break-words text-foreground sm:text-sm"
+                                                    class="truncate text-xs font-semibold text-foreground uppercase sm:text-sm"
+                                                    :title="group.label"
                                                 >
                                                     {{ group.label }}
                                                 </p>
                                                 <p
-                                                    class="text-[11px] break-words text-muted-foreground sm:text-xs"
+                                                    class="truncate text-[11px] text-muted-foreground sm:text-xs"
+                                                    :title="group.description"
                                                 >
                                                     {{ group.description }}
                                                 </p>
                                             </div>
-                                            <span
-                                                class="text-[11px] text-muted-foreground sm:text-xs"
-                                            >
-                                                {{ group.permissions.length }}
-                                                permissions
-                                            </span>
-                                        </div>
+                                        </button>
                                     </td>
                                 </tr>
-                                <tr
-                                    v-for="permission in group.permissions"
-                                    :key="permission.name"
-                                    class="group"
-                                >
-                                    <td
-                                        class="sticky left-0 z-10 min-w-[14rem] border-r border-b border-sidebar-border/40 bg-background px-3 py-2 group-hover:bg-muted/20 sm:min-w-[20rem] sm:px-4"
+                                <template v-if="!isGroupCollapsed(group.key)">
+                                    <tr
+                                        v-for="permission in group.permissions"
+                                        :key="permission.name"
+                                        class="group"
                                     >
-                                        <p
-                                            class="text-xs font-medium break-words text-foreground sm:text-sm"
+                                        <td
+                                            class="sticky left-0 z-10 min-w-[14rem] border-r border-b border-sidebar-border/40 bg-background px-3 py-2 group-hover:bg-muted/20 sm:min-w-[20rem] sm:px-4"
                                         >
-                                            {{ permission.label }}
-                                        </p>
-                                        <p
-                                            class="mt-0.5 text-[11px] text-muted-foreground/70"
+                                            <p
+                                                class="text-xs font-medium break-words text-foreground sm:text-sm"
+                                            >
+                                                {{ permission.label }}
+                                            </p>
+                                            <p
+                                                class="mt-0.5 text-[11px] text-muted-foreground/70"
+                                            >
+                                                {{ permission.name }}
+                                            </p>
+                                        </td>
+                                        <td
+                                            v-for="role in visibleRoles"
+                                            :key="`${role.id}-${permission.name}`"
+                                            class="border-r border-b border-sidebar-border/40 px-2 py-2 text-center group-hover:bg-muted/20 sm:px-3"
                                         >
-                                            {{ permission.name }}
-                                        </p>
-                                    </td>
-                                    <td
-                                        v-for="role in visibleRoles"
-                                        :key="`${role.id}-${permission.name}`"
-                                        class="border-r border-b border-sidebar-border/40 px-2 py-2 text-center group-hover:bg-muted/20 sm:px-3"
-                                    >
-                                        <button
-                                            type="button"
-                                            class="mx-auto inline-flex h-8 w-12 items-center justify-center rounded-full border transition sm:w-14"
-                                            :class="
-                                                isChecked(
-                                                    role.name,
-                                                    permission.name,
-                                                )
-                                                    ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-700'
-                                                    : 'border-sidebar-border/70 bg-muted/20 text-muted-foreground hover:bg-muted/40'
-                                            "
-                                            :aria-pressed="
-                                                isChecked(
-                                                    role.name,
-                                                    permission.name,
-                                                )
-                                            "
-                                            :aria-label="`${role.label} ${permission.label}`"
-                                            @click="
-                                                toggleFromCell(
-                                                    role,
-                                                    permission.name,
-                                                )
-                                            "
-                                        >
-                                            <Check
-                                                v-if="
+                                            <button
+                                                type="button"
+                                                class="mx-auto inline-flex h-8 w-12 items-center justify-center rounded-full border transition sm:w-14"
+                                                :class="
+                                                    isChecked(
+                                                        role.name,
+                                                        permission.name,
+                                                    )
+                                                        ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-700'
+                                                        : 'border-sidebar-border/70 bg-muted/20 text-muted-foreground hover:bg-muted/40'
+                                                "
+                                                :aria-pressed="
                                                     isChecked(
                                                         role.name,
                                                         permission.name,
                                                     )
                                                 "
-                                                class="size-4"
-                                            />
-                                            <span
-                                                v-else
-                                                class="h-0.5 w-4 rounded bg-current"
-                                            />
-                                        </button>
-                                    </td>
-                                </tr>
+                                                :aria-label="`${role.label} ${permission.label}`"
+                                                @click="
+                                                    toggleFromCell(
+                                                        role,
+                                                        permission.name,
+                                                    )
+                                                "
+                                            >
+                                                <Check
+                                                    v-if="
+                                                        isChecked(
+                                                            role.name,
+                                                            permission.name,
+                                                        )
+                                                    "
+                                                    class="size-4"
+                                                />
+                                                <span
+                                                    v-else
+                                                    class="h-0.5 w-4 rounded bg-current"
+                                                />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
                             </template>
                         </tbody>
                     </table>

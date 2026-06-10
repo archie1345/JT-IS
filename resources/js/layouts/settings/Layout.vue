@@ -14,22 +14,22 @@ import type { NavItem } from '@/types';
 
 const sidebarNavItems: NavItem[] = [
     {
-        title: 'Profile',
+        title: 'Profil',
         href: editProfile(),
         icon: UserRound,
     },
     {
-        title: 'Password',
+        title: 'Kata Sandi',
         href: editPassword(),
         icon: KeyRound,
     },
     {
-        title: 'Two-factor auth',
+        title: 'Keamanan Akun',
         href: show(),
         icon: ShieldCheck,
     },
     {
-        title: 'Appearance',
+        title: 'Tampilan',
         href: editAppearance(),
         icon: Palette,
     },
@@ -41,15 +41,15 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
 <template>
     <div class="px-4 py-6">
         <Heading
-            title="Settings"
-            description="Manage your profile and account settings"
+            title="Pengaturan"
+            description="Kelola profil, kata sandi, keamanan, dan tampilan akun."
         />
 
         <div class="flex flex-col lg:flex-row lg:space-x-12">
             <aside class="w-full max-w-xl lg:w-48">
                 <nav
                     class="flex flex-col space-y-1 space-x-0"
-                    aria-label="Settings"
+                    aria-label="Pengaturan"
                 >
                     <Link
                         v-for="item in sidebarNavItems"

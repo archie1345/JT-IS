@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, useSlots } from 'vue';
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
-import { ExternalLink, Trash2 } from 'lucide-vue-next';
+import { ExternalLink, Trash2, Upload } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
 import DocumentUploadPanel from '@/components/shared/DocumentUploadPanel.vue';
 import DataTable, {
@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
@@ -109,17 +110,22 @@ const props = withDefaults(
         uploadConnectionOptions: () => [],
         pagination: null,
         ocrConfigured: true,
-        ocrUnavailableMessage: 'OCR belum aktif. Dokumen tetap bisa diunggah, lanjutkan input manual.',
+        ocrUnavailableMessage:
+            'OCR belum aktif. Dokumen tetap bisa diunggah, lanjutkan input manual.',
     },
 );
 
 const page = usePage<SharedOcrProps>();
 const ocrConfig = computed<OcrConfig>(() => ({
-    configured: props.ocrConfigured ?? page.props.features?.ocr?.configured ?? true,
-    unavailableMessage: props.ocrUnavailableMessage ?? page.props.features?.ocr?.unavailableMessage,
+    configured:
+        props.ocrConfigured ?? page.props.features?.ocr?.configured ?? true,
+    unavailableMessage:
+        props.ocrUnavailableMessage ??
+        page.props.features?.ocr?.unavailableMessage,
 }));
 
 const isOpen = ref(false);
+const isUploadOpen = ref(false);
 const editingId = ref<null | number>(null);
 const deletingId = ref<null | number>(null);
 const slots = useSlots();
@@ -160,8 +166,34 @@ const ocrMessage = computed(() => {
  * Hide for RAB and RAP components
  */
 const shouldShowCreateButton = computed(() => {
-    return props.uploadComponentType !== 'rab' && props.uploadComponentType !== 'rap';
+    return (
+        props.uploadComponentType !== 'rab' &&
+        props.uploadComponentType !== 'rap'
+    );
 });
+
+const shouldUseImportDialog = computed(() =>
+    Boolean(props.uploadComponentType),
+);
+
+const importDocumentLabels: Record<string, string> = {
+    invoice: 'Invoice',
+    pipeline: 'Pipeline',
+    project_cost: 'Project Cost',
+    progress_report: 'Progress Report',
+    rab: 'RAB',
+    rap: 'RAP',
+};
+
+const importDocumentName = computed(
+    () =>
+        importDocumentLabels[props.uploadComponentType] ??
+        props.uploadComponentType
+            .split(/[-_]/)
+            .filter(Boolean)
+            .map((word) => `${word.charAt(0).toUpperCase()}${word.slice(1)}`)
+            .join(' '),
+);
 
 const blankState = computed<Record<string, FormValue>>(() =>
     Object.fromEntries(props.fields.map((field) => [field.name, ''])),
@@ -342,6 +374,15 @@ const goToPage = (page: number) => {
                 @create="openCreate"
             >
                 <template #toolbar-actions>
+                    <Button
+                        v-if="shouldUseImportDialog"
+                        type="button"
+                        variant="outline"
+                        @click="isUploadOpen = true"
+                    >
+                        <Upload class="size-4" />
+                        Import Documents
+                    </Button>
                     <slot name="toolbar-actions" />
                 </template>
 
@@ -436,22 +477,34 @@ const goToPage = (page: number) => {
                     </Button>
                 </div>
             </div>
-
-            <section
-                v-if="props.uploadComponentType"
-                class="min-w-0 overflow-hidden rounded-xl border border-sidebar-border/70 bg-background/80 p-3 shadow-sm sm:rounded-2xl sm:p-5"
-            >
-                <DocumentUploadPanel
-                    :project-id="props.uploadProjectId"
-                    :project-options="props.projectOptions"
-                    :component-type="props.uploadComponentType"
-                    :connection-options="props.uploadConnectionOptions"
-                    :documents="props.uploadedDocuments"
-                    title="Supporting Documents"
-                    description="Upload supporting files and link them to the selected project and monitoring record."
-                />
-            </section>
         </div>
+
+        <Dialog v-model:open="isUploadOpen">
+            <DialogContent
+                class="flex max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] !max-w-4xl flex-col overflow-hidden p-4 sm:p-6"
+            >
+                <DialogHeader class="shrink-0">
+                    <DialogTitle>
+                        Import {{ importDocumentName }} Documents
+                    </DialogTitle>
+                    <DialogDescription>
+                        Choose the upload location before selecting documents.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div class="min-h-0 flex-1 overflow-y-auto pr-1">
+                    <DocumentUploadPanel
+                        :project-id="props.uploadProjectId"
+                        :project-options="props.projectOptions"
+                        :component-type="props.uploadComponentType"
+                        :connection-options="props.uploadConnectionOptions"
+                        :documents="props.uploadedDocuments"
+                        :title="`Import ${importDocumentName} Document`"
+                        description="Select a file or drop it into the upload area."
+                    />
+                </div>
+            </DialogContent>
+        </Dialog>
 
         <Dialog v-model:open="isOpen">
             <DialogContent

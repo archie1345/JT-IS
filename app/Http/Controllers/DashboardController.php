@@ -24,7 +24,7 @@ class DashboardController extends Controller
                 'monthlyCosts' => $this->monthlyCosts(),
                 'progressTrend' => $this->progressTrend(),
                 'totals' => $this->totals(),
-                'mvpSummary' => $this->mvpSummary(),
+                'projectSummary' => $this->projectSummary(),
                 'problemProjects' => $this->problemProjects(),
                 'recentProjects' => $this->recentProjects(),
                 'recentProgress' => $this->recentProgress(),
@@ -140,20 +140,38 @@ class DashboardController extends Controller
         ];
     }
 
-    private function mvpSummary(): array
+    private function projectSummary(): array
     {
         $projects = Project::query()->get();
-        $statuses = $projects->map(fn (Project $project): string => $project->mvpStatus());
+        $statuses = $projects->map(
+            fn (Project $project): string => $project->projectHealthStatus()
+        );
 
         return [
-            ['label' => 'Total Nilai Kontrak', 'value' => (float) $projects->sum('contract_value'), 'format' => 'currency'],
-            ['label' => 'Proyek Aktif', 'value' => (float) $projects->whereIn('status', ['planning', 'ongoing'])->count(), 'format' => 'number'],
-            ['label' => 'Total Realisasi Biaya', 'value' => (float) ProjectCost::query()->sum('amount'), 'format' => 'currency'],
-            ['label' => 'Total Tagihan', 'value' => (float) Invoice::query()->sum('amount'), 'format' => 'currency'],
-            ['label' => 'Total Pembayaran', 'value' => (float) Payment::query()->sum('amount'), 'format' => 'currency'],
-            ['label' => 'Tagihan Jatuh Tempo', 'value' => (float) Invoice::query()->where('status', 'overdue')->count(), 'format' => 'number'],
-            ['label' => 'Proyek Warning', 'value' => (float) $statuses->filter(fn (string $status): bool => $status === 'Warning')->count(), 'format' => 'number'],
-            ['label' => 'Proyek Critical', 'value' => (float) $statuses->filter(fn (string $status): bool => $status === 'Critical')->count(), 'format' => 'number'],
+            [
+                'label' => 'Proyek Aktif',
+                'value' => (float) $projects
+                    ->whereIn('status', ['planning', 'ongoing'])
+                    ->count(),
+                'format' => 'number',
+                'tone' => 'success',
+            ],
+            [
+                'label' => 'Proyek Warning',
+                'value' => (float) $statuses
+                    ->filter(fn (string $status): bool => $status === 'Warning')
+                    ->count(),
+                'format' => 'number',
+                'tone' => 'warning',
+            ],
+            [
+                'label' => 'Proyek Critical',
+                'value' => (float) $statuses
+                    ->filter(fn (string $status): bool => $status === 'Critical')
+                    ->count(),
+                'format' => 'number',
+                'tone' => 'critical',
+            ],
         ];
     }
 
@@ -168,8 +186,8 @@ class DashboardController extends Controller
                     'id' => $project->id,
                     'name' => $project->name ?? 'Untitled project',
                     'client' => $project->client?->name ?? '-',
-                    'status' => $project->mvpStatus(),
-                    'warnings' => $project->mvpWarnings(),
+                    'status' => $project->projectHealthStatus(),
+                    'warnings' => $project->projectHealthWarnings(),
                     'contractValue' => (float) ($project->contract_value ?? 0),
                     'realizedCost' => $project->realizedCostTotal(),
                     'rapTotal' => $project->rapTotal(),
@@ -192,7 +210,7 @@ class DashboardController extends Controller
                 'id' => $project->id,
                 'name' => $project->name ?? 'Untitled project',
                 'client' => $project->client?->name ?? '-',
-                'status' => $project->mvpStatus(),
+                'status' => $project->projectHealthStatus(),
                 'dbStatus' => $project->status,
                 'approvedProgress' => $project->latestApprovedProgressPercent() ?? 0,
                 'endDate' => optional($project->end_date)->format('Y-m-d'),

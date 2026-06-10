@@ -46,7 +46,7 @@ const getProjectStatusClass = (status: ProjectItem['projectStatus']) =>
             'bg-emerald-500/15 text-emerald-500 ring-1 ring-emerald-500/25',
     })[status];
 
-const getMvpStatusClass = (status: string) =>
+const getProjectHealthStatusClass = (status: string) =>
     ({
         'On Track':
             'bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/25',
@@ -104,10 +104,10 @@ const projectColumns = [
             (row as ProjectItem).projectStatus,
     },
     {
-        key: 'mvpStatus',
-        label: 'MVP Status',
+        key: 'projectHealthStatus',
+        label: 'Health Status',
         accessor: (row: Record<string, unknown>) =>
-            (row as ProjectItem).mvpStatus ?? 'On Track',
+            (row as ProjectItem).projectHealthStatus ?? 'On Track',
     },
 ] satisfies SpreadsheetColumn[];
 </script>
@@ -119,12 +119,7 @@ const projectColumns = [
         :rows="rows"
         :columns="projectColumns"
         :breadcrumbs="breadcrumbs"
-        description="Monitor active contracts, payment condition, project status, and MVP warning level."
-        :note="
-            props.activeClientId
-                ? `Showing projects for client ID ${props.activeClientId}`
-                : ''
-        "
+        description="Monitor active contracts, payment condition, project status, and project health warning level."
         row-key-field="id"
         create-label="New Project"
         show-create-button
@@ -140,10 +135,12 @@ const projectColumns = [
                 }).format(Number(value ?? 0))
             }}
         </template>
-        <template #cell-mvpStatus="{ value }">
+        <template #cell-projectHealthStatus="{ value }">
             <span
                 class="inline-flex rounded-full px-2 py-1 text-xs font-medium"
-                :class="getMvpStatusClass(String(value ?? 'On Track'))"
+                :class="
+                    getProjectHealthStatusClass(String(value ?? 'On Track'))
+                "
             >
                 {{ value ?? 'On Track' }}
             </span>

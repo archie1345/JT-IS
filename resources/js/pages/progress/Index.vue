@@ -137,7 +137,6 @@ const fields = [
         :upload-connection-options="uploadConnectionOptions"
         :pagination="props.pagination"
         create-label="New Progress Report"
-        :note="`${props.pagination.total} progress reports recorded`"
     >
         <template #cell-approved_by_client="{ value }">
             {{ value === '1' || value === 1 ? 'Yes' : 'No' }}

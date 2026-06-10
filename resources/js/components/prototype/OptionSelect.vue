@@ -7,6 +7,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import TextPreview from '@/components/shared/TextPreview.vue';
 
 type Option = {
     value: number | string;
@@ -42,30 +43,55 @@ const selectValue = computed({
             props.allowEmpty && value === EMPTY_SELECT_VALUE ? '' : value;
     },
 });
+
+const selectedTitle = computed(() => {
+    if (props.allowEmpty && selectValue.value === EMPTY_SELECT_VALUE) {
+        return props.emptyLabel;
+    }
+
+    const option = props.options.find(
+        (item) => String(item.value) === selectValue.value,
+    );
+
+    if (!option) {
+        return props.placeholder;
+    }
+
+    return option.hint ? `${option.label} - ${option.hint}` : option.label;
+});
 </script>
 
 <template>
     <Select v-model="selectValue">
-        <SelectTrigger :id="props.triggerId" class="w-full">
+        <SelectTrigger
+            :id="props.triggerId"
+            class="w-full min-w-0"
+            :title="selectedTitle"
+        >
             <SelectValue :placeholder="props.placeholder" />
         </SelectTrigger>
         <SelectContent>
             <SelectItem v-if="props.allowEmpty" :value="EMPTY_SELECT_VALUE">
-                {{ props.emptyLabel }}
+                <TextPreview :text="props.emptyLabel" :max="42" />
             </SelectItem>
             <SelectItem
                 v-for="option in props.options"
                 :key="String(option.value)"
                 :value="String(option.value)"
+                :title="
+                    option.hint
+                        ? `${option.label} - ${option.hint}`
+                        : option.label
+                "
             >
-                <span class="min-w-0">
-                    <span class="block truncate">{{ option.label }}</span>
-                    <span
+                <span class="max-w-72 min-w-0 overflow-hidden">
+                    <TextPreview :text="option.label" :max="42" />
+                    <TextPreview
                         v-if="option.hint"
-                        class="block truncate text-xs text-muted-foreground"
-                    >
-                        {{ option.hint }}
-                    </span>
+                        :text="option.hint"
+                        :max="48"
+                        class="text-xs text-muted-foreground"
+                    />
                 </span>
             </SelectItem>
         </SelectContent>

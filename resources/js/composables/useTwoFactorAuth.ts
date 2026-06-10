@@ -56,20 +56,24 @@ export const useTwoFactorAuth = (): UseTwoFactorAuthReturn => {
 
     const fetchQrCode = async (): Promise<void> => {
         try {
-            const { svg } = await fetchJson<{ svg: string; url: string }>(qrCode.url());
+            const { svg } = await fetchJson<{ svg: string; url: string }>(
+                qrCode.url(),
+            );
             qrCodeSvg.value = svg;
         } catch {
-            errors.value.push('Failed to fetch QR code');
+            errors.value.push('Gagal memuat kode QR');
             qrCodeSvg.value = null;
         }
     };
 
     const fetchSetupKey = async (): Promise<void> => {
         try {
-            const { secretKey: key } = await fetchJson<{ secretKey: string }>(secretKey.url());
+            const { secretKey: key } = await fetchJson<{ secretKey: string }>(
+                secretKey.url(),
+            );
             manualSetupKey.value = key;
         } catch {
-            errors.value.push('Failed to fetch a setup key');
+            errors.value.push('Gagal memuat kunci setup');
             manualSetupKey.value = null;
         }
     };
@@ -77,9 +81,11 @@ export const useTwoFactorAuth = (): UseTwoFactorAuthReturn => {
     const fetchRecoveryCodes = async (): Promise<void> => {
         try {
             clearErrors();
-            recoveryCodesList.value = await fetchJson<string[]>(recoveryCodes.url());
+            recoveryCodesList.value = await fetchJson<string[]>(
+                recoveryCodes.url(),
+            );
         } catch {
-            errors.value.push('Failed to fetch recovery codes');
+            errors.value.push('Gagal memuat kode pemulihan');
             recoveryCodesList.value = [];
         }
     };

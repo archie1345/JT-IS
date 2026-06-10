@@ -165,12 +165,12 @@ class Project extends Model
             ->exists();
     }
 
-    public function mvpWarnings(): array
+    public function projectHealthWarnings(): array
     {
         return app(ProjectStatusService::class)->warnings($this);
     }
 
-    public function mvpStatus(): string
+    public function projectHealthStatus(): string
     {
         return app(ProjectStatusService::class)->status($this);
     }

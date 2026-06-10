@@ -85,10 +85,10 @@ const invoiceStyle = computed(() => ({
 
 <template>
     <section
-        class="invoice-print-area max-w-full overflow-x-auto rounded-lg bg-muted/30 p-3"
+        class="invoice-print-area max-w-full overflow-x-hidden rounded-lg bg-muted/30 p-3"
     >
         <div
-            class="invoice-sheet mx-auto flex min-h-[297mm] w-[210mm] flex-col bg-white text-[#111827] shadow-lg"
+            class="invoice-sheet mx-auto flex min-h-[297mm] w-full max-w-[210mm] flex-col bg-white text-[#111827] shadow-lg"
             :style="invoiceStyle"
         >
             <div
@@ -235,7 +235,9 @@ const invoiceStyle = computed(() => ({
                     class="overflow-hidden rounded-lg border"
                     :style="{ borderColor: 'var(--invoice-border)' }"
                 >
-                    <table class="w-full table-fixed border-collapse">
+                    <table
+                        class="invoice-line-table w-full table-fixed border-collapse"
+                    >
                         <colgroup>
                             <col
                                 :style="{
@@ -264,28 +266,36 @@ const invoiceStyle = computed(() => ({
                             }"
                         >
                             <tr>
-                                <th class="px-4 py-3 text-left align-top">
+                                <th
+                                    class="invoice-wrap px-3 py-3 text-left align-top sm:px-4"
+                                >
                                     Description
                                 </th>
                                 <th
                                     v-if="props.variant === 'summary'"
-                                    class="px-4 py-3 text-left align-top"
+                                    class="invoice-wrap px-3 py-3 text-left align-top sm:px-4"
                                 >
                                     Project
                                 </th>
-                                <th class="px-4 py-3 text-right align-top">
+                                <th
+                                    class="invoice-wrap px-2 py-3 text-right align-top sm:px-4"
+                                >
                                     Qty
                                 </th>
                                 <th
                                     v-if="props.variant === 'detail'"
-                                    class="px-4 py-3 text-left align-top"
+                                    class="invoice-wrap px-2 py-3 text-left align-top sm:px-4"
                                 >
                                     Unit
                                 </th>
-                                <th class="px-4 py-3 text-right align-top">
+                                <th
+                                    class="invoice-wrap px-2 py-3 text-right align-top sm:px-4"
+                                >
                                     Unit Price
                                 </th>
-                                <th class="px-4 py-3 text-right align-top">
+                                <th
+                                    class="invoice-wrap px-2 py-3 text-right align-top sm:px-4"
+                                >
                                     Amount
                                 </th>
                             </tr>
@@ -299,7 +309,7 @@ const invoiceStyle = computed(() => ({
                                     borderColor: 'var(--invoice-border)',
                                 }"
                             >
-                                <td class="px-4 py-3 align-top">
+                                <td class="px-3 py-3 align-top sm:px-4">
                                     <p class="invoice-wrap font-medium">
                                         {{ item.description || '-' }}
                                     </p>
@@ -312,7 +322,7 @@ const invoiceStyle = computed(() => ({
                                 </td>
                                 <td
                                     v-if="props.variant === 'summary'"
-                                    class="invoice-wrap px-4 py-3 align-top"
+                                    class="invoice-wrap px-3 py-3 align-top sm:px-4"
                                 >
                                     {{
                                         item.projectName ||
@@ -320,19 +330,25 @@ const invoiceStyle = computed(() => ({
                                         '-'
                                     }}
                                 </td>
-                                <td class="px-4 py-3 text-right align-top">
+                                <td
+                                    class="invoice-wrap px-2 py-3 text-right align-top sm:px-4"
+                                >
                                     {{ item.quantity ?? 1 }}
                                 </td>
                                 <td
                                     v-if="props.variant === 'detail'"
-                                    class="invoice-wrap px-4 py-3 align-top"
+                                    class="invoice-wrap px-2 py-3 align-top sm:px-4"
                                 >
                                     {{ item.unit || '-' }}
                                 </td>
-                                <td class="px-4 py-3 text-right align-top">
+                                <td
+                                    class="invoice-wrap px-2 py-3 text-right align-top sm:px-4"
+                                >
                                     {{ formatCurrency(item.unitPrice) }}
                                 </td>
-                                <td class="px-4 py-3 text-right align-top">
+                                <td
+                                    class="invoice-wrap px-2 py-3 text-right align-top sm:px-4"
+                                >
                                     {{ formatCurrency(item.totalPrice) }}
                                 </td>
                             </tr>

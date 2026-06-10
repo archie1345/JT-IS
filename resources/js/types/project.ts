@@ -1,5 +1,9 @@
 export type ProjectStatus = 'planning' | 'ongoing' | 'completed';
-export type MvpStatus = 'On Track' | 'Warning' | 'Critical' | 'On Hold';
+export type ProjectHealthStatus =
+    | 'On Track'
+    | 'Warning'
+    | 'Critical'
+    | 'On Hold';
 export type PaymentStatus = 'pending' | 'paid' | 'overdue' | 'partial';
 export type Mode = 'create' | 'edit';
 
@@ -7,13 +11,6 @@ export type ClientOption = {
     id: number;
     name: string;
     contact: null | string;
-};
-
-export type DocumentItem = {
-    label: string;
-    detail: string;
-    status: 'available' | 'missing';
-    url: null | string;
 };
 
 export type UploadedDocument = {
@@ -44,6 +41,31 @@ export type DocumentConnectionOption = {
     projectId?: null | number;
 };
 
+export type ProjectDocumentGroupRecord = {
+    id: number;
+    title: string;
+    detail: string;
+    value?: null | string;
+    url: string;
+};
+
+export type ProjectDocumentGroup = {
+    key: string;
+    label: string;
+    description: string;
+    count: number;
+    listUrl: string;
+    createKind?:
+        | 'rab'
+        | 'rap'
+        | 'progress_report'
+        | 'invoice'
+        | 'project_cost'
+        | 'pipeline'
+        | 'fund_request';
+    records: ProjectDocumentGroupRecord[];
+};
+
 export type ProgressSnapshot = {
     reportScore: number;
     projectStatusScore: number;
@@ -63,7 +85,7 @@ export type ProjectDetails = {
     startDate: null | string;
     endDate: null | string;
     status: ProjectStatus;
-    mvpStatus?: MvpStatus;
+    projectHealthStatus?: ProjectHealthStatus;
     warnings?: Array<{ type: string; level: string; message: string }>;
     rabTotal?: number;
     rapTotal?: number;
@@ -83,7 +105,7 @@ export type ProjectItem = {
     deadline: string;
     paymentStatus: PaymentStatus;
     projectStatus: ProjectStatus;
-    mvpStatus?: MvpStatus;
+    projectHealthStatus?: ProjectHealthStatus;
 };
 
 export type ProjectsPageProps = {

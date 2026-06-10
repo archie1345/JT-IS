@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { computed, onMounted, shallowRef, nextTick } from 'vue';
+import { computed, nextTick, onMounted, ref, shallowRef } from 'vue';
 import {
     ArrowLeft,
     CircleAlert,
     FileText,
-    FolderOpen,
     Plus,
     Save,
     MapPin,
@@ -14,7 +13,9 @@ import {
 import AppLayout from '@/layouts/AppLayout.vue';
 import EntityDetailHero from '@/components/entity/EntityDetailHero.vue';
 import EntityPageSection from '@/components/entity/EntityPageSection.vue';
-import DocumentUploadPanel from '@/components/shared/DocumentUploadPanel.vue';
+import ProjectDocumentCreateDialog from '@/components/projects/ProjectDocumentCreateDialog.vue';
+import ProjectHealthSummary from '@/components/projects/ProjectHealthSummary.vue';
+import ProjectRelatedDataSection from '@/components/projects/ProjectRelatedDataSection.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,11 +31,11 @@ import type { BreadcrumbItem } from '@/types';
 import type {
     ClientOption,
     DocumentConnectionOption,
-    DocumentItem,
     Mode,
     PaymentStatus,
     ProgressSnapshot,
     ProjectDetails,
+    ProjectDocumentGroup,
     ProjectStatus,
     UploadedDocument,
 } from '@/types/project';
@@ -51,7 +52,7 @@ const props = defineProps<{
         longitude?: number | null;
     };
     clients: ClientOption[];
-    documents: DocumentItem[];
+    documentGroups: ProjectDocumentGroup[];
     progress: ProgressSnapshot;
     recentReport: {
         date: string | null;
@@ -131,6 +132,9 @@ const form = useForm({
     status: props.project.status,
     payment_status: props.project.paymentStatus,
 });
+
+const isDocumentCreateOpen = ref(false);
+const activeDocumentGroup = ref<ProjectDocumentGroup | null>(null);
 
 const mapContainer = shallowRef<HTMLElement | null>(null);
 let map: L.Map;
@@ -213,7 +217,7 @@ const formatPaymentStatus = (status: PaymentStatus) =>
     paymentStatusOptions.find((option) => option.value === status)?.label ??
     status;
 
-const getMvpStatusClass = (status: string) =>
+const getProjectHealthStatusClass = (status: string) =>
     ({
         'On Track':
             'bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/25',
@@ -269,9 +273,21 @@ const backToProjects = () => {
     router.get('/projects');
 };
 
-const openDocument = (document: DocumentItem) => {
-    if (!document.url) return;
-    router.visit(document.url);
+const openGroupCreate = (group: ProjectDocumentGroup) => {
+    if (!group.createKind) {
+        return;
+    }
+
+    activeDocumentGroup.value = group;
+    isDocumentCreateOpen.value = true;
+};
+
+const setDocumentCreateOpen = (open: boolean) => {
+    isDocumentCreateOpen.value = open;
+
+    if (!open) {
+        activeDocumentGroup.value = null;
+    }
 };
 
 const getCurrentLocation = () => {
@@ -323,6 +339,11 @@ const getCurrentLocation = () => {
             <section
                 class="flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-hidden rounded-xl border border-sidebar-border/70 bg-background/80 p-3 shadow-sm sm:rounded-2xl sm:p-5"
             >
+                <ProjectHealthSummary
+                    v-if="!isCreateMode"
+                    :project="props.project"
+                />
+
                 <div
                     class="grid min-h-0 min-w-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]"
                 >
@@ -335,10 +356,13 @@ const getCurrentLocation = () => {
                                     ? 'Fill in the project data and save it to the database.'
                                     : 'Edit the project details and save your updates to the database.'
                             "
-                            :badge-text="props.project.mvpStatus ?? 'On Track'"
+                            :badge-text="
+                                props.project.projectHealthStatus ?? 'On Track'
+                            "
                             :badge-class="
-                                getMvpStatusClass(
-                                    props.project.mvpStatus ?? 'On Track',
+                                getProjectHealthStatusClass(
+                                    props.project.projectHealthStatus ??
+                                        'On Track',
                                 )
                             "
                             metric-label="BAMC Progress"
@@ -477,86 +501,6 @@ const getCurrentLocation = () => {
                             </div>
                         </EntityPageSection>
 
-                        <EntityPageSection
-                            v-if="!isCreateMode"
-                            title="MVP Monitoring Summary"
-                            :icon="FileText"
-                        >
-                            <div class="grid gap-3 sm:grid-cols-2">
-                                <div class="rounded-xl bg-muted/30 p-4">
-                                    <p
-                                        class="text-xs tracking-[0.18em] text-muted-foreground uppercase"
-                                    >
-                                        RAB Total
-                                    </p>
-                                    <p
-                                        class="mt-1 text-sm font-medium text-foreground"
-                                    >
-                                        {{
-                                            formatCurrency(
-                                                props.project.rabTotal ?? 0,
-                                            )
-                                        }}
-                                    </p>
-                                </div>
-                                <div class="rounded-xl bg-muted/30 p-4">
-                                    <p
-                                        class="text-xs tracking-[0.18em] text-muted-foreground uppercase"
-                                    >
-                                        RAP Total
-                                    </p>
-                                    <p
-                                        class="mt-1 text-sm font-medium text-foreground"
-                                    >
-                                        {{
-                                            formatCurrency(
-                                                props.project.rapTotal ?? 0,
-                                            )
-                                        }}
-                                    </p>
-                                </div>
-                                <div class="rounded-xl bg-muted/30 p-4">
-                                    <p
-                                        class="text-xs tracking-[0.18em] text-muted-foreground uppercase"
-                                    >
-                                        Realized Cost
-                                    </p>
-                                    <p
-                                        class="mt-1 text-sm font-medium text-foreground"
-                                    >
-                                        {{
-                                            formatCurrency(
-                                                props.project
-                                                    .realizedCostTotal ?? 0,
-                                            )
-                                        }}
-                                    </p>
-                                </div>
-                                <div class="rounded-xl bg-muted/30 p-4">
-                                    <p
-                                        class="text-xs tracking-[0.18em] text-muted-foreground uppercase"
-                                    >
-                                        Latest Progress
-                                    </p>
-                                    <p
-                                        class="mt-1 text-sm font-medium text-foreground"
-                                    >
-                                        {{
-                                            props.project
-                                                .latestProgressPercent ?? 0
-                                        }}%
-                                        <span class="text-muted-foreground">
-                                            {{
-                                                props.project
-                                                    .latestProgressApproved
-                                                    ? 'approved'
-                                                    : 'draft/unofficial'
-                                            }}
-                                        </span>
-                                    </p>
-                                </div>
-                            </div>
-                        </EntityPageSection>
                         <EntityPageSection>
                             <div class="space-y-3">
                                 <div class="flex items-center justify-between">
@@ -805,76 +749,24 @@ const getCurrentLocation = () => {
                                 ></div>
                             </div>
                         </EntityPageSection>
-
-                        <EntityPageSection
-                            title="Project Documents"
-                            :icon="FolderOpen"
-                        >
-                            <div
-                                v-if="isCreateMode"
-                                class="rounded-xl border border-dashed border-sidebar-border/70 bg-muted/20 p-4 text-sm text-muted-foreground"
-                            >
-                                Save the project first, then upload documents
-                                here.
-                            </div>
-                            <div v-else class="space-y-4">
-                                <div class="space-y-3">
-                                    <button
-                                        v-for="document in props.documents"
-                                        :key="document.label"
-                                        type="button"
-                                        class="flex w-full items-start justify-between gap-4 rounded-xl border border-sidebar-border/70 bg-background px-4 py-3 text-left transition hover:bg-muted/40"
-                                        :class="{ 'opacity-60': !document.url }"
-                                        :disabled="!document.url"
-                                        @click="openDocument(document)"
-                                    >
-                                        <div class="min-w-0">
-                                            <p
-                                                class="text-sm font-medium text-foreground"
-                                            >
-                                                {{ document.label }}
-                                            </p>
-                                            <p
-                                                class="text-xs text-muted-foreground"
-                                            >
-                                                {{ document.detail }}
-                                            </p>
-                                        </div>
-                                        <Badge
-                                            :variant="
-                                                document.status === 'available'
-                                                    ? 'default'
-                                                    : 'outline'
-                                            "
-                                            class="shrink-0"
-                                        >
-                                            {{ document.status }}
-                                        </Badge>
-                                    </button>
-
-                                    <div
-                                        v-if="props.documents.length === 0"
-                                        class="rounded-xl border border-dashed border-sidebar-border/70 bg-muted/20 p-4 text-sm text-muted-foreground"
-                                    >
-                                        No system documents linked yet.
-                                    </div>
-                                </div>
-
-                                <DocumentUploadPanel
-                                    :project-id="props.project.id"
-                                    component-type="project"
-                                    :connection-options="
-                                        props.documentConnections
-                                    "
-                                    :documents="props.uploadedDocuments"
-                                    title="Dokumen & OCR"
-                                    description="Unggah dokumen proyek, jalankan OCR bila tersedia, lalu review draft sebelum diterapkan."
-                                    empty-text="Belum ada dokumen proyek."
-                                />
-                            </div>
-                        </EntityPageSection>
                     </div>
                 </div>
+
+                <ProjectRelatedDataSection
+                    :connection-options="props.documentConnections"
+                    :documents="props.uploadedDocuments"
+                    :groups="props.documentGroups"
+                    :is-create-mode="isCreateMode"
+                    :project-id="props.project.id"
+                    @create="openGroupCreate"
+                />
+
+                <ProjectDocumentCreateDialog
+                    :group="activeDocumentGroup"
+                    :open="isDocumentCreateOpen"
+                    :project-id="props.project.id"
+                    @update:open="setDocumentCreateOpen"
+                />
 
                 <div
                     class="rounded-2xl border border-sidebar-border/70 bg-background p-4 shadow-sm"

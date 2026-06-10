@@ -2,12 +2,20 @@
 
 namespace App\Http\Controllers\ProjectMonitoring;
 
+use App\Models\Project;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
 class RapsController extends CrudResourceController
 {
     protected string $table = 'raps';
+
+    public function storeForProject(Request $request, Project $project)
+    {
+        $request->merge(['project_id' => $project->id]);
+
+        return $this->store($request);
+    }
 
     protected function storeRules(): array
     {

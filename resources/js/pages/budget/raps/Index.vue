@@ -137,11 +137,6 @@ const fields = [
         :upload-connection-options="uploadConnectionOptions"
         :pagination="props.pagination"
         create-label="New RAP"
-        :note="
-            props.activeProjectId
-                ? `Showing RAP documents for project ID ${props.activeProjectId}`
-                : `${props.pagination?.total ?? rows.length} RAP documents available`
-        "
     >
         <template #cell-totalBudget="{ value }">
             <span class="font-medium text-foreground">{{

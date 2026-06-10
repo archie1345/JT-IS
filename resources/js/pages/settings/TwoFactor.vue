@@ -25,7 +25,7 @@ withDefaults(defineProps<Props>(), {
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Two-factor authentication',
+        title: 'Keamanan Akun',
         href: show(),
     },
 ];
@@ -40,29 +40,27 @@ onUnmounted(() => {
 
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
-        <Head title="Two-factor authentication" />
+        <Head title="Keamanan Akun" />
 
-        <h1 class="sr-only">Two-factor authentication settings</h1>
+        <h1 class="sr-only">Pengaturan keamanan akun</h1>
 
         <SettingsLayout>
             <div class="space-y-6">
                 <Heading
                     variant="small"
-                    title="Two-factor authentication"
-                    description="Manage your two-factor authentication settings"
+                    title="Keamanan Akun"
+                    description="Aktifkan 2FA agar login membutuhkan kode dari aplikasi autentikator."
                 />
 
                 <div
                     v-if="!twoFactorEnabled"
                     class="flex flex-col items-start justify-start space-y-4"
                 >
-                    <Badge variant="destructive">Disabled</Badge>
+                    <Badge variant="destructive">Belum aktif</Badge>
 
                     <p class="text-muted-foreground">
-                        When you enable two-factor authentication, you will be
-                        prompted for a secure pin during login. This pin can be
-                        retrieved from a TOTP-supported application on your
-                        phone.
+                        2FA menambahkan kode 6 digit saat login. Gunakan
+                        aplikasi seperti Google Authenticator atau Authy.
                     </p>
 
                     <div>
@@ -70,7 +68,7 @@ onUnmounted(() => {
                             v-if="hasSetupData"
                             @click="showSetupModal = true"
                         >
-                            <ShieldCheck />Continue setup
+                            <ShieldCheck />Lanjutkan setup
                         </Button>
                         <Form
                             v-else
@@ -80,7 +78,7 @@ onUnmounted(() => {
                             #default="{ processing }"
                         >
                             <Button type="submit" :disabled="processing">
-                                <ShieldCheck />Enable 2FA</Button
+                                <ShieldCheck />Aktifkan 2FA</Button
                             ></Form
                         >
                     </div>
@@ -90,13 +88,11 @@ onUnmounted(() => {
                     v-else
                     class="flex flex-col items-start justify-start space-y-4"
                 >
-                    <Badge variant="default">Enabled</Badge>
+                    <Badge variant="default">Aktif</Badge>
 
                     <p class="text-muted-foreground">
-                        With two-factor authentication enabled, you will be
-                        prompted for a secure, random pin during login, which
-                        you can retrieve from the TOTP-supported application on
-                        your phone.
+                        Saat login, masukkan kode 6 digit dari aplikasi
+                        autentikator. Simpan kode pemulihan sebagai cadangan.
                     </p>
 
                     <TwoFactorRecoveryCodes />
@@ -113,7 +109,7 @@ onUnmounted(() => {
                                 :disabled="processing"
                             >
                                 <ShieldBan />
-                                Disable 2FA
+                                Nonaktifkan 2FA
                             </Button>
                         </Form>
                     </div>

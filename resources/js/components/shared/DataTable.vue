@@ -11,7 +11,6 @@ import {
     ArrowDownAZ,
     ArrowUpAZ,
     Check,
-    ChevronDown,
     ExternalLink,
     Plus,
     Search,
@@ -19,6 +18,7 @@ import {
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import TextPreview from '@/components/shared/TextPreview.vue';
 
 export type SpreadsheetColumn = {
     key: string;
@@ -71,7 +71,6 @@ const headerFilterStyle = ref<CSSProperties>({});
 const headerFilterSearch = ref<Record<string, string>>({});
 const visibleColumns = ref<Record<string, boolean>>({});
 const selectedColumnValues = ref<Record<string, string[]>>({});
-const draftSelectedColumnValues = ref<Record<string, string[]>>({});
 
 const resolvedColumns = computed(() =>
     props.columns.filter(
@@ -127,7 +126,6 @@ const resetState = () => {
         props.columns.map((column) => [column.key, '']),
     ) as Record<string, string>;
     selectedColumnValues.value = createDefaultSelections();
-    draftSelectedColumnValues.value = createDefaultSelections();
 
     if (sortKey.value === '' && props.columns.length > 0) {
         sortKey.value = props.columns[0].key;
@@ -209,7 +207,7 @@ const createItem = () => emit('create');
 const openHeaderFilter = (event: MouseEvent, key: string) => {
     const column = props.columns.find((item) => item.key === key);
 
-    if (column?.sortable === false && column?.filterable === false) {
+    if (column?.filterable === false) {
         return;
     }
 
@@ -218,9 +216,6 @@ const openHeaderFilter = (event: MouseEvent, key: string) => {
         return;
     }
 
-    draftSelectedColumnValues.value[key] = [
-        ...(selectedColumnValues.value[key] ?? []),
-    ];
     headerFilterSearch.value[key] = '';
     activeHeaderFilter.value = key;
 
@@ -265,8 +260,19 @@ const applySort = (key: string, direction: SortDirection) => {
     sortDirection.value = direction;
 };
 
-const clearColumnFilter = (key: string) => {
-    draftSelectedColumnValues.value[key] = [];
+const toggleSort = (key: string) => {
+    const column = props.columns.find((item) => item.key === key);
+
+    if (column?.sortable === false) {
+        return;
+    }
+
+    if (sortKey.value !== key) {
+        applySort(key, 'asc');
+        return;
+    }
+
+    applySort(key, sortDirection.value === 'asc' ? 'desc' : 'asc');
 };
 
 const filteredColumnOptions = (key: string) => {
@@ -287,45 +293,27 @@ const filteredColumnOptions = (key: string) => {
 };
 
 const isValueSelected = (key: string, value: string) =>
-    draftSelectedColumnValues.value[key]?.includes(value) ?? false;
+    selectedColumnValues.value[key]?.includes(value) ?? false;
 
 const toggleColumnValue = (key: string, value: string) => {
     if (isValueSelected(key, value)) {
-        draftSelectedColumnValues.value[key] = (
-            draftSelectedColumnValues.value[key] ?? []
+        selectedColumnValues.value[key] = (
+            selectedColumnValues.value[key] ?? []
         ).filter((item) => item !== value);
         return;
     }
 
-    draftSelectedColumnValues.value[key] = [
-        ...(draftSelectedColumnValues.value[key] ?? []),
+    selectedColumnValues.value[key] = [
+        ...(selectedColumnValues.value[key] ?? []),
         value,
     ];
 };
 
-const selectAllColumnValues = (key: string) => {
-    draftSelectedColumnValues.value[key] = [
-        ...(uniqueColumnValues.value[key] ?? []),
-    ];
-};
+const activeFilterCount = (key: string) => {
+    const selectedCount = selectedColumnValues.value[key]?.length ?? 0;
+    const totalCount = uniqueColumnValues.value[key]?.length ?? 0;
 
-const activeFilterCount = (key: string) =>
-    selectedColumnValues.value[key]?.length ?? 0;
-
-const cancelColumnFilter = (key: string) => {
-    draftSelectedColumnValues.value[key] = [
-        ...(selectedColumnValues.value[key] ?? []),
-    ];
-    headerFilterSearch.value[key] = '';
-    activeHeaderFilter.value = null;
-};
-
-const confirmColumnFilter = (key: string) => {
-    selectedColumnValues.value[key] = [
-        ...(draftSelectedColumnValues.value[key] ?? []),
-    ];
-    headerFilterSearch.value[key] = '';
-    activeHeaderFilter.value = null;
+    return selectedCount === totalCount ? 0 : selectedCount;
 };
 
 const closeAllPopups = () => {
@@ -385,20 +373,16 @@ onBeforeUnmount(() => {
                     <div class="min-w-0">
                         <h2
                             class="text-base font-semibold break-words text-foreground sm:text-lg"
+                            :title="props.title"
                         >
-                            {{ props.title }}
+                            <TextPreview :text="props.title" :max="64" />
                         </h2>
                         <p
                             v-if="props.description"
                             class="text-xs break-words text-muted-foreground sm:text-sm"
+                            :title="props.description"
                         >
-                            {{ props.description }}
-                        </p>
-                        <p
-                            v-if="props.note"
-                            class="text-[11px] break-words text-muted-foreground sm:text-xs"
-                        >
-                            {{ props.note }}
+                            <TextPreview :text="props.description" :max="96" />
                         </p>
                     </div>
 
@@ -427,7 +411,10 @@ onBeforeUnmount(() => {
                                 @click="createItem"
                             >
                                 <Plus class="size-4" />
-                                {{ props.createLabel }}
+                                <TextPreview
+                                    :text="props.createLabel"
+                                    :max="24"
+                                />
                             </Button>
                         </div>
 
@@ -458,7 +445,10 @@ onBeforeUnmount(() => {
                                     :key="column.key"
                                     class="flex cursor-pointer items-center justify-between gap-3 rounded-md px-2 py-1.5 text-sm hover:bg-muted/50"
                                 >
-                                    <span>{{ column.label }}</span>
+                                    <TextPreview
+                                        :text="column.label"
+                                        :max="32"
+                                    />
                                     <input
                                         v-model="visibleColumns[column.key]"
                                         type="checkbox"
@@ -490,20 +480,51 @@ onBeforeUnmount(() => {
                                         data-spreadsheet-table-root
                                         :class="column.widthClass"
                                     >
-                                        <button
-                                            type="button"
-                                            class="inline-flex items-center gap-1.5 text-left font-medium text-muted-foreground transition hover:text-foreground sm:gap-2"
-                                            @click="
-                                                openHeaderFilter(
-                                                    $event,
-                                                    column.key,
-                                                )
-                                            "
+                                        <div
+                                            class="flex max-w-full min-w-0 items-center gap-1.5"
                                         >
-                                            {{ column.label }}
-                                            <ChevronDown
-                                                class="size-4 shrink-0 text-muted-foreground/90 sm:size-5"
-                                            />
+                                            <button
+                                                type="button"
+                                                class="min-w-0 text-left font-medium text-muted-foreground transition hover:text-foreground"
+                                                :title="column.label"
+                                                @click="
+                                                    openHeaderFilter(
+                                                        $event,
+                                                        column.key,
+                                                    )
+                                                "
+                                            >
+                                                <TextPreview
+                                                    :text="column.label"
+                                                    :max="28"
+                                                />
+                                            </button>
+                                            <button
+                                                v-if="column.sortable !== false"
+                                                type="button"
+                                                class="inline-flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                                                :aria-label="`Sort ${column.label}`"
+                                                :title="`Sort ${column.label}`"
+                                                @click="toggleSort(column.key)"
+                                            >
+                                                <ArrowUpAZ
+                                                    v-if="
+                                                        sortKey ===
+                                                            column.key &&
+                                                        sortDirection === 'asc'
+                                                    "
+                                                    class="size-4"
+                                                />
+                                                <ArrowDownAZ
+                                                    v-else
+                                                    class="size-4"
+                                                    :class="
+                                                        sortKey === column.key
+                                                            ? ''
+                                                            : 'opacity-45'
+                                                    "
+                                                />
+                                            </button>
                                             <span
                                                 v-if="
                                                     activeFilterCount(
@@ -518,7 +539,7 @@ onBeforeUnmount(() => {
                                                     )
                                                 }}
                                             </span>
-                                        </button>
+                                        </div>
                                     </th>
                                     <th class="px-4 py-3" />
                                 </tr>
@@ -545,7 +566,9 @@ onBeforeUnmount(() => {
                                             :column="column"
                                             :value="columnValue(row, column)"
                                         >
-                                            {{ columnValue(row, column) }}
+                                            <TextPreview
+                                                :text="columnValue(row, column)"
+                                            />
                                         </slot>
                                     </td>
                                     <td class="px-3 py-3 sm:px-4 sm:py-3">
@@ -583,140 +606,62 @@ onBeforeUnmount(() => {
             <div
                 data-spreadsheet-table-root
                 :style="headerFilterStyle"
-                class="rounded-xl border border-sidebar-border/70 bg-background shadow-lg"
+                class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-background shadow-lg"
             >
-                <div class="border-b border-sidebar-border/70 px-4 py-3">
-                    <button
-                        type="button"
-                        class="flex w-full items-center justify-between rounded-md px-1 py-2 text-left text-sm hover:bg-muted/50"
-                        @click="applySort(activeHeaderColumn.key, 'asc')"
-                    >
-                        <span>Sort A to Z</span>
-                        <ArrowUpAZ class="size-4 text-muted-foreground" />
-                    </button>
-                    <button
-                        type="button"
-                        class="flex w-full items-center justify-between rounded-md px-1 py-2 text-left text-sm hover:bg-muted/50"
-                        @click="applySort(activeHeaderColumn.key, 'desc')"
-                    >
-                        <span>Sort Z to A</span>
-                        <ArrowDownAZ class="size-4 text-muted-foreground" />
-                    </button>
-                </div>
-
-                <div class="px-4 py-3">
-                    <div class="relative mb-3">
+                <div class="border-b border-sidebar-border/70 px-3 py-2">
+                    <div class="relative">
                         <Search
                             class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
                         />
                         <Input
                             v-model="headerFilterSearch[activeHeaderColumn.key]"
-                            placeholder="Search values..."
-                            class="pl-9"
+                            placeholder="Cari..."
+                            class="h-8 border-0 bg-transparent pl-9 shadow-none focus-visible:ring-0"
                         />
-                    </div>
-
-                    <div class="mb-3 flex items-center justify-between text-xs">
-                        <div class="space-x-1">
-                            <button
-                                type="button"
-                                class="font-medium text-primary hover:underline"
-                                @click="
-                                    selectAllColumnValues(
-                                        activeHeaderColumn.key,
-                                    )
-                                "
-                            >
-                                Select all
-                            </button>
-                            <span class="text-muted-foreground">-</span>
-                            <button
-                                type="button"
-                                class="font-medium text-primary hover:underline"
-                                @click="
-                                    clearColumnFilter(activeHeaderColumn.key)
-                                "
-                            >
-                                Clear
-                            </button>
-                        </div>
-                        <span class="text-muted-foreground">
-                            Showing
-                            {{
-                                filteredColumnOptions(activeHeaderColumn.key)
-                                    .length
-                            }}
-                            values
-                            <span
-                                v-if="
-                                    activeFilterCount(activeHeaderColumn.key) >
-                                    0
-                                "
-                            >
-                                |
-                                {{ activeFilterCount(activeHeaderColumn.key) }}
-                                selected
-                            </span>
-                        </span>
-                    </div>
-
-                    <div
-                        class="max-h-64 overflow-y-auto rounded-lg border border-sidebar-border/70 p-2"
-                    >
-                        <p
-                            v-if="
-                                filteredColumnOptions(activeHeaderColumn.key)
-                                    .length === 0
-                            "
-                            class="px-2 py-3 text-sm text-muted-foreground"
-                        >
-                            No values match your search.
-                        </p>
-                        <button
-                            v-for="value in filteredColumnOptions(
-                                activeHeaderColumn.key,
-                            )"
-                            :key="value"
-                            type="button"
-                            class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted/50"
-                            @click="
-                                toggleColumnValue(activeHeaderColumn.key, value)
-                            "
-                        >
-                            <span
-                                class="flex size-4 items-center justify-center"
-                            >
-                                <Check
-                                    v-if="
-                                        isValueSelected(
-                                            activeHeaderColumn.key,
-                                            value,
-                                        )
-                                    "
-                                    class="size-4"
-                                />
-                            </span>
-                            <span class="truncate">{{ value }}</span>
-                        </button>
                     </div>
                 </div>
 
-                <div
-                    class="flex items-center justify-end gap-3 border-t border-sidebar-border/70 px-4 py-3"
-                >
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        @click="cancelColumnFilter(activeHeaderColumn.key)"
+                <div class="max-h-64 overflow-y-auto p-2">
+                    <p
+                        v-if="
+                            filteredColumnOptions(activeHeaderColumn.key)
+                                .length === 0
+                        "
+                        class="px-2 py-3 text-sm text-muted-foreground"
                     >
-                        Cancel
-                    </Button>
-                    <Button
-                        size="sm"
-                        @click="confirmColumnFilter(activeHeaderColumn.key)"
+                        No values match your search.
+                    </p>
+                    <button
+                        v-for="value in filteredColumnOptions(
+                            activeHeaderColumn.key,
+                        )"
+                        :key="value"
+                        type="button"
+                        class="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left text-sm hover:bg-muted/50"
+                        @click="
+                            toggleColumnValue(activeHeaderColumn.key, value)
+                        "
                     >
-                        OK
-                    </Button>
+                        <span
+                            class="flex size-4 shrink-0 items-center justify-center rounded border"
+                            :class="
+                                isValueSelected(activeHeaderColumn.key, value)
+                                    ? 'border-primary bg-primary text-primary-foreground'
+                                    : 'border-sidebar-border/80 bg-background'
+                            "
+                        >
+                            <Check
+                                v-if="
+                                    isValueSelected(
+                                        activeHeaderColumn.key,
+                                        value,
+                                    )
+                                "
+                                class="size-4"
+                            />
+                        </span>
+                        <TextPreview :text="value" :max="48" />
+                    </button>
                 </div>
             </div>
         </Teleport>

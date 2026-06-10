@@ -54,7 +54,7 @@ test('rab and rap totals use item sums', function () {
     expect($project->rapTotal())->toBe(400.0);
 });
 
-test('project health becomes warning and critical from mvp thresholds', function () {
+test('project health becomes warning and critical from health thresholds', function () {
     $project = Project::query()->create([
         'name' => 'Health Demo',
         'contract_value' => 1000000,
@@ -65,10 +65,10 @@ test('project health becomes warning and critical from mvp thresholds', function
     $rap->items()->create(['description' => 'Execution', 'quantity' => 1, 'unit_price' => 1000, 'total_price' => 1000]);
 
     ProjectCost::query()->create(['project_id' => $project->id, 'amount' => 900, 'date' => now()]);
-    expect($project->fresh()->mvpStatus())->toBe('Warning');
+    expect($project->fresh()->projectHealthStatus())->toBe('Warning');
 
     ProjectCost::query()->create(['project_id' => $project->id, 'amount' => 101, 'date' => now()]);
-    expect($project->fresh()->mvpStatus())->toBe('Critical');
+    expect($project->fresh()->projectHealthStatus())->toBe('Critical');
 });
 
 test('project detail save cannot change the progress snapshot percentage', function () {
@@ -249,7 +249,7 @@ test('progress ocr apply does not auto approve bamc suggestions', function () {
     expect((bool) $report->approved_by_internal)->toBeFalse();
 });
 
-test('admin can access mvp routes', function () {
+test('admin can access monitoring routes', function () {
     $this->actingAs(User::factory()->admin()->create());
 
     $project = Project::query()->create([

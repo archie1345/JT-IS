@@ -136,11 +136,6 @@ const fields = [
         :uploaded-documents="props.uploadedDocuments"
         :upload-connection-options="uploadConnectionOptions"
         :pagination="props.pagination"
-        :note="
-            props.activeProjectId
-                ? `Showing RAB documents for project ID ${props.activeProjectId}`
-                : `${props.pagination?.total ?? rows.length} RAB documents available`
-        "
     >
         <template #cell-totalBudget="{ value }">
             <span class="font-medium text-foreground">{{

@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\Project;
-use App\Models\Tender;
+use App\Support\ProjectDocumentData;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -134,19 +134,6 @@ class ProjectDetailsController extends Controller
             ? $project->latestApprovedProgressReport()
             : null;
 
-        $rabsCount = $project->exists ? $project->rabs()->count() : 0;
-        $rapsCount = $project->exists ? $project->raps()->count() : 0;
-        $progressReportsCount = $project->exists ? $project->progressReports()->count() : 0;
-        $invoicesCount = $project->exists ? $project->invoices()->count() : 0;
-        $projectCostsCount = $project->exists ? $project->projectCosts()->count() : 0;
-        $fundRequestsCount = $project->exists ? $project->fundRequests()->count() : 0;
-        $pipelineCount = $project->exists ? Tender::query()->where('project_id', $project->id)->count() : 0;
-        $latestRabId = $project->exists ? $project->rabs()->latest('id')->value('id') : null;
-        $latestRapId = $project->exists ? $project->raps()->latest('id')->value('id') : null;
-        $latestProgressReportId = $project->exists ? $project->progressReports()->latest('report_date')->latest('id')->value('id') : null;
-        $latestInvoiceId = $project->exists ? $project->invoices()->latest('invoice_date')->latest('id')->value('id') : null;
-        $latestProjectCostId = $project->exists ? $project->projectCosts()->latest('date')->latest('id')->value('id') : null;
-        $latestPipelineId = $project->exists ? Tender::query()->where('project_id', $project->id)->latest('id')->value('id') : null;
         $uploadedDocuments = $project->exists
             ? $project->documents()
             ->with('project:id,name')
@@ -163,129 +150,9 @@ class ProjectDetailsController extends Controller
 
         $reportScore = (float) ($latestProgressReport?->progress_percent ?? 0);
 
-        $documents = [
-            [
-                'label' => 'Contract / RAB',
-                'detail' => $rabsCount > 0 ? $rabsCount . ' linked record(s)' : 'No RAB linked yet',
-                'status' => $rabsCount > 0 ? 'available' : 'missing',
-                'url' => $project->exists
-                    ? ($latestRabId ? route('rabs.show', $latestRabId) : route('rabs', ['project' => $project->id]))
-                    : null,
-            ],
-            [
-                'label' => 'RAP',
-                'detail' => $rapsCount > 0 ? $rapsCount . ' linked record(s)' : 'No RAP linked yet',
-                'status' => $rapsCount > 0 ? 'available' : 'missing',
-                'url' => $project->exists
-                    ? ($latestRapId ? route('raps.show', $latestRapId) : route('raps', ['project' => $project->id]))
-                    : null,
-            ],
-            [
-                'label' => 'Progress Reports',
-                'detail' => $progressReportsCount > 0 ? $progressReportsCount . ' report(s)' : 'No report submitted yet',
-                'status' => $progressReportsCount > 0 ? 'available' : 'missing',
-                'url' => $project->exists
-                    ? ($latestProgressReportId ? route('progress-updates.show', $latestProgressReportId) : route('progress-updates.index', ['project' => $project->id]))
-                    : null,
-            ],
-            [
-                'label' => 'Invoices',
-                'detail' => $invoicesCount > 0 ? $invoicesCount . ' invoice(s)' : 'No invoice created yet',
-                'status' => $invoicesCount > 0 ? 'available' : 'missing',
-                'url' => $project->exists
-                    ? ($latestInvoiceId ? route('invoices.show', $latestInvoiceId) : route('invoices.index', ['project' => $project->id]))
-                    : null,
-            ],
-            [
-                'label' => 'Cost Realization',
-                'detail' => $projectCostsCount > 0 ? $projectCostsCount . ' cost record(s)' : 'No cost record yet',
-                'status' => $projectCostsCount > 0 ? 'available' : 'missing',
-                'url' => $project->exists
-                    ? ($latestProjectCostId ? route('project-costs.show', $latestProjectCostId) : route('project-costs.index', ['project' => $project->id]))
-                    : null,
-            ],
-            [
-                'label' => 'Pipeline / Reports',
-                'detail' => $pipelineCount > 0 ? $pipelineCount . ' report(s)' : 'No pipeline report yet',
-                'status' => $pipelineCount > 0 ? 'available' : 'missing',
-                'url' => $project->exists
-                    ? ($latestPipelineId ? route('pipeline.show', $latestPipelineId) : route('pipeline', ['project' => $project->id]))
-                    : null,
-            ],
-            [
-                'label' => 'Fund Requests',
-                'detail' => $fundRequestsCount > 0 ? $fundRequestsCount . ' request(s)' : 'No fund request yet',
-                'status' => $fundRequestsCount > 0 ? 'available' : 'missing',
-                'url' => $project->exists ? route('fund-requests.index', ['project' => $project->id]) : null,
-            ],
-        ];
-        $documentConnections = [];
-
-        if ($project->exists) {
-            $documentConnections[] = [
-                'value' => 'project:general',
-                'label' => 'Project general',
-                'hint' => $project->name,
-                'componentType' => 'project',
-                'componentId' => null,
-                'projectId' => $project->id,
-            ];
-
-            foreach ($project->rabs()->latest('id')->get(['id', 'project_id', 'total_budget']) as $rab) {
-                $documentConnections[] = [
-                    'value' => 'rab:'.$rab->id,
-                    'label' => 'RAB #'.$rab->id,
-                    'hint' => 'Budget '.number_format((float) $rab->total_budget, 0, ',', '.'),
-                    'componentType' => 'rab',
-                    'componentId' => $rab->id,
-                    'projectId' => $project->id,
-                ];
-            }
-
-            foreach ($project->raps()->latest('id')->get(['id', 'project_id', 'total_budget']) as $rap) {
-                $documentConnections[] = [
-                    'value' => 'rap:'.$rap->id,
-                    'label' => 'RAP #'.$rap->id,
-                    'hint' => 'Budget '.number_format((float) $rap->total_budget, 0, ',', '.'),
-                    'componentType' => 'rap',
-                    'componentId' => $rap->id,
-                    'projectId' => $project->id,
-                ];
-            }
-
-            foreach ($project->invoices()->latest('id')->get(['id', 'project_id', 'invoice_date', 'status']) as $invoice) {
-                $documentConnections[] = [
-                    'value' => 'invoice:'.$invoice->id,
-                    'label' => 'Invoice #'.$invoice->id,
-                    'hint' => trim(($invoice->status ?? '').' '.optional($invoice->invoice_date)->format('Y-m-d')),
-                    'componentType' => 'invoice',
-                    'componentId' => $invoice->id,
-                    'projectId' => $project->id,
-                ];
-            }
-
-            foreach ($project->projectCosts()->latest('date')->latest('id')->get(['id', 'project_id', 'category', 'date']) as $cost) {
-                $documentConnections[] = [
-                    'value' => 'project_cost:'.$cost->id,
-                    'label' => 'Cost #'.$cost->id,
-                    'hint' => trim(($cost->category ?? 'Cost').' '.optional($cost->date)->format('Y-m-d')),
-                    'componentType' => 'project_cost',
-                    'componentId' => $cost->id,
-                    'projectId' => $project->id,
-                ];
-            }
-
-            foreach ($project->progressReports()->latest('report_date')->latest('id')->get(['id', 'project_id', 'progress_percent', 'report_date']) as $report) {
-                $documentConnections[] = [
-                    'value' => 'progress_report:'.$report->id,
-                    'label' => 'Progress #'.$report->id,
-                    'hint' => trim(($report->progress_percent ?? 0).'% '.optional($report->report_date)->format('Y-m-d')),
-                    'componentType' => 'progress_report',
-                    'componentId' => $report->id,
-                    'projectId' => $project->id,
-                ];
-            }
-        }
+        $documentData = app(ProjectDocumentData::class);
+        $documentGroups = $documentData->groups($project);
+        $documentConnections = $documentData->connections($project);
 
         return [
             'mode' => $mode,
@@ -303,8 +170,10 @@ class ProjectDetailsController extends Controller
                 'startDate' => $project->exists ? optional($project->start_date)->format('Y-m-d') : null,
                 'endDate' => $project->exists ? optional($project->end_date)->format('Y-m-d') : null,
                 'status' => $projectStatus,
-                'mvpStatus' => $project->exists ? $project->mvpStatus() : 'On Track',
-                'warnings' => $project->exists ? $project->mvpWarnings() : [],
+                'projectHealthStatus' => $project->exists
+                    ? $project->projectHealthStatus()
+                    : 'On Track',
+                'warnings' => $project->exists ? $project->projectHealthWarnings() : [],
                 'rabTotal' => $project->exists ? $project->rabTotal() : 0,
                 'rapTotal' => $project->exists ? $project->rapTotal() : 0,
                 'realizedCostTotal' => $project->exists ? $project->realizedCostTotal() : 0,
@@ -325,7 +194,7 @@ class ProjectDetailsController extends Controller
                     'contact' => $client->contact,
                 ])
                 ->all(),
-            'documents' => $documents,
+            'documentGroups' => $documentGroups,
             'uploadedDocuments' => $uploadedDocuments,
             'documentConnections' => $documentConnections,
             'progress' => [

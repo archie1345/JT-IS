@@ -54,9 +54,9 @@ class UserManagementController extends Controller
         $roles = Role::query()
             ->with('permissions:name')
             ->where('guard_name', 'web')
+            ->where('name', '!=', 'admin')
             ->get()
             ->sortBy(fn(Role $role): array => [
-                $role->name === 'admin' ? 0 : 1,
                 $role->name === 'employee' ? 0 : 1,
                 $role->name,
             ])
@@ -129,6 +129,24 @@ class UserManagementController extends Controller
         }
 
         return to_route('admin.acc_mgmt')->with('success', 'Account updated successfully.');
+    }
+
+    public function updateRolePermissions(Request $request, Role $role): RedirectResponse
+    {
+        AccessControl::sync();
+
+        if ($role->name === 'admin') {
+            return to_route('admin.acc_mgmt')->with('success', 'Admin always has access to all permissions.');
+        }
+
+        $data = $request->validate([
+            'permissions' => ['array'],
+            'permissions.*' => ['string', Rule::in(AccessControl::permissionNames())],
+        ]);
+
+        $role->syncPermissions(AccessControl::expandPermissions($data['permissions'] ?? []));
+
+        return to_route('admin.acc_mgmt')->with('success', 'Role permissions updated successfully.');
     }
 
     protected function validatePayload(Request $request, ?int $userId = null, bool $updating = false): array

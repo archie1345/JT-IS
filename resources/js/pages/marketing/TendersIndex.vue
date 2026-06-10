@@ -149,7 +149,6 @@ const convertTender = (record: Record<string, null | number | string>) => {
         :upload-connection-options="uploadConnectionOptions"
         :pagination="props.pagination"
         create-label="New Tender"
-        :note="`${props.pagination.total} tender opportunities in the pipeline`"
     >
         <template #cell-value="{ value }">
             {{

@@ -2,7 +2,6 @@
 
 namespace App\Support;
 
-use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -183,20 +182,7 @@ class AccessControl
             $role = Role::findOrCreate($roleName, 'web');
 
             if ($roleName === 'admin') {
-                $permissionIds = Permission::query()
-                    ->whereIn('name', self::permissionNames())
-                    ->where('guard_name', 'web')
-                    ->pluck('id')
-                    ->map(fn ($id): array => [
-                        'permission_id' => $id,
-                        'role_id' => $role->id,
-                    ])
-                    ->all();
-
-                if ($permissionIds !== []) {
-                    DB::table(config('permission.table_names.role_has_permissions'))
-                        ->insertOrIgnore($permissionIds);
-                }
+                $role->syncPermissions(self::permissionNames());
             } elseif ($role->permissions()->count() === 0) {
                 $role->syncPermissions(self::expandPermissions($permissions));
             }

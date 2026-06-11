@@ -93,7 +93,7 @@ const strengths = [
                         <img
                             src="/assets/svg/JTE_Logo.svg"
                             alt="Jasa Tirta Energi"
-                            class="h-12 w-auto rounded-md bg-white px-3 py-2 shadow-sm"
+                            class="h-16 w-auto "
                         />
                     </Link>
 

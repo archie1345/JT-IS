@@ -67,8 +67,8 @@ const template = computed(() => ({
     borderColor: '#d1d5db',
     footerText: '',
     bankDetails:
-        'Bank Mandiri\nAccount Name: PT. Jasa Tirta Energi\nAccount No: 000-000-0000',
-    notes: 'Please include the invoice number on the payment reference. Thank you for your business.',
+        'Bank Mandiri\nNama Rekening: PT. Jasa Tirta Energi\nNo. Rekening: 000-000-0000',
+    notes: 'Mohon cantumkan nomor invoice pada referensi pembayaran. Terima kasih.',
     showBankDetails: true,
     showNotes: true,
     showSignature: true,
@@ -85,10 +85,10 @@ const invoiceStyle = computed(() => ({
 
 <template>
     <section
-        class="invoice-print-area max-w-full overflow-x-hidden rounded-lg bg-muted/30 p-3"
+        class="invoice-print-area max-w-full overflow-hidden rounded-lg bg-muted/30 p-3"
     >
         <div
-            class="invoice-sheet mx-auto flex min-h-[297mm] w-full max-w-[210mm] flex-col bg-white text-[#111827] shadow-lg"
+            class="invoice-sheet mx-auto flex min-h-[297mm] w-[210mm] max-w-full flex-col bg-white text-[#111827] shadow-lg"
             :style="invoiceStyle"
         >
             <div
@@ -128,17 +128,17 @@ const invoiceStyle = computed(() => ({
                         class="max-w-64 min-w-48 rounded-lg bg-white/10 p-4 text-right text-sm"
                     >
                         <p class="text-xs text-white/70 uppercase">
-                            Invoice No.
+                            No. Invoice
                         </p>
                         <p class="invoice-wrap font-semibold">
                             {{ props.invoiceNumber }}
                         </p>
                         <p class="mt-3 text-xs text-white/70 uppercase">
-                            Invoice Date
+                            Tanggal Invoice
                         </p>
                         <p>{{ props.invoiceDate || '-' }}</p>
                         <p class="mt-3 text-xs text-white/70 uppercase">
-                            Due Date
+                            Jatuh Tempo
                         </p>
                         <p>{{ props.dueDate || '-' }}</p>
                         <p class="mt-3 text-xs text-white/70 uppercase">
@@ -161,13 +161,13 @@ const invoiceStyle = computed(() => ({
                 <div class="grid gap-6 sm:grid-cols-2">
                     <div>
                         <p class="text-xs font-medium uppercase opacity-60">
-                            Bill To
+                            Ditagihkan Kepada
                         </p>
                         <p class="invoice-wrap mt-2 text-lg font-semibold">
                             {{ props.billTo || '-' }}
                         </p>
                         <p class="invoice-wrap mt-1 opacity-75">
-                            {{ props.projectName || 'Project billing' }}
+                            {{ props.projectName || 'Invoice proyek' }}
                         </p>
                     </div>
                     <div
@@ -175,10 +175,10 @@ const invoiceStyle = computed(() => ({
                         :style="{ borderColor: 'var(--invoice-border)' }"
                     >
                         <p class="text-xs font-medium uppercase opacity-60">
-                            Billing Summary
+                            Ringkasan Billing
                         </p>
                         <p class="invoice-wrap mt-2 opacity-75">
-                            {{ props.description || 'Project billing' }}
+                            {{ props.description || 'Invoice proyek' }}
                         </p>
                         <p class="mt-2 capitalize opacity-75">
                             Status: {{ props.status || 'pending' }}
@@ -195,7 +195,7 @@ const invoiceStyle = computed(() => ({
                         :style="{ borderColor: 'var(--invoice-border)' }"
                     >
                         <p class="text-xs font-medium uppercase opacity-60">
-                            From
+                            Dari
                         </p>
                         <p class="mt-2 font-semibold">PT. Jasa Tirta Energi</p>
                         <p class="invoice-wrap mt-1 opacity-75">
@@ -208,12 +208,12 @@ const invoiceStyle = computed(() => ({
                         :style="{ borderColor: 'var(--invoice-border)' }"
                     >
                         <p class="text-xs font-medium uppercase opacity-60">
-                            Payment Terms
+                            Syarat Pembayaran
                         </p>
-                        <p class="mt-2 font-semibold">Due on receipt</p>
+                        <p class="mt-2 font-semibold">Dibayar saat diterima</p>
                         <p class="mt-1 opacity-75">
-                            Please include the invoice number as the payment
-                            reference.
+                            Mohon cantumkan nomor invoice sebagai referensi
+                            pembayaran.
                         </p>
                     </div>
                 </div>
@@ -224,7 +224,7 @@ const invoiceStyle = computed(() => ({
                     :style="{ borderColor: 'var(--invoice-border)' }"
                 >
                     <p class="text-xs font-medium uppercase opacity-60">
-                        Payment Details
+                        Detail Pembayaran
                     </p>
                     <p class="mt-2 whitespace-pre-line opacity-75">
                         {{ template.bankDetails }}
@@ -232,7 +232,7 @@ const invoiceStyle = computed(() => ({
                 </div>
 
                 <div
-                    class="overflow-hidden rounded-lg border"
+                    class="invoice-table-frame rounded-lg border"
                     :style="{ borderColor: 'var(--invoice-border)' }"
                 >
                     <table
@@ -269,13 +269,13 @@ const invoiceStyle = computed(() => ({
                                 <th
                                     class="invoice-wrap px-3 py-3 text-left align-top sm:px-4"
                                 >
-                                    Description
+                                    Deskripsi
                                 </th>
                                 <th
                                     v-if="props.variant === 'summary'"
                                     class="invoice-wrap px-3 py-3 text-left align-top sm:px-4"
                                 >
-                                    Project
+                                    Proyek
                                 </th>
                                 <th
                                     class="invoice-wrap px-2 py-3 text-right align-top sm:px-4"
@@ -291,12 +291,12 @@ const invoiceStyle = computed(() => ({
                                 <th
                                     class="invoice-wrap px-2 py-3 text-right align-top sm:px-4"
                                 >
-                                    Unit Price
+                                    Harga Satuan
                                 </th>
                                 <th
                                     class="invoice-wrap px-2 py-3 text-right align-top sm:px-4"
                                 >
-                                    Amount
+                                    Jumlah
                                 </th>
                             </tr>
                         </thead>
@@ -359,7 +359,7 @@ const invoiceStyle = computed(() => ({
                                     "
                                     class="px-4 py-8 text-center opacity-60"
                                 >
-                                    No invoice line items yet.
+                                    Belum ada item invoice.
                                 </td>
                             </tr>
                         </tbody>
@@ -374,7 +374,7 @@ const invoiceStyle = computed(() => ({
                                 props.variant === 'summary'
                             "
                         >
-                            <p class="font-medium">Bank Details</p>
+                            <p class="font-medium">Detail Bank</p>
                             <p
                                 class="invoice-wrap mt-1 whitespace-pre-line opacity-75"
                             >
@@ -382,7 +382,7 @@ const invoiceStyle = computed(() => ({
                             </p>
                         </div>
                         <div v-if="template.showNotes">
-                            <p class="font-medium">Notes</p>
+                            <p class="font-medium">Catatan</p>
                             <p
                                 class="invoice-wrap mt-1 whitespace-pre-line opacity-75"
                             >
@@ -399,7 +399,7 @@ const invoiceStyle = computed(() => ({
                             }}</span>
                         </div>
                         <div class="flex justify-between gap-4">
-                            <span>Tax</span>
+                            <span>Pajak</span>
                             <span class="shrink-0">{{
                                 formatCurrency(props.tax)
                             }}</span>
@@ -428,13 +428,13 @@ const invoiceStyle = computed(() => ({
                             {{
                                 props.variant === 'summary'
                                     ? 'Approval'
-                                    : 'Notes'
+                                    : 'Catatan'
                             }}
                         </p>
                         <p class="invoice-wrap mt-2 leading-relaxed opacity-75">
                             {{
                                 props.variant === 'summary'
-                                    ? 'This invoice is issued for the project scope stated above and is valid without a physical stamp when printed from the system.'
+                                    ? 'Invoice ini diterbitkan untuk lingkup proyek di atas dan sah saat dicetak dari sistem.'
                                     : template.notes
                             }}
                         </p>
@@ -444,7 +444,7 @@ const invoiceStyle = computed(() => ({
                             class="mb-16 border-t"
                             :style="{ borderColor: 'var(--invoice-border)' }"
                         ></div>
-                        <p class="font-medium">Authorized Signature</p>
+                        <p class="font-medium">Tanda Tangan Berwenang</p>
                     </div>
                 </div>
             </div>
@@ -470,6 +470,9 @@ const invoiceStyle = computed(() => ({
     background: var(--invoice-paper);
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
+    width: min(210mm, 100%);
+    max-width: 210mm;
+    aspect-ratio: 210 / 297;
 }
 
 .invoice-sheet,
@@ -481,15 +484,27 @@ const invoiceStyle = computed(() => ({
     min-width: 0;
     overflow-wrap: anywhere;
     word-break: break-word;
+    white-space: normal;
 }
 
-.invoice-sheet :where(div, section):has(> table) {
-    overflow-x: visible !important;
+.invoice-table-frame {
+    max-width: 100%;
+    overflow: hidden;
 }
 
-.invoice-sheet :where(div, section):has(> table) > table {
+.invoice-line-table {
+    table-layout: fixed;
     width: 100% !important;
-    min-width: 100%;
+    max-width: 100% !important;
+    min-width: 0 !important;
+}
+
+.invoice-line-table th,
+.invoice-line-table td {
+    min-width: 0;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 @media print {
@@ -528,7 +543,9 @@ const invoiceStyle = computed(() => ({
 
     .invoice-sheet {
         width: 190mm !important;
+        max-width: 190mm !important;
         min-height: 277mm !important;
+        aspect-ratio: auto !important;
         margin: 0 auto !important;
         box-shadow: none !important;
         page-break-after: avoid;

@@ -38,7 +38,7 @@ const submit = () => {
                         <h1
                             class="mb-2 text-center text-4xl font-bold tracking-tight text-slate-900"
                         >
-                            WELCOME TO JTE-IS
+                            JTE-IS
                         </h1>
                         <p
                             class="mb-8 text-justify text-sm leading-6 text-slate-500"
@@ -182,14 +182,14 @@ const submit = () => {
                                         type="checkbox"
                                         class="h-4 w-4 rounded border-slate-300 text-slate-900"
                                     />
-                                    <span>Remember me</span>
+                                    <span>Ingat saya</span>
                                 </label>
 
                                 <a
                                     href="/forgot-password"
                                     class="text-sm font-medium text-slate-500 transition hover:text-slate-900"
                                 >
-                                    Forgot password?
+                                    Lupa password?
                                 </a>
                             </div>
 
@@ -199,7 +199,7 @@ const submit = () => {
                                 :disabled="form.processing"
                             >
                                 {{
-                                    form.processing ? 'Signing in...' : 'Login'
+                                    form.processing ? 'Memproses...' : 'Login'
                                 }}
                             </button>
                         </form>
@@ -210,7 +210,7 @@ const submit = () => {
             <div class="relative hidden md:block">
                 <img
                     src="/assets/images/MANDOSI-2-scaled.jpeg"
-                    alt="Login Image"
+                    alt="Foto proyek Jasa Tirta Energi"
                     class="h-screen w-full object-cover"
                 />
             </div>

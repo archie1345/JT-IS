@@ -67,11 +67,11 @@ const isCreateMode = computed(() => props.mode === 'create');
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     {
-        title: 'Projects',
+        title: 'Proyek',
         href: '/projects',
     },
     {
-        title: isCreateMode.value ? 'Create Project' : props.project.name,
+        title: isCreateMode.value ? 'Tambah Proyek' : props.project.name,
         href: isCreateMode.value
             ? '/projects/create'
             : `/projects/${props.project.id}`,
@@ -85,14 +85,14 @@ const projectStatusOptions: Array<{
 }> = [
     {
         value: 'planning',
-        label: 'Planning',
-        hint: 'Initial scope and approvals',
+        label: 'Perencanaan',
+        hint: 'Scope awal dan persetujuan',
     },
-    { value: 'ongoing', label: 'Ongoing', hint: 'Work is actively running' },
+    { value: 'ongoing', label: 'Berjalan', hint: 'Pekerjaan sedang berjalan' },
     {
         value: 'completed',
-        label: 'Completed',
-        hint: 'Delivery and handover done',
+        label: 'Selesai',
+        hint: 'Pekerjaan dan serah terima selesai',
     },
 ];
 
@@ -103,16 +103,16 @@ const paymentStatusOptions: Array<{
 }> = [
     {
         value: 'pending',
-        label: 'Pending',
-        hint: 'Waiting for billing progress',
+        label: 'Menunggu',
+        hint: 'Menunggu progress tagihan',
     },
     {
         value: 'partial',
-        label: 'Partial',
-        hint: 'Some payment has been received',
+        label: 'Sebagian',
+        hint: 'Sebagian pembayaran sudah diterima',
     },
-    { value: 'paid', label: 'Paid', hint: 'Invoice is fully settled' },
-    { value: 'overdue', label: 'Overdue', hint: 'Payment is late' },
+    { value: 'paid', label: 'Lunas', hint: 'Invoice sudah lunas' },
+    { value: 'overdue', label: 'Terlambat', hint: 'Pembayaran melewati jatuh tempo' },
 ];
 
 const form = useForm({
@@ -217,6 +217,14 @@ const formatPaymentStatus = (status: PaymentStatus) =>
     paymentStatusOptions.find((option) => option.value === status)?.label ??
     status;
 
+const formatProjectHealthStatus = (status: string) =>
+    ({
+        'On Track': 'Sesuai Rencana',
+        Warning: 'Perhatian',
+        Critical: 'Kritis',
+        'On Hold': 'Ditahan',
+    })[status] ?? status;
+
 const getProjectHealthStatusClass = (status: string) =>
     ({
         'On Track':
@@ -247,10 +255,10 @@ const progressDisplayValue = computed(() =>
 );
 
 const progressLabel = computed(() => {
-    if (liveProgressScore.value >= 90) return 'Ready for handover';
-    if (liveProgressScore.value >= 70) return 'Nearly complete';
-    if (liveProgressScore.value >= 40) return 'In progress';
-    return 'Early stage';
+    if (liveProgressScore.value >= 90) return 'Siap serah terima';
+    if (liveProgressScore.value >= 70) return 'Hampir selesai';
+    if (liveProgressScore.value >= 40) return 'Sedang berjalan';
+    return 'Tahap awal';
 });
 
 const progressToneClass = computed(() => {
@@ -327,8 +335,8 @@ const getCurrentLocation = () => {
     <Head
         :title="
             isCreateMode
-                ? 'Create Project'
-                : `Project Detail - ${props.project.name}`
+                ? 'Tambah Proyek'
+                : `Detail Proyek - ${props.project.name}`
         "
     />
 
@@ -349,15 +357,18 @@ const getCurrentLocation = () => {
                 >
                     <div class="flex min-h-0 min-w-0 flex-col gap-4">
                         <EntityDetailHero
-                            back-label="Back to Projects"
-                            title="Project Detail"
+                            back-label="Kembali ke Proyek"
+                            title="Detail Proyek"
                             :description="
                                 isCreateMode
-                                    ? 'Fill in the project data and save it to the database.'
-                                    : 'Edit the project details and save your updates to the database.'
+                                    ? 'Isi data proyek dan simpan ke database.'
+                                    : 'Edit detail proyek dan simpan update ke database.'
                             "
                             :badge-text="
-                                props.project.projectHealthStatus ?? 'On Track'
+                                formatProjectHealthStatus(
+                                    props.project.projectHealthStatus ??
+                                        'On Track',
+                                )
                             "
                             :badge-class="
                                 getProjectHealthStatusClass(
@@ -365,11 +376,11 @@ const getCurrentLocation = () => {
                                         'On Track',
                                 )
                             "
-                            metric-label="BAMC Progress"
+                            metric-label="Progress BAMC"
                             :metric-value="`${progressDisplayValue}%`"
                             :metric-description="progressLabel"
-                            progress-label="Progress snapshot"
-                            :progress-value="`${progressDisplayValue}% report progress`"
+                            progress-label="Snapshot progress"
+                            :progress-value="`${progressDisplayValue}% progress laporan`"
                             :progress-bar-value="liveProgressScore"
                             :progress-tone-class="progressToneClass"
                             @back="backToProjects"
@@ -381,7 +392,7 @@ const getCurrentLocation = () => {
                                     @click="backToProjects"
                                 >
                                     <ArrowLeft class="mr-2 size-4" />
-                                    Back to Projects
+                                    Kembali ke Proyek
                                 </Button>
                             </template>
                             <template #title-input>
@@ -389,12 +400,12 @@ const getCurrentLocation = () => {
                                     <p
                                         class="text-xs tracking-[0.18em] text-muted-foreground uppercase"
                                     >
-                                        Project Title
+                                        Nama Proyek
                                     </p>
                                     <p
                                         class="mt-1 text-sm font-medium break-words text-foreground"
                                     >
-                                        {{ form.name || 'Untitled project' }}
+                                        {{ form.name || 'Proyek tanpa nama' }}
                                     </p>
                                 </div>
                             </template>
@@ -403,12 +414,12 @@ const getCurrentLocation = () => {
                                     class="mt-2 max-w-full truncate text-sm text-muted-foreground"
                                     :title="
                                         selectedClient?.name ??
-                                        'Choose a client to connect this project.'
+                                        'Pilih klien untuk menghubungkan proyek ini.'
                                     "
                                 >
                                     {{
                                         selectedClient?.name ??
-                                        'Choose a client to connect this project.'
+                                        'Pilih klien untuk menghubungkan proyek ini.'
                                     }}
                                 </p>
                             </template>
@@ -417,7 +428,7 @@ const getCurrentLocation = () => {
                                     <p
                                         class="text-xs tracking-[0.18em] text-muted-foreground uppercase"
                                     >
-                                        Client
+                                        Klien
                                     </p>
                                     <p
                                         class="mt-1 text-sm font-medium break-words text-foreground"
@@ -430,7 +441,7 @@ const getCurrentLocation = () => {
                                     <p
                                         class="text-xs tracking-[0.18em] text-muted-foreground uppercase"
                                     >
-                                        Contract No.
+                                        No. Kontrak
                                     </p>
                                     <p
                                         class="mt-1 text-sm font-medium break-words text-foreground"
@@ -443,7 +454,7 @@ const getCurrentLocation = () => {
                                     <p
                                         class="text-xs tracking-[0.18em] text-muted-foreground uppercase"
                                     >
-                                        Value
+                                        Nilai
                                     </p>
                                     <p
                                         class="mt-1 text-sm font-medium break-words text-foreground"
@@ -460,7 +471,7 @@ const getCurrentLocation = () => {
                                     <p
                                         class="text-xs tracking-[0.18em] text-muted-foreground uppercase"
                                     >
-                                        Location
+                                        Lokasi
                                     </p>
                                     <p
                                         class="mt-1 text-sm font-medium break-words text-foreground"
@@ -476,7 +487,7 @@ const getCurrentLocation = () => {
                                 !isCreateMode &&
                                 (props.project.warnings?.length ?? 0) > 0
                             "
-                            title="Early Warnings"
+                            title="Peringatan Awal"
                             :icon="CircleAlert"
                         >
                             <div class="grid gap-2">
@@ -508,7 +519,7 @@ const getCurrentLocation = () => {
                                         class="flex items-center gap-2 text-sm font-medium text-foreground"
                                     >
                                         <MapPin class="size-4 text-blue-500" />
-                                        Geographic Location
+                                        Lokasi Geografis
                                     </span>
                                     <Button
                                         type="button"
@@ -546,7 +557,7 @@ const getCurrentLocation = () => {
                                             v-model="form.latitude"
                                             readonly
                                             class="cursor-not-allowed bg-muted/30 font-mono text-muted-foreground"
-                                            placeholder="Select on map"
+                                            placeholder="Pilih di peta"
                                         />
                                         <InputError
                                             :message="form.errors.latitude"
@@ -561,7 +572,7 @@ const getCurrentLocation = () => {
                                             v-model="form.longitude"
                                             readonly
                                             class="cursor-not-allowed bg-muted/30 font-mono text-muted-foreground"
-                                            placeholder="Select on map"
+                                            placeholder="Pilih di peta"
                                         />
                                         <InputError
                                             :message="form.errors.longitude"
@@ -573,17 +584,17 @@ const getCurrentLocation = () => {
                     </div>
 
                     <div class="flex min-h-0 min-w-0 flex-col gap-4">
-                        <EntityPageSection title="Settings" :icon="FileText">
+                        <EntityPageSection title="Pengaturan" :icon="FileText">
                             <div class="grid min-w-0 gap-4">
                                 <label class="min-w-0 space-y-2">
                                     <span
                                         class="text-sm font-medium text-foreground"
-                                        >Project Title</span
+                                        >Nama Proyek</span
                                     >
                                     <Input
                                         v-model="form.name"
                                         class="w-full min-w-0"
-                                        placeholder="Project name"
+                                        placeholder="Nama proyek"
                                     />
                                     <InputError :message="form.errors.name" />
                                 </label>
@@ -591,11 +602,11 @@ const getCurrentLocation = () => {
                                 <label class="min-w-0 space-y-2">
                                     <span
                                         class="text-sm font-medium text-foreground"
-                                        >Client</span
+                                        >Klien</span
                                     >
                                     <Input
                                         v-model="form.client_id"
-                                        placeholder="Enter client name"
+                                        placeholder="Masukkan nama klien"
                                     />
                                     <InputError
                                         :message="form.errors.client_id"
@@ -605,11 +616,11 @@ const getCurrentLocation = () => {
                                 <label class="min-w-0 space-y-2">
                                     <span
                                         class="text-sm font-medium text-foreground"
-                                        >Contract Number</span
+                                        >Nomor Kontrak</span
                                     >
                                     <Input
                                         v-model="form.contract_number"
-                                        placeholder="Contract number"
+                                        placeholder="Nomor kontrak"
                                     />
                                     <InputError
                                         :message="form.errors.contract_number"
@@ -619,7 +630,7 @@ const getCurrentLocation = () => {
                                 <label class="min-w-0 space-y-2">
                                     <span
                                         class="text-sm font-medium text-foreground"
-                                        >Contract Value</span
+                                        >Nilai Kontrak</span
                                     >
                                     <Input
                                         v-model.number="form.contract_value"
@@ -635,12 +646,12 @@ const getCurrentLocation = () => {
                                 <label class="min-w-0 space-y-2">
                                     <span
                                         class="text-sm font-medium text-foreground"
-                                        >Location Title</span
+                                        >Nama Lokasi</span
                                     >
                                     <Input
                                         v-model="form.location"
                                         class="min-w-0"
-                                        placeholder="General project area"
+                                        placeholder="Area umum proyek"
                                     />
                                     <InputError
                                         :message="form.errors.location"
@@ -651,7 +662,7 @@ const getCurrentLocation = () => {
                                     <label class="min-w-0 space-y-2">
                                         <span
                                             class="text-sm font-medium text-foreground"
-                                            >Start Date</span
+                                            >Tanggal Mulai</span
                                         >
                                         <Input
                                             v-model="form.start_date"
@@ -665,7 +676,7 @@ const getCurrentLocation = () => {
                                     <label class="min-w-0 space-y-2">
                                         <span
                                             class="text-sm font-medium text-foreground"
-                                            >End Date</span
+                                            >Tanggal Selesai</span
                                         >
                                         <Input
                                             v-model="form.end_date"
@@ -680,12 +691,12 @@ const getCurrentLocation = () => {
                                 <label class="min-w-0 space-y-2">
                                     <span
                                         class="text-sm font-medium text-foreground"
-                                        >Project Status</span
+                                        >Status Proyek</span
                                     >
                                     <Select v-model="form.status">
                                         <SelectTrigger class="w-full">
                                             <SelectValue
-                                                placeholder="Choose a status"
+                                                placeholder="Pilih status"
                                             />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -712,12 +723,12 @@ const getCurrentLocation = () => {
                                 <label class="min-w-0 space-y-2">
                                     <span
                                         class="text-sm font-medium text-foreground"
-                                        >Payment Status</span
+                                        >Status Pembayaran</span
                                     >
                                     <Select v-model="form.payment_status">
                                         <SelectTrigger class="w-full">
                                             <SelectValue
-                                                placeholder="Choose a payment status"
+                                                placeholder="Pilih status pembayaran"
                                             />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -778,7 +789,7 @@ const getCurrentLocation = () => {
                             class="w-full"
                             @click="backToProjects"
                         >
-                            Cancel
+                            Batal
                         </Button>
                         <Button
                             type="button"
@@ -791,7 +802,7 @@ const getCurrentLocation = () => {
                                 class="mr-2 size-4"
                             />
                             {{
-                                isCreateMode ? 'Create Project' : 'Save Changes'
+                                isCreateMode ? 'Tambah Proyek' : 'Simpan Perubahan'
                             }}
                         </Button>
                     </div>

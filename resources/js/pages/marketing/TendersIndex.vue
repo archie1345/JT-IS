@@ -48,54 +48,54 @@ const uploadConnectionOptions = computed(() =>
 
 const columns = [
     { key: 'id', label: 'Id' },
-    { key: 'project_name', label: 'Project' },
-    { key: 'document_number', label: 'Document No.' },
-    { key: 'document_date', label: 'Document Date' },
-    { key: 'title', label: 'Tender / Report' },
+    { key: 'project_name', label: 'Proyek' },
+    { key: 'document_number', label: 'No. Dokumen' },
+    { key: 'document_date', label: 'Tanggal Dokumen' },
+    { key: 'title', label: 'Tender / Laporan' },
     { key: 'owner', label: 'Owner' },
-    { key: 'value', label: 'Estimated Value' },
+    { key: 'value', label: 'Estimasi Nilai' },
     { key: 'status', label: 'Status' },
 ] satisfies SpreadsheetColumn[];
 
 const fields = [
     {
         name: 'project_id',
-        label: 'Project',
+        label: 'Proyek',
         type: 'select',
         options: props.projectOptions,
     },
     {
         name: 'document_number',
-        label: 'Document Number',
+        label: 'Nomor Dokumen',
         type: 'text',
-        placeholder: 'Example: 001/SPH/JTE/II/2026',
+        placeholder: 'Contoh: 001/SPH/JTE/II/2026',
     },
     {
         name: 'document_date',
-        label: 'Document Date',
+        label: 'Tanggal Dokumen',
         type: 'date',
     },
     {
         name: 'title',
-        label: 'Work / Package Title',
+        label: 'Nama Pekerjaan / Paket',
         type: 'text',
-        placeholder: 'Example: Konsolidasi pembangunan perkuatan tanggul',
+        placeholder: 'Contoh: Konsolidasi pembangunan perkuatan tanggul',
     },
     {
         name: 'owner',
-        label: 'Owner / Client',
+        label: 'Owner / Klien',
         type: 'text',
-        placeholder: 'Example: Perum Jasa Tirta I',
+        placeholder: 'Contoh: Perum Jasa Tirta I',
     },
     {
         name: 'location',
-        label: 'Location',
+        label: 'Lokasi',
         type: 'textarea',
-        placeholder: 'Project location from the document',
+        placeholder: 'Lokasi proyek dari dokumen',
     },
     {
         name: 'value',
-        label: 'Offer / Contract Value',
+        label: 'Nilai Penawaran / Kontrak',
         type: 'number',
         min: 0,
         step: '0.01',
@@ -105,17 +105,17 @@ const fields = [
         label: 'Status',
         type: 'select',
         options: [
-            { value: 'open', label: 'Open' },
-            { value: 'submitted', label: 'Submitted' },
-            { value: 'won', label: 'Won' },
-            { value: 'lost', label: 'Lost' },
+            { value: 'open', label: 'Terbuka' },
+            { value: 'submitted', label: 'Diajukan' },
+            { value: 'won', label: 'Menang' },
+            { value: 'lost', label: 'Kalah' },
         ],
     },
     {
         name: 'notes',
-        label: 'Notes',
+        label: 'Catatan',
         type: 'textarea',
-        placeholder: 'Scope, addendum notes, or document remarks',
+        placeholder: 'Scope, catatan addendum, atau catatan dokumen',
     },
 ] as const;
 
@@ -134,7 +134,7 @@ const convertTender = (record: Record<string, null | number | string>) => {
     <CrudPrototypePage
         head-title="Marketing Pipeline"
         title="Marketing Pipeline"
-        description="Track tender opportunities from open offer through submitted, won, or lost status."
+        description="Pantau peluang tender dari penawaran terbuka sampai diajukan, menang, atau kalah."
         :breadcrumbs="breadcrumbs"
         :rows="props.records"
         :columns="columns"
@@ -148,7 +148,7 @@ const convertTender = (record: Record<string, null | number | string>) => {
         :uploaded-documents="props.uploadedDocuments"
         :upload-connection-options="uploadConnectionOptions"
         :pagination="props.pagination"
-        create-label="New Tender"
+        create-label="Tambah Tender"
     >
         <template #cell-value="{ value }">
             {{
@@ -182,7 +182,7 @@ const convertTender = (record: Record<string, null | number | string>) => {
                 v-if="Number(row.can_convert ?? 0) === 1"
                 variant="outline"
                 size="icon-sm"
-                title="Convert to Project"
+                title="Konversi ke Proyek"
                 @click="
                     convertTender(row as Record<string, null | number | string>)
                 "

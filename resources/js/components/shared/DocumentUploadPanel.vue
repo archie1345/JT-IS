@@ -354,7 +354,7 @@ const metadataPreview = computed(() => {
                     : null,
         },
         {
-            label: 'Amount',
+            label: 'Nilai',
             value:
                 (effectiveComponentType.value === 'invoice' ||
                     effectiveComponentType.value === 'project_cost') &&
@@ -774,7 +774,7 @@ const removeDocument = (document: UploadedDocument) => {
                             @click="openExtractionPreview"
                         >
                             <ScanText class="mr-2 size-4" />
-                            Review draft OCR
+                            Review Draft OCR
                         </Button>
                         <span
                             v-if="applyStatus"
@@ -994,7 +994,7 @@ const removeDocument = (document: UploadedDocument) => {
                                         <th class="w-[7rem] px-3 py-2">Qty</th>
                                         <th class="w-[7rem] px-3 py-2">Unit</th>
                                         <th class="w-[10rem] px-3 py-2">
-                                            Unit Price
+                                            Harga Satuan
                                         </th>
                                         <th class="w-[10rem] px-3 py-2">
                                             Total

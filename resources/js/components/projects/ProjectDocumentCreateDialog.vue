@@ -424,7 +424,7 @@ const submitDocumentCreate = () => {
                     class="min-w-0 space-y-2"
                 >
                     <span class="text-sm font-medium text-foreground">
-                        Amount
+                        Nilai
                     </span>
                     <Input
                         v-model="documentForm.amount"
@@ -440,7 +440,7 @@ const submitDocumentCreate = () => {
                     class="min-w-0 space-y-2"
                 >
                     <span class="text-sm font-medium text-foreground">
-                        Tax
+                        Pajak
                     </span>
                     <Input
                         v-model="documentForm.tax_amount"
@@ -481,7 +481,7 @@ const submitDocumentCreate = () => {
                     class="min-w-0 space-y-2"
                 >
                     <span class="text-sm font-medium text-foreground">
-                        Owner / Client
+                        Owner / Klien
                     </span>
                     <Input v-model="documentForm.owner" />
                     <InputError :message="documentForm.errors.owner" />
@@ -518,15 +518,15 @@ const submitDocumentCreate = () => {
                             <SelectValue placeholder="Pilih status" />
                         </SelectTrigger>
                         <SelectContent v-if="activeCreateKind === 'invoice'">
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="paid">Paid</SelectItem>
-                            <SelectItem value="overdue">Overdue</SelectItem>
+                            <SelectItem value="pending">Menunggu</SelectItem>
+                            <SelectItem value="paid">Lunas</SelectItem>
+                            <SelectItem value="overdue">Terlambat</SelectItem>
                         </SelectContent>
                         <SelectContent v-else>
-                            <SelectItem value="open">Open</SelectItem>
-                            <SelectItem value="submitted">Submitted</SelectItem>
-                            <SelectItem value="won">Won</SelectItem>
-                            <SelectItem value="lost">Lost</SelectItem>
+                            <SelectItem value="open">Terbuka</SelectItem>
+                            <SelectItem value="submitted">Diajukan</SelectItem>
+                            <SelectItem value="won">Menang</SelectItem>
+                            <SelectItem value="lost">Kalah</SelectItem>
                         </SelectContent>
                     </Select>
                     <InputError :message="documentForm.errors.status" />

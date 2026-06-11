@@ -19,10 +19,10 @@ const inputEmail = ref(props.email);
 
 <template>
     <AuthLayout
-        title="Reset password"
-        description="Please enter your new password below"
+        title="Reset Password"
+        description="Masukkan password baru untuk akun ini."
     >
-        <Head title="Reset password" />
+        <Head title="Reset Password" />
 
         <Form
             v-bind="update()"
@@ -61,7 +61,7 @@ const inputEmail = ref(props.email);
 
                 <div class="grid gap-2">
                     <Label for="password_confirmation">
-                        Confirm password
+                        Konfirmasi Password
                     </Label>
                     <Input
                         id="password_confirmation"
@@ -69,7 +69,7 @@ const inputEmail = ref(props.email);
                         name="password_confirmation"
                         autocomplete="new-password"
                         class="mt-1 block w-full"
-                        placeholder="Confirm password"
+                        placeholder="Konfirmasi password"
                     />
                     <InputError :message="errors.password_confirmation" />
                 </div>

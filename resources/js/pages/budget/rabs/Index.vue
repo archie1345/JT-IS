@@ -59,11 +59,11 @@ const rabColumns = [
     { key: 'id', label: 'Id' },
     {
         key: 'projectName',
-        label: 'Project',
+        label: 'Proyek',
         accessor: (row: Record<string, unknown>) => (row as RabRow).projectName,
     },
-    { key: 'document_number', label: 'Document No.' },
-    { key: 'document_date', label: 'Document Date' },
+    { key: 'document_number', label: 'No. Dokumen' },
+    { key: 'document_date', label: 'Tanggal Dokumen' },
     {
         key: 'totalBudget',
         label: 'Total Budget',
@@ -71,12 +71,12 @@ const rabColumns = [
     },
     {
         key: 'itemCount',
-        label: 'Items',
+        label: 'Item',
         accessor: (row: Record<string, unknown>) => (row as RabRow).itemCount,
     },
     {
         key: 'updatedAt',
-        label: 'Updated',
+        label: 'Diupdate',
         accessor: (row: Record<string, unknown>) =>
             (row as RabRow).updatedAt ?? '-',
     },
@@ -85,34 +85,34 @@ const rabColumns = [
 const fields = [
     {
         name: 'project_id',
-        label: 'Project',
+        label: 'Proyek',
         type: 'select',
         options: props.projectOptions,
         required: true,
     },
     {
         name: 'document_number',
-        label: 'Document Number',
+        label: 'Nomor Dokumen',
         type: 'text',
-        placeholder: 'RAB or contract document number',
+        placeholder: 'Nomor dokumen RAB atau kontrak',
     },
     {
         name: 'document_date',
-        label: 'Document Date',
+        label: 'Tanggal Dokumen',
         type: 'date',
     },
     {
         name: 'total_budget',
-        label: 'Total / Contract Value',
+        label: 'Total / Nilai Kontrak',
         type: 'number',
         min: 0,
         step: '0.01',
     },
     {
         name: 'notes',
-        label: 'Notes',
+        label: 'Catatan',
         type: 'textarea',
-        placeholder: 'Terbilang or document remarks',
+        placeholder: 'Terbilang atau catatan dokumen',
     },
 ] as const;
 </script>
@@ -120,8 +120,8 @@ const fields = [
 <template>
     <CrudPrototypePage
         head-title="RAB"
-        title="RAB List"
-        description="Review project revenue budgets and contract-value baselines for each monitored project."
+        title="Daftar RAB"
+        description="Review budget pendapatan proyek dan baseline nilai kontrak untuk tiap proyek."
         :rows="rows"
         :columns="rabColumns"
         :fields="fields"

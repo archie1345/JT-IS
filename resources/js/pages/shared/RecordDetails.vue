@@ -94,7 +94,7 @@ const openInvoicePreview = () => {
                     @click="backToList"
                 >
                     <ArrowLeft class="mr-2 size-4" />
-                    Back
+                    Kembali
                 </Button>
                 <div
                     class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
@@ -119,11 +119,11 @@ const openInvoicePreview = () => {
                             @click="openInvoicePreview"
                         >
                             <FileText class="mr-2 size-4" />
-                            Make PDF
+                            Buat PDF
                         </Button>
                         <Button :disabled="form.processing" @click="submit">
                             <Save class="mr-2 size-4" />
-                            Save Changes
+                            Simpan Perubahan
                         </Button>
                     </div>
                 </div>
@@ -133,8 +133,8 @@ const openInvoicePreview = () => {
                 class="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]"
             >
                 <EntityPageSection
-                    title="Record Fields"
-                    description="Edit the fields captured from the source document."
+                    title="Field Data"
+                    description="Edit field yang terbaca dari dokumen sumber."
                 >
                     <form
                         class="grid min-w-0 gap-4 sm:grid-cols-2"
@@ -151,7 +151,7 @@ const openInvoicePreview = () => {
                         <div class="flex min-w-0 justify-end sm:col-span-2">
                             <Button type="submit" :disabled="form.processing">
                                 <Save class="mr-2 size-4" />
-                                Save Changes
+                                Simpan Perubahan
                             </Button>
                         </div>
                     </form>
@@ -159,16 +159,16 @@ const openInvoicePreview = () => {
 
                 <EntityPageSection
                     v-if="props.upload"
-                    title="Attached Files"
-                    description="Documents linked to this record."
+                    title="File Terlampir"
+                    description="Dokumen yang terhubung ke data ini."
                 >
                     <DocumentUploadPanel
                         :project-id="props.upload.projectId"
                         :component-type="props.upload.componentType"
                         :component-id="props.upload.componentId"
                         :documents="props.upload.documents"
-                        title="Record files"
-                        description="Upload source files and supporting evidence for this record."
+                        title="File Data"
+                        description="Upload file sumber dan bukti pendukung untuk data ini."
                     />
                 </EntityPageSection>
             </section>

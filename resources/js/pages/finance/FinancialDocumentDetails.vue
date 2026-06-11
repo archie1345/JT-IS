@@ -138,7 +138,7 @@ const documentTitle = computed(() =>
 );
 
 const itemDialogTitle = computed(() =>
-    editingItemId.value === null ? 'Add item' : 'Edit item',
+    editingItemId.value === null ? 'Tambah item' : 'Edit item',
 );
 
 const itemTotal = computed(
@@ -170,22 +170,22 @@ const scannerRows = computed(() =>
 );
 const scannerSummary = computed(() => {
     if (!scannerData.value) {
-        return 'Upload a file to scan invoice or cost details.';
+        return 'Upload file untuk scan detail invoice atau biaya.';
     }
 
     const metadata = scannerData.value.metadata;
     const detected = [
-        metadata.doc_number ? 'document number' : null,
-        metadata.contract_value ? 'amount' : null,
-        metadata.contract_date ? 'date' : null,
+        metadata.doc_number ? 'nomor dokumen' : null,
+        metadata.contract_value ? 'nilai' : null,
+        metadata.contract_date ? 'tanggal' : null,
         scannerRows.value.length > 0
-            ? `${scannerRows.value.length} line item(s)`
+            ? `${scannerRows.value.length} baris item`
             : null,
     ].filter(Boolean);
 
     return detected.length > 0
-        ? `Detected ${detected.join(', ')}.`
-        : 'OCR finished, but no structured fields were detected.';
+        ? `Terdeteksi ${detected.join(', ')}.`
+        : 'OCR selesai, tetapi tidak ada field terstruktur yang terdeteksi.';
 });
 
 const backToList = () => router.get(props.indexUrl);
@@ -366,7 +366,7 @@ const submitItem = () => {
 };
 
 const destroyItem = (item: FinancialItem) => {
-    if (!window.confirm('Delete this item?')) return;
+    if (!window.confirm('Hapus item ini?')) return;
 
     deletingItemId.value = item.id;
     router.delete(`${props.itemUpdateUrlBase}/${item.id}`, {
@@ -391,8 +391,8 @@ const openInvoicePreview = () => {
             class="flex min-h-[calc(100vh-8rem)] min-w-0 flex-1 flex-col gap-3 rounded-xl p-2 sm:gap-4 sm:p-4"
         >
             <EntityDetailHero
-                back-label="Back"
-                :title="String(props.record.project_name || 'Project')"
+                back-label="Kembali"
+                :title="String(props.record.project_name || 'Proyek')"
                 :description="documentTitle"
                 :badge-text="props.recordLabel"
                 badge-class="bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/25"
@@ -405,14 +405,14 @@ const openInvoicePreview = () => {
                         @click="backToList"
                     >
                         <ArrowLeft class="mr-2 size-4" />
-                        Back
+                        Kembali
                     </Button>
                 </template>
             </EntityDetailHero>
 
             <section class="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <EntityMetricCard
-                    label="Items"
+                    label="Item"
                     :value="props.summary.itemCount"
                 />
                 <EntityMetricCard
@@ -421,7 +421,7 @@ const openInvoicePreview = () => {
                 />
                 <EntityMetricCard
                     :label="
-                        props.kind === 'invoice' ? 'Tax' : 'Linked Budget Items'
+                        props.kind === 'invoice' ? 'Pajak' : 'Item Budget Terkait'
                     "
                     :value="
                         props.kind === 'invoice'
@@ -437,8 +437,8 @@ const openInvoicePreview = () => {
 
             <section class="grid min-w-0 gap-4">
                 <EntityPageSection
-                    title="Record Fields"
-                    :description="`Edit the header fields for this ${props.recordLabel.toLowerCase()} document.`"
+                    title="Field Data"
+                    :description="`Edit field header untuk dokumen ${props.recordLabel.toLowerCase()} ini.`"
                 >
                     <form
                         class="grid min-w-0 gap-4 sm:grid-cols-2"
@@ -462,22 +462,22 @@ const openInvoicePreview = () => {
                                 @click="openInvoicePreview"
                             >
                                 <FileText class="mr-2 size-4" />
-                                Make PDF
+                                Buat PDF
                             </Button>
                             <Button
                                 type="submit"
                                 :disabled="headerForm.processing"
                             >
                                 <Save class="mr-2 size-4" />
-                                Save Record Fields
+                                Simpan Field Data
                             </Button>
                         </div>
                     </form>
                 </EntityPageSection>
 
                 <EntityPageSection
-                    title="Uploaded Files"
-                    :description="`Files attached to this ${props.recordLabel.toLowerCase()} record.`"
+                    title="File Terunggah"
+                    :description="`File yang terlampir ke data ${props.recordLabel.toLowerCase()} ini.`"
                 >
                     <div
                         class="mb-4 grid min-w-0 gap-3 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]"
@@ -493,7 +493,7 @@ const openInvoicePreview = () => {
                             >
                                 <div class="min-w-0">
                                     <p class="text-sm font-medium">
-                                        OCR Scanner Result
+                                        Hasil Scanner OCR
                                     </p>
                                     <p
                                         class="mt-1 text-sm text-muted-foreground"
@@ -509,7 +509,7 @@ const openInvoicePreview = () => {
                                         :disabled="!scannerData"
                                         @click="applyScannerToHeader"
                                     >
-                                        Fill Header
+                                        Isi Header
                                     </Button>
                                     <Button
                                         type="button"
@@ -517,7 +517,7 @@ const openInvoicePreview = () => {
                                         :disabled="!scannerData"
                                         @click="openScannerItem"
                                     >
-                                        Add OCR Row
+                                        Tambah Baris OCR
                                     </Button>
                                 </div>
                             </div>
@@ -532,7 +532,7 @@ const openInvoicePreview = () => {
                                     <span
                                         class="block text-xs text-muted-foreground"
                                     >
-                                        Reference
+                                        Referensi
                                     </span>
                                     <span class="block truncate font-medium">
                                         {{
@@ -547,7 +547,7 @@ const openInvoicePreview = () => {
                                     <span
                                         class="block text-xs text-muted-foreground"
                                     >
-                                        Amount
+                                        Nilai
                                     </span>
                                     <span class="block truncate font-medium">
                                         {{
@@ -564,7 +564,7 @@ const openInvoicePreview = () => {
                                     <span
                                         class="block text-xs text-muted-foreground"
                                     >
-                                        Project / Description
+                                        Proyek / Deskripsi
                                     </span>
                                     <span class="block font-medium break-words">
                                         {{
@@ -579,7 +579,7 @@ const openInvoicePreview = () => {
                                     <span
                                         class="block text-xs text-muted-foreground"
                                     >
-                                        Detected Rows
+                                        Baris Terdeteksi
                                     </span>
                                     <span class="font-medium">
                                         {{ scannerRows.length }}
@@ -591,8 +591,8 @@ const openInvoicePreview = () => {
                                 v-if="scannerApplied"
                                 class="mt-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700"
                             >
-                                OCR values were copied into the form. Review
-                                them, then save the record fields.
+                                Nilai OCR disalin ke form. Review dulu, lalu
+                                simpan field data.
                             </p>
 
                             <p
@@ -609,14 +609,14 @@ const openInvoicePreview = () => {
                         :component-type="props.upload.componentType"
                         :component-id="props.upload.componentId"
                         :documents="props.upload.documents"
-                        :title="`${props.recordLabel} files`"
-                        :description="`Attach invoices, receipts, approvals, and supporting documents.`"
+                        :title="`File ${props.recordLabel}`"
+                        :description="`Lampirkan invoice, bukti pembayaran, persetujuan, dan dokumen pendukung.`"
                     />
                 </EntityPageSection>
 
                 <EntityPageSection
-                    title="Item Details"
-                    :description="`Break this ${props.recordLabel.toLowerCase()} into billable or realized line items.`"
+                    title="Detail Item"
+                    :description="`Pisahkan ${props.recordLabel.toLowerCase()} ini menjadi baris item tagihan atau realisasi.`"
                 >
                     <div
                         class="flex min-w-0 flex-wrap items-center justify-between gap-3 border-b border-sidebar-border/70 px-3 py-3 sm:px-5 sm:py-4"
@@ -624,12 +624,12 @@ const openInvoicePreview = () => {
                         <p
                             class="min-w-0 text-xs text-muted-foreground sm:text-sm"
                         >
-                            Pick from this project's RAB/RAP items or add a
-                            manual line.
+                            Pilih dari item RAB/RAP proyek atau tambah baris
+                            manual.
                         </p>
                         <Button @click="openCreateItem">
                             <Plus class="mr-2 size-4" />
-                            Add row
+                            Tambah baris
                         </Button>
                     </div>
 
@@ -645,12 +645,12 @@ const openInvoicePreview = () => {
                                         <th
                                             class="min-w-[8rem] px-3 py-2.5 font-medium sm:min-w-[9rem] sm:px-4 sm:py-3"
                                         >
-                                            Source
+                                            Sumber
                                         </th>
                                         <th
                                             class="min-w-[16rem] px-3 py-2.5 font-medium sm:min-w-[20rem] sm:px-4 sm:py-3"
                                         >
-                                            Description
+                                            Deskripsi
                                         </th>
                                         <th
                                             v-if="props.kind === 'cost'"
@@ -671,17 +671,17 @@ const openInvoicePreview = () => {
                                         <th
                                             class="min-w-[9rem] px-3 py-2.5 font-medium sm:min-w-[10rem] sm:px-4 sm:py-3"
                                         >
-                                            Unit Price
+                                            Harga Satuan
                                         </th>
                                         <th
                                             class="min-w-[9rem] px-3 py-2.5 font-medium sm:min-w-[10rem] sm:px-4 sm:py-3"
                                         >
-                                            Amount
+                                            Nilai
                                         </th>
                                         <th
                                             class="min-w-[6rem] px-3 py-2.5 text-right font-medium sm:min-w-[7rem] sm:px-4 sm:py-3"
                                         >
-                                            Action
+                                            Aksi
                                         </th>
                                     </tr>
                                 </thead>
@@ -760,9 +760,9 @@ const openInvoicePreview = () => {
                                             "
                                             class="px-4 py-8 text-center text-sm text-muted-foreground"
                                         >
-                                            No items yet. Add rows from the
-                                            project's RAB/RAP to start
-                                            reconciliation.
+                                            Belum ada item. Tambah baris dari
+                                            RAB/RAP proyek untuk mulai
+                                            rekonsiliasi.
                                         </td>
                                     </tr>
                                 </tbody>
@@ -780,7 +780,7 @@ const openInvoicePreview = () => {
                 <DialogHeader class="shrink-0">
                     <DialogTitle>{{ itemDialogTitle }}</DialogTitle>
                     <DialogDescription>
-                        Link a project budget item or enter a manual line.
+                        Hubungkan item budget proyek atau isi baris manual.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -789,14 +789,14 @@ const openInvoicePreview = () => {
                     @submit.prevent="submitItem"
                 >
                     <div class="min-w-0 space-y-2 sm:col-span-2">
-                        <Label for="source_item">Pick RAB/RAP Item</Label>
+                        <Label for="source_item">Pilih Item RAB/RAP</Label>
                         <select
                             id="source_item"
                             v-model="selectedSource"
                             class="h-10 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm"
                             @change="applyBudgetItem"
                         >
-                            <option value="">Manual item</option>
+                            <option value="">Item manual</option>
                             <option
                                 v-for="option in props.budgetItemOptions"
                                 :key="option.value"
@@ -810,17 +810,17 @@ const openInvoicePreview = () => {
                     </div>
 
                     <div class="min-w-0 space-y-2">
-                        <Label for="category">Category</Label>
+                        <Label for="category">Kategori</Label>
                         <Input id="category" v-model="itemForm.category" />
                         <InputError :message="itemForm.errors.category" />
                     </div>
                     <div v-if="props.kind === 'cost'" class="min-w-0 space-y-2">
-                        <Label for="vendor">Vendor / Payee</Label>
+                        <Label for="vendor">Vendor / Penerima</Label>
                         <Input id="vendor" v-model="itemForm.vendor" />
                         <InputError :message="itemForm.errors.vendor" />
                     </div>
                     <div class="min-w-0 space-y-2 sm:col-span-2">
-                        <Label for="description">Description</Label>
+                        <Label for="description">Deskripsi</Label>
                         <Input
                             id="description"
                             v-model="itemForm.description"
@@ -844,7 +844,7 @@ const openInvoicePreview = () => {
                         <InputError :message="itemForm.errors.unit" />
                     </div>
                     <div class="min-w-0 space-y-2">
-                        <Label for="unit_price">Unit Price</Label>
+                        <Label for="unit_price">Harga Satuan</Label>
                         <Input
                             id="unit_price"
                             v-model.number="itemForm.unit_price"
@@ -855,7 +855,7 @@ const openInvoicePreview = () => {
                         <InputError :message="itemForm.errors.unit_price" />
                     </div>
                     <div class="min-w-0 space-y-2">
-                        <Label for="total_price">Total Price</Label>
+                        <Label for="total_price">Total Harga</Label>
                         <Input
                             id="total_price"
                             v-model.number="itemForm.total_price"
@@ -864,12 +864,12 @@ const openInvoicePreview = () => {
                             step="0.01"
                         />
                         <p class="text-xs text-muted-foreground">
-                            Computed: {{ formatCurrency(itemTotal) }}
+                            Terhitung: {{ formatCurrency(itemTotal) }}
                         </p>
                         <InputError :message="itemForm.errors.total_price" />
                     </div>
                     <div class="min-w-0 space-y-2 sm:col-span-2">
-                        <Label for="notes">Notes</Label>
+                        <Label for="notes">Catatan</Label>
                         <textarea
                             id="notes"
                             v-model="itemForm.notes"
@@ -883,10 +883,10 @@ const openInvoicePreview = () => {
                             type="button"
                             variant="outline"
                             @click="closeItemModal"
-                            >Cancel</Button
+                            >Batal</Button
                         >
                         <Button type="submit" :disabled="itemForm.processing">
-                            {{ editingItemId === null ? 'Save' : 'Update' }}
+                            {{ editingItemId === null ? 'Simpan' : 'Update' }}
                         </Button>
                     </DialogFooter>
                 </form>

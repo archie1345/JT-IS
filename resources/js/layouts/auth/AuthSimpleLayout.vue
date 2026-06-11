@@ -12,7 +12,7 @@ defineProps<{
         <div class="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-md items-center">
             <div class="w-full rounded-[2rem] bg-white p-8 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.35)] sm:p-10">
                 <Link href="/" class="mb-8 inline-flex items-center text-sm font-medium text-slate-500 transition hover:text-slate-900">
-                    Back to home
+                    Kembali ke beranda
                 </Link>
 
                 <div class="space-y-2">

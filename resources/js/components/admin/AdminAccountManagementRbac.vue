@@ -92,7 +92,7 @@ const employeeRoleLabel = (role: string | null) =>
         ?.split('-')
         .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
         .join(' ') ??
-    'General';
+    'Umum';
 
 const employeeRoleBadgeClass =
     'bg-indigo-500/15 text-indigo-600 ring-1 ring-indigo-500/25';
@@ -110,7 +110,7 @@ const userColumns: SpreadsheetColumn[] = [
     { key: 'id', label: 'Id', widthClass: 'min-w-[5rem]' },
     {
         key: 'name',
-        label: 'Name',
+        label: 'Nama',
         accessor: (row) => getUserRow(row).name,
     },
     {
@@ -125,17 +125,17 @@ const userColumns: SpreadsheetColumn[] = [
     },
     {
         key: 'clientName',
-        label: 'Client',
+        label: 'Klien',
         accessor: (row) => getUserRow(row).clientName ?? '-',
     },
     {
         key: 'verifiedAt',
-        label: 'Verified',
+        label: 'Terverifikasi',
         accessor: (row) => getUserRow(row).verifiedAt ?? '-',
     },
     {
         key: 'createdAt',
-        label: 'Created',
+        label: 'Dibuat',
         accessor: (row) => getUserRow(row).createdAt ?? '-',
     },
 ];
@@ -218,16 +218,16 @@ watch(
                 <h1
                     class="text-3xl font-semibold tracking-tight text-foreground"
                 >
-                    Account Management
+                    Manajemen Akun
                 </h1>
                 <p class="text-sm text-muted-foreground">
-                    Create and edit client, employee, and admin accounts from
-                    one place.
+                    Buat dan edit akun klien, karyawan, dan admin dari satu
+                    tempat.
                 </p>
             </div>
 
             <Badge class="bg-blue-500/15 text-blue-600 ring-1 ring-blue-500/25">
-                {{ props.stats.total }} Accounts
+                {{ props.stats.total }} Akun
             </Badge>
         </div>
 
@@ -262,7 +262,7 @@ watch(
                 <p
                     class="text-xs tracking-[0.18em] text-muted-foreground uppercase"
                 >
-                    Employee
+                    Karyawan
                 </p>
                 <p class="mt-2 text-2xl font-semibold text-foreground">
                     {{ props.stats.employee }}
@@ -274,7 +274,7 @@ watch(
                 <p
                     class="text-xs tracking-[0.18em] text-muted-foreground uppercase"
                 >
-                    Client
+                    Klien
                 </p>
                 <p class="mt-2 text-2xl font-semibold text-foreground">
                     {{ props.stats.client }}
@@ -285,15 +285,15 @@ watch(
         <DataTable
             :rows="props.users"
             :columns="userColumns"
-            title="Users"
-            description="Click a row to edit the account or use the new account button to create one."
-            note="Employee accounts can include an extra access tag such as marketing, finance, or operational."
+            title="User"
+            description="Klik baris untuk edit akun atau gunakan tombol akun baru untuk membuat akun."
+            note="Akun karyawan bisa memakai access tag tambahan seperti marketing, finance, atau operational."
             row-key-field="id"
             :stretch-to-viewport="false"
             :framed="false"
             show-create-button
-            create-label="New Account"
-            empty-text="No accounts found."
+            create-label="Tambah Akun"
+            empty-text="Akun tidak ditemukan."
             @row-click="openEditModal"
             @create="openCreateModal"
         >
@@ -310,7 +310,7 @@ watch(
                         :class="employeeRoleBadgeClass"
                         class="w-fit whitespace-nowrap"
                     >
-                        {{ getUserRow(row).employeeRoleLabel ?? 'General' }}
+                        {{ getUserRow(row).employeeRoleLabel ?? 'Umum' }}
                     </Badge>
                 </div>
             </template>
@@ -331,7 +331,7 @@ watch(
 
             <template #cell-verifiedAt="{ value }">
                 <Badge :class="verificationBadgeClass(value)">
-                    {{ value || 'Pending' }}
+                    {{ value || 'Menunggu' }}
                 </Badge>
             </template>
 
@@ -359,11 +359,10 @@ watch(
                 <DialogHeader class="shrink-0">
                     <DialogTitle class="flex items-center gap-2 text-xl">
                         <UserRoundCog class="size-5 text-muted-foreground" />
-                        {{ isEditing ? 'Edit Account' : 'Create Account' }}
+                        {{ isEditing ? 'Edit Akun' : 'Tambah Akun' }}
                     </DialogTitle>
                     <DialogDescription>
-                        Create admin, employee, or client accounts from one
-                        popup.
+                        Buat akun admin, karyawan, atau klien dari satu popup.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -377,7 +376,7 @@ watch(
                             Preview
                         </p>
                         <p class="mt-1 text-lg font-semibold text-foreground">
-                            {{ form.name || 'Account name' }}
+                            {{ form.name || 'Nama akun' }}
                         </p>
                         <p class="text-sm text-muted-foreground">
                             {{ form.email || 'account@email.com' }}
@@ -401,7 +400,7 @@ watch(
                                 variant="outline"
                             >
                                 {{
-                                    selectedClient?.name ?? 'Client linked here'
+                                    selectedClient?.name ?? 'Klien terhubung di sini'
                                 }}
                             </Badge>
                         </div>
@@ -409,9 +408,9 @@ watch(
 
                     <label class="block min-w-0 space-y-2">
                         <span class="text-sm font-medium text-foreground"
-                            >Name</span
+                            >Nama</span
                         >
-                        <Input v-model="form.name" placeholder="Full name" />
+                        <Input v-model="form.name" placeholder="Nama lengkap" />
                         <InputError :message="form.errors.name" />
                     </label>
 
@@ -439,8 +438,8 @@ watch(
                             <span class="text-xs text-muted-foreground">
                                 {{
                                     isEditing
-                                        ? '(leave blank to keep current password)'
-                                        : '(required)'
+                                        ? '(kosongkan untuk memakai password saat ini)'
+                                        : '(wajib)'
                                 }}
                             </span>
                         </span>
@@ -449,8 +448,8 @@ watch(
                             type="password"
                             :placeholder="
                                 isEditing
-                                    ? 'Leave blank to keep current password'
-                                    : 'Temporary password'
+                                    ? 'Kosongkan untuk memakai password saat ini'
+                                    : 'Password sementara'
                             "
                         />
                         <InputError :message="form.errors.password" />
@@ -462,7 +461,7 @@ watch(
                         >
                         <Select v-model="form.user_type">
                             <SelectTrigger class="w-full">
-                                <SelectValue placeholder="Choose role" />
+                            <SelectValue placeholder="Pilih role" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem
@@ -475,9 +474,8 @@ watch(
                             </SelectContent>
                         </Select>
                         <p class="text-xs text-muted-foreground">
-                            Client accounts need a linked client record.
-                            Employee accounts can also carry a custom access
-                            tag.
+                            Akun klien perlu dihubungkan ke data klien.
+                            Akun karyawan bisa memakai access tag khusus.
                         </p>
                         <InputError :message="form.errors.user_type" />
                     </label>
@@ -487,7 +485,7 @@ watch(
                         class="block min-w-0 space-y-2"
                     >
                         <span class="text-sm font-medium text-foreground"
-                            >Employee Access Tag</span
+                            >Access Tag Karyawan</span
                         >
                         <Input
                             v-model="form.employee_role"
@@ -504,9 +502,10 @@ watch(
                             </option>
                         </datalist>
                         <p class="text-xs text-muted-foreground">
-                            Use tags like <code>marketing</code>,
-                            <code>finance</code>, or <code>operational</code>.
-                            You can type a custom value too.
+                            Gunakan tag seperti <code>marketing</code>,
+                            <code>finance</code>, atau
+                            <code>operational</code>.
+                            Anda juga bisa mengetik nilai khusus.
                         </p>
                         <InputError :message="form.errors.employee_role" />
                     </label>
@@ -516,11 +515,11 @@ watch(
                         class="block min-w-0 space-y-2"
                     >
                         <span class="text-sm font-medium text-foreground"
-                            >Linked Client</span
+                            >Klien Terkait</span
                         >
                         <Select v-model="form.client_id">
                             <SelectTrigger class="w-full">
-                                <SelectValue placeholder="Choose a client" />
+                                <SelectValue placeholder="Pilih klien" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem
@@ -528,7 +527,7 @@ watch(
                                     :key="client.id"
                                     :value="String(client.id)"
                                 >
-                                    {{ client.name ?? `Client #${client.id}` }}
+                                    {{ client.name ?? `Klien #${client.id}` }}
                                 </SelectItem>
                             </SelectContent>
                         </Select>
@@ -541,8 +540,8 @@ watch(
                     >
                         {{
                             form.user_type === 'employee'
-                                ? 'Employee access is handled with the tag above.'
-                                : 'No client link is needed for this role.'
+                                ? 'Akses karyawan diatur dengan tag di atas.'
+                                : 'Role ini tidak membutuhkan link klien.'
                         }}
                     </div>
 
@@ -553,12 +552,12 @@ watch(
                             <CheckCircle2 class="size-4 text-emerald-500" />
                             {{
                                 selectedUser
-                                    ? `Editing ${selectedUser.name}`
-                                    : 'Ready to create a new account'
+                                    ? `Mengedit ${selectedUser.name}`
+                                    : 'Siap membuat akun baru'
                             }}
                         </div>
                         <p class="mt-1">
-                            Employee access:
+                            Akses karyawan:
                             {{
                                 form.user_type === 'employee'
                                     ? employeeRoleLabel(
@@ -568,7 +567,7 @@ watch(
                             }}
                         </p>
                         <p>
-                            Selected client: {{ selectedClient?.name ?? '-' }}
+                            Klien dipilih: {{ selectedClient?.name ?? '-' }}
                         </p>
                     </div>
                 </div>
@@ -580,7 +579,7 @@ watch(
                         class="w-full"
                         @click="cancelEdit"
                     >
-                        Cancel
+                        Batal
                     </Button>
                     <Button
                         type="button"
@@ -590,7 +589,7 @@ watch(
                     >
                         <Plus v-if="!isEditing" class="mr-2 size-4" />
                         <Save v-else class="mr-2 size-4" />
-                        {{ isEditing ? 'Save Changes' : 'Create Account' }}
+                        {{ isEditing ? 'Simpan Perubahan' : 'Tambah Akun' }}
                     </Button>
                 </DialogFooter>
             </DialogContent>

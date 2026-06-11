@@ -26,8 +26,8 @@ const props = withDefaults(
     }>(),
     {
         rowKeyField: 'id',
-        createLabel: 'New Item',
-        emptyText: 'No matching data found.',
+        createLabel: 'Tambah Data',
+        emptyText: 'Data tidak ditemukan.',
         stretchToViewport: true,
         showCreateButton: false,
     },

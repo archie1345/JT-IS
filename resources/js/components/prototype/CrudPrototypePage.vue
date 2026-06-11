@@ -101,7 +101,7 @@ const props = withDefaults(
         ocrUnavailableMessage?: string;
     }>(),
     {
-        createLabel: 'New Record',
+        createLabel: 'Tambah Data',
         note: '',
         uploadComponentType: '',
         uploadProjectId: null,
@@ -179,8 +179,8 @@ const shouldUseImportDialog = computed(() =>
 const importDocumentLabels: Record<string, string> = {
     invoice: 'Invoice',
     pipeline: 'Pipeline',
-    project_cost: 'Project Cost',
-    progress_report: 'Progress Report',
+    project_cost: 'Realisasi Biaya',
+    progress_report: 'Laporan Progress',
     rab: 'RAB',
     rap: 'RAP',
 };
@@ -287,7 +287,7 @@ const submit = () => {
 const destroyRecord = (row: Row) => {
     const id = Number(row.id);
 
-    if (!window.confirm('Delete this record?')) {
+    if (!window.confirm('Hapus data ini?')) {
         return;
     }
 
@@ -302,7 +302,7 @@ const destroyRecord = (row: Row) => {
 };
 
 const dialogTitle = computed(() =>
-    editingId.value === null ? `Create ${props.title}` : `Edit ${props.title}`,
+    editingId.value === null ? `Tambah ${props.title}` : `Edit ${props.title}`,
 );
 
 const forwardedSlots = computed(() =>
@@ -381,7 +381,7 @@ const goToPage = (page: number) => {
                         @click="isUploadOpen = true"
                     >
                         <Upload class="size-4" />
-                        Import Documents
+                        Import Dokumen
                     </Button>
                     <slot name="toolbar-actions" />
                 </template>
@@ -431,25 +431,25 @@ const goToPage = (page: number) => {
                 >
                     <div class="flex items-center gap-2">
                         <span class="whitespace-nowrap text-muted-foreground">
-                            Show
+                            Tampilkan
                         </span>
                         <div class="w-20 sm:w-24">
                             <OptionSelect
                                 v-model="rowsPerPageValue"
                                 :options="rowsPerPageSelectOptions"
                                 trigger-id="rows_per_page"
-                                placeholder="Rows"
+                                placeholder="Baris"
                             />
                         </div>
                         <span class="whitespace-nowrap text-muted-foreground">
-                            rows
+                            baris
                         </span>
                     </div>
 
                     <span class="text-muted-foreground">
-                        Page {{ props.pagination.currentPage }} of
+                        Halaman {{ props.pagination.currentPage }} dari
                         {{ props.pagination.lastPage }} -
-                        {{ props.pagination.total }} total entries
+                        {{ props.pagination.total }} total data
                     </span>
                 </div>
 
@@ -461,7 +461,7 @@ const goToPage = (page: number) => {
                         :disabled="props.pagination.currentPage <= 1"
                         @click="goToPage(props.pagination.currentPage - 1)"
                     >
-                        Previous
+                        Sebelumnya
                     </Button>
                     <Button
                         type="button"
@@ -473,7 +473,7 @@ const goToPage = (page: number) => {
                         "
                         @click="goToPage(props.pagination.currentPage + 1)"
                     >
-                        Next
+                        Berikutnya
                     </Button>
                 </div>
             </div>
@@ -485,10 +485,10 @@ const goToPage = (page: number) => {
             >
                 <DialogHeader class="shrink-0">
                     <DialogTitle>
-                        Import {{ importDocumentName }} Documents
+                        Import Dokumen {{ importDocumentName }}
                     </DialogTitle>
                     <DialogDescription>
-                        Choose the upload location before selecting documents.
+                        Pilih lokasi upload sebelum memilih dokumen.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -499,8 +499,8 @@ const goToPage = (page: number) => {
                         :component-type="props.uploadComponentType"
                         :connection-options="props.uploadConnectionOptions"
                         :documents="props.uploadedDocuments"
-                        :title="`Import ${importDocumentName} Document`"
-                        description="Select a file or drop it into the upload area."
+                        :title="`Import Dokumen ${importDocumentName}`"
+                        description="Pilih file atau tarik ke area upload."
                     />
                 </div>
             </DialogContent>
@@ -531,10 +531,10 @@ const goToPage = (page: number) => {
                             type="button"
                             variant="outline"
                             @click="closeModal"
-                            >Cancel</Button
+                            >Batal</Button
                         >
                         <Button type="submit" :disabled="form.processing">
-                            {{ editingId === null ? 'Save' : 'Update' }}
+                            {{ editingId === null ? 'Simpan' : 'Update' }}
                         </Button>
                     </DialogFooter>
                 </form>

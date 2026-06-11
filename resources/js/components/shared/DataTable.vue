@@ -49,10 +49,10 @@ const props = withDefaults(
     }>(),
     {
         rowKeyField: 'id',
-        searchPlaceholder: 'Search records...',
+        searchPlaceholder: 'Cari data...',
         showCreateButton: false,
-        createLabel: 'New Item',
-        emptyText: 'No matching data found.',
+        createLabel: 'Tambah Data',
+        emptyText: 'Data tidak ditemukan.',
         stretchToViewport: true,
     },
 );
@@ -428,7 +428,7 @@ onBeforeUnmount(() => {
                                 @click="showColumnPicker = !showColumnPicker"
                             >
                                 <Settings2 class="size-4" />
-                                Columns
+                                Kolom
                             </Button>
 
                             <div
@@ -438,7 +438,7 @@ onBeforeUnmount(() => {
                                 <p
                                     class="mb-2 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase"
                                 >
-                                    Visible Columns
+                                    Kolom Terlihat
                                 </p>
                                 <label
                                     v-for="column in props.columns"
@@ -503,8 +503,8 @@ onBeforeUnmount(() => {
                                                 v-if="column.sortable !== false"
                                                 type="button"
                                                 class="inline-flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                                                :aria-label="`Sort ${column.label}`"
-                                                :title="`Sort ${column.label}`"
+                                                :aria-label="`Urutkan ${column.label}`"
+                                                :title="`Urutkan ${column.label}`"
                                                 @click="toggleSort(column.key)"
                                             >
                                                 <ArrowUpAZ
@@ -629,7 +629,7 @@ onBeforeUnmount(() => {
                         "
                         class="px-2 py-3 text-sm text-muted-foreground"
                     >
-                        No values match your search.
+                        Tidak ada nilai yang cocok.
                     </p>
                     <button
                         v-for="value in filteredColumnOptions(

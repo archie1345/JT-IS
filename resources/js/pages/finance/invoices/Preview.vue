@@ -33,11 +33,11 @@ const printPreview = () => {
         >
             <Button variant="outline" @click="router.get('/invoices')">
                 <ArrowLeft class="size-4" />
-                Back to invoices
+                Kembali ke Invoice
             </Button>
             <Button @click="printPreview">
                 <Printer class="size-4" />
-                Print / Save PDF
+                Cetak / Simpan PDF
             </Button>
         </div>
 

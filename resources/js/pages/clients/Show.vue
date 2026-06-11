@@ -22,9 +22,9 @@ const props = defineProps<{
 const isCreateMode = computed(() => props.mode === 'create');
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
-    { title: 'Clients', href: '/client' },
+    { title: 'Klien', href: '/client' },
     {
-        title: isCreateMode.value ? 'Create Client' : props.client.name,
+        title: isCreateMode.value ? 'Tambah Klien' : props.client.name,
         href: isCreateMode.value ? '/client/create' : `/client/${props.client.id}`,
     },
 ]);
@@ -50,6 +50,13 @@ const getProjectStatusClass = (status: RelatedProject['status']) =>
         completed: 'bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/25',
     })[status];
 
+const formatProjectStatus = (status: RelatedProject['status']) =>
+    ({
+        planning: 'Perencanaan',
+        ongoing: 'Berjalan',
+        completed: 'Selesai',
+    })[status] ?? status;
+
 const progressScore = computed(() => {
     if (props.client.projectCount === 0) return 0;
 
@@ -70,10 +77,10 @@ const progressToneClass = computed(() => {
 });
 
 const progressLabel = computed(() => {
-    if (progressScore.value >= 90) return 'Strong account';
-    if (progressScore.value >= 60) return 'Healthy activity';
-    if (progressScore.value >= 30) return 'Some active work';
-    return 'New or quiet account';
+    if (progressScore.value >= 90) return 'Akun kuat';
+    if (progressScore.value >= 60) return 'Aktivitas sehat';
+    if (progressScore.value >= 30) return 'Ada pekerjaan aktif';
+    return 'Akun baru atau pasif';
 });
 
 const backToClients = () => {
@@ -99,7 +106,7 @@ const submit = () => {
 </script>
 
 <template>
-    <Head :title="isCreateMode ? 'Create Client' : `Client Detail - ${props.client.name}`" />
+    <Head :title="isCreateMode ? 'Tambah Klien' : `Detail Klien - ${props.client.name}`" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex min-h-[calc(100vh-8rem)] flex-1 flex-col gap-4 rounded-xl p-4">
@@ -108,35 +115,35 @@ const submit = () => {
                     <div>
                         <Button variant="ghost" class="mb-3 pl-0 text-muted-foreground" @click="backToClients">
                             <ArrowLeft class="mr-2 size-4" />
-                            Back to Clients
+                            Kembali ke Klien
                         </Button>
                         <h1 class="text-3xl font-semibold tracking-tight text-foreground">
-                            {{ isCreateMode ? 'Create Client' : 'Client Detail' }}
+                            {{ isCreateMode ? 'Tambah Klien' : 'Detail Klien' }}
                         </h1>
                         <p class="text-sm text-muted-foreground">
-                            {{ isCreateMode ? 'Create a new client profile and save it to the database.' : 'Edit the client profile and review the projects connected to this account.' }}
+                            {{ isCreateMode ? 'Buat profil klien baru dan simpan ke database.' : 'Edit profil klien dan review proyek yang terhubung ke akun ini.' }}
                         </p>
                     </div>
 
                     <Badge class="bg-blue-500/15 text-blue-600 ring-1 ring-blue-500/25">
-                        {{ isCreateMode ? 'New' : `${props.client.projectCount} Projects` }}
+                        {{ isCreateMode ? 'Baru' : `${props.client.projectCount} Proyek` }}
                     </Badge>
                 </div>
 
                 <div class="grid min-h-0 flex-1 gap-4 lg:grid-cols-[1.3fr_0.95fr]">
                     <div class="flex min-h-0 flex-col gap-4">
                         <EntityDetailHero
-                            back-label="Back to Clients"
-                            :title="isCreateMode ? 'Create Client' : 'Client Detail'"
-                            :description="isCreateMode ? 'Create a new client profile and save it to the database.' : 'Edit the client profile and review the projects connected to this account.'"
-                            :badge-text="isCreateMode ? 'New' : `${props.client.projectCount} Projects`"
+                            back-label="Kembali ke Klien"
+                            :title="isCreateMode ? 'Tambah Klien' : 'Detail Klien'"
+                            :description="isCreateMode ? 'Buat profil klien baru dan simpan ke database.' : 'Edit profil klien dan review proyek yang terhubung ke akun ini.'"
+                            :badge-text="isCreateMode ? 'Baru' : `${props.client.projectCount} Proyek`"
                             badge-class="bg-blue-500/15 text-blue-600 ring-1 ring-blue-500/25"
-                            :title-prefix="isCreateMode ? 'New Client Name' : 'Client Name'"
-                            metric-label="Account activity"
+                            :title-prefix="isCreateMode ? 'Nama Klien Baru' : 'Nama Klien'"
+                            metric-label="Aktivitas akun"
                             :metric-value="`${progressScore}%`"
                             :metric-description="progressLabel"
-                            progress-label="Account activity"
-                            :progress-value="isCreateMode ? 'New client profile' : `${props.client.activeProjects} active / ${props.client.completedProjects} completed`"
+                            progress-label="Aktivitas akun"
+                            :progress-value="isCreateMode ? 'Profil klien baru' : `${props.client.activeProjects} aktif / ${props.client.completedProjects} selesai`"
                             :progress-bar-value="progressScore"
                             :progress-tone-class="progressToneClass"
                             @back="backToClients"
@@ -144,46 +151,46 @@ const submit = () => {
                             <template #back>
                                 <Button variant="ghost" class="mb-3 pl-0 text-muted-foreground" @click="backToClients">
                                     <ArrowLeft class="mr-2 size-4" />
-                                    Back to Clients
+                                    Kembali ke Klien
                                 </Button>
                             </template>
                             <template #title-input>
                                 <Input
                                     v-model="form.name"
                                     class="mt-2 max-w-2xl text-2xl font-semibold"
-                                    placeholder="Client name"
+                                    placeholder="Nama klien"
                                 />
                                 <InputError :message="form.errors.name" class="mt-2" />
                             </template>
                             <template #title-meta>
                                 <p class="mt-2 text-sm text-muted-foreground">
-                                    {{ form.contact || (isCreateMode ? 'Add the main contact person or email before saving.' : 'Add the main contact person or email.') }}
+                                    {{ form.contact || (isCreateMode ? 'Tambahkan kontak utama atau email sebelum menyimpan.' : 'Tambahkan kontak utama atau email.') }}
                                 </p>
                             </template>
                             <template #summary>
                                 <div class="rounded-xl bg-muted/30 p-4">
-                                    <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Primary Contact</p>
+                                    <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Kontak Utama</p>
                                     <p class="mt-1 text-sm font-medium text-foreground">{{ form.contact || '-' }}</p>
                                 </div>
 
                                 <div class="rounded-xl bg-muted/30 p-4">
-                                    <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Projects</p>
+                                    <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Proyek</p>
                                     <p class="mt-1 text-sm font-medium text-foreground">{{ props.client.projectCount }}</p>
                                 </div>
 
                                 <div class="rounded-xl bg-muted/30 p-4">
-                                    <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">First Project</p>
+                                    <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Proyek Pertama</p>
                                     <p class="mt-1 text-sm font-medium text-foreground">{{ formatDate(props.client.firstProjectDate) }}</p>
                                 </div>
 
                                 <div class="rounded-xl bg-muted/30 p-4">
-                                    <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Latest Project</p>
+                                    <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Proyek Terbaru</p>
                                     <p class="mt-1 text-sm font-medium text-foreground">{{ formatDate(props.client.lastProjectDate) }}</p>
                                 </div>
                             </template>
                         </EntityDetailHero>
 
-                        <EntityPageSection v-if="!isCreateMode" title="Related Projects" :icon="FolderOpen">
+                        <EntityPageSection v-if="!isCreateMode" title="Proyek Terkait" :icon="FolderOpen">
                             <div class="space-y-3">
                                 <button
                                     v-for="project in props.projects"
@@ -202,55 +209,55 @@ const submit = () => {
                                         </p>
                                     </div>
                                     <Badge :class="getProjectStatusClass(project.status)" class="shrink-0">
-                                        {{ project.status }}
+                                        {{ formatProjectStatus(project.status) }}
                                     </Badge>
                                 </button>
 
                                 <div v-if="props.projects.length === 0" class="rounded-xl border border-dashed border-sidebar-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
-                                    No projects linked to this client yet.
+                                    Belum ada proyek yang terhubung ke klien ini.
                                 </div>
                             </div>
                         </EntityPageSection>
                     </div>
 
                     <div class="flex min-h-0 flex-col gap-4">
-                        <EntityPageSection :title="isCreateMode ? 'Create Settings' : 'Client Settings'" :icon="FileText">
+                        <EntityPageSection :title="isCreateMode ? 'Pengaturan Pembuatan' : 'Pengaturan Klien'" :icon="FileText">
                             <div class="grid gap-4">
                                 <label class="space-y-2">
-                                    <span class="text-sm font-medium text-foreground">Client Name</span>
-                                    <Input v-model="form.name" placeholder="Client name" />
+                                    <span class="text-sm font-medium text-foreground">Nama Klien</span>
+                                    <Input v-model="form.name" placeholder="Nama klien" />
                                     <InputError :message="form.errors.name" />
                                 </label>
 
                                 <label class="space-y-2">
-                                    <span class="text-sm font-medium text-foreground">Contact</span>
-                                    <Input v-model="form.contact" placeholder="Email or phone" />
+                                    <span class="text-sm font-medium text-foreground">Kontak</span>
+                                    <Input v-model="form.contact" placeholder="Email atau telepon" />
                                     <InputError :message="form.errors.contact" />
                                 </label>
                             </div>
                         </EntityPageSection>
 
-                        <EntityPageSection title="Date" :icon="CalendarDays">
+                        <EntityPageSection title="Tanggal" :icon="CalendarDays">
                             <div class="space-y-4 text-sm">
                                 <div v-if="isCreateMode" class="rounded-xl bg-muted/30 p-4 text-muted-foreground">
-                                    Dates and activity will appear after the client is saved and linked to projects.
+                                    Tanggal dan aktivitas akan muncul setelah klien disimpan dan dihubungkan ke proyek.
                                 </div>
                                 <div class="rounded-xl bg-muted/30 p-4">
-                                    <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">First Project Date</p>
+                                    <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Tanggal Proyek Pertama</p>
                                     <p class="mt-1 font-medium text-foreground">{{ formatDate(props.client.firstProjectDate) }}</p>
                                 </div>
                                 <div class="rounded-xl bg-muted/30 p-4">
-                                    <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Latest Project Date</p>
+                                    <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Tanggal Proyek Terbaru</p>
                                     <p class="mt-1 font-medium text-foreground">{{ formatDate(props.client.lastProjectDate) }}</p>
                                 </div>
                                 <div class="rounded-xl bg-muted/30 p-4">
-                                    <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Last Updated</p>
+                                    <p class="text-xs uppercase tracking-[0.18em] text-muted-foreground">Terakhir Diupdate</p>
                                     <p class="mt-1 font-medium text-foreground">{{ formatDate(props.client.lastUpdated) }}</p>
                                 </div>
                             </div>
                         </EntityPageSection>
 
-                        <EntityPageSection :title="isCreateMode ? 'Save Client' : 'Quick Links'" :icon="Save">
+                        <EntityPageSection :title="isCreateMode ? 'Simpan Klien' : 'Link Cepat'" :icon="Save">
                             <div v-if="!isCreateMode" class="space-y-3">
                                 <button
                                     v-for="link in props.quickLinks"
@@ -263,11 +270,11 @@ const submit = () => {
                                         <p class="text-sm font-medium text-foreground">{{ link.label }}</p>
                                         <p class="text-xs text-muted-foreground">{{ link.detail }}</p>
                                     </div>
-                                    <Badge variant="secondary" class="shrink-0">Open</Badge>
+                                    <Badge variant="secondary" class="shrink-0">Buka</Badge>
                                 </button>
                             </div>
                             <p v-else class="text-sm text-muted-foreground">
-                                Save the client first to unlock related project and invoice links.
+                                Simpan klien terlebih dahulu untuk membuka link proyek dan invoice terkait.
                             </p>
                         </EntityPageSection>
                     </div>
@@ -276,12 +283,12 @@ const submit = () => {
                 <div class="rounded-2xl border border-sidebar-border/70 bg-background p-4 shadow-sm">
                     <div class="grid gap-3 sm:grid-cols-2">
                         <Button variant="outline" type="button" class="w-full" @click="backToClients">
-                            Cancel
+                            Batal
                         </Button>
                         <Button type="button" class="w-full" :disabled="form.processing" @click="submit">
                             <Plus v-if="isCreateMode" class="mr-2 size-4" />
                             <Save v-else class="mr-2 size-4" />
-                            {{ isCreateMode ? 'Create Client' : 'Save Changes' }}
+                            {{ isCreateMode ? 'Tambah Klien' : 'Simpan Perubahan' }}
                         </Button>
                     </div>
                 </div>

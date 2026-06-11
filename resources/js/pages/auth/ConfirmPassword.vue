@@ -11,10 +11,10 @@ import { store } from '@/routes/password/confirm';
 
 <template>
     <AuthLayout
-        title="Confirm your password"
-        description="This is a secure area of the application. Please confirm your password before continuing."
+        title="Konfirmasi Password"
+        description="Masukkan password untuk melanjutkan ke area aman."
     >
-        <Head title="Confirm password" />
+        <Head title="Konfirmasi Password" />
 
         <Form
             :action="store()"
@@ -45,7 +45,7 @@ import { store } from '@/routes/password/confirm';
                         data-test="confirm-password-button"
                     >
                         <Spinner v-if="processing" />
-                        Confirm password
+                        Konfirmasi password
                     </Button>
                 </div>
             </div>

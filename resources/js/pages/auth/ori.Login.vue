@@ -11,10 +11,10 @@ defineProps<{
 
 <template>
     <AuthBase
-        title="Log in to your account"
-        description="Enter your email and password below to log in"
+        title="Login ke Akun"
+        description="Masukkan Email dan password untuk melanjutkan."
     >
-        <Head title="Log in" />
+        <Head title="Login" />
 
         <div
             v-if="status"
@@ -31,7 +31,7 @@ defineProps<{
             class="space-y-5"
         >
             <div>
-                <label for="email" class="mb-2 block text-sm font-medium text-slate-700">Email address</label>
+                <label for="email" class="mb-2 block text-sm font-medium text-slate-700">Email</label>
                 <input
                     id="email"
                     type="email"
@@ -53,7 +53,7 @@ defineProps<{
                         href="/forgot-password"
                         class="text-sm font-medium text-slate-500 transition hover:text-slate-900"
                     >
-                        Forgot password?
+                        Lupa password?
                     </a>
                 </div>
                 <input
@@ -75,7 +75,7 @@ defineProps<{
                     value="1"
                     class="h-4 w-4 rounded border-slate-300 text-slate-900"
                 >
-                <span>Remember me</span>
+                <span>Ingat saya</span>
             </label>
 
             <button
@@ -83,13 +83,8 @@ defineProps<{
                 class="inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
                 :disabled="processing"
             >
-                {{ processing ? 'Signing in...' : 'Log in' }}
+                {{ processing ? 'Memproses...' : 'Login' }}
             </button>
-
-            <p v-if="canRegister" class="text-center text-sm text-slate-500">
-                Don't have an account?
-                <a href="/register" class="font-medium text-slate-900 underline underline-offset-4">Sign up</a>
-            </p>
         </Form>
     </AuthBase>
 </template>

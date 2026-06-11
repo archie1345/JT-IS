@@ -6,10 +6,10 @@ import AuthBase from '@/layouts/AuthLayout.vue';
 
 <template>
     <AuthBase
-        title="Create an account"
-        description="Enter your details below to create your account"
+        title="Buat Akun"
+        description="Isi data akun baru sesuai akses yang diberikan admin."
     >
-        <Head title="Register" />
+        <Head title="Daftar" />
 
         <Form
             action="/register"
@@ -19,7 +19,7 @@ import AuthBase from '@/layouts/AuthLayout.vue';
             class="space-y-5"
         >
             <div>
-                <label for="name" class="mb-2 block text-sm font-medium text-slate-700">Name</label>
+                <label for="name" class="mb-2 block text-sm font-medium text-slate-700">Nama</label>
                 <input
                     id="name"
                     type="text"
@@ -27,14 +27,14 @@ import AuthBase from '@/layouts/AuthLayout.vue';
                     required
                     autofocus
                     autocomplete="name"
-                    placeholder="Full name"
+                    placeholder="Nama lengkap"
                     class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:outline-none"
                 >
                 <p v-if="errors.name" class="mt-2 text-sm text-red-600">{{ errors.name }}</p>
             </div>
 
             <div>
-                <label for="email" class="mb-2 block text-sm font-medium text-slate-700">Email address</label>
+                <label for="email" class="mb-2 block text-sm font-medium text-slate-700">Email</label>
                 <input
                     id="email"
                     type="email"
@@ -62,14 +62,14 @@ import AuthBase from '@/layouts/AuthLayout.vue';
             </div>
 
             <div>
-                <label for="password_confirmation" class="mb-2 block text-sm font-medium text-slate-700">Confirm password</label>
+                <label for="password_confirmation" class="mb-2 block text-sm font-medium text-slate-700">Konfirmasi Password</label>
                 <input
                     id="password_confirmation"
                     type="password"
                     name="password_confirmation"
                     required
                     autocomplete="new-password"
-                    placeholder="Confirm password"
+                    placeholder="Konfirmasi password"
                     class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:outline-none"
                 >
                 <p v-if="errors.password_confirmation" class="mt-2 text-sm text-red-600">{{ errors.password_confirmation }}</p>
@@ -80,12 +80,12 @@ import AuthBase from '@/layouts/AuthLayout.vue';
                 class="inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
                 :disabled="processing"
             >
-                {{ processing ? 'Creating account...' : 'Create account' }}
+                {{ processing ? 'Membuat akun...' : 'Buat akun' }}
             </button>
 
             <p class="text-center text-sm text-slate-500">
-                Already have an account?
-                <a href="/login" class="font-medium text-slate-900 underline underline-offset-4">Log in</a>
+                Sudah punya akun?
+                <a href="/login" class="font-medium text-slate-900 underline underline-offset-4">Login</a>
             </p>
         </Form>
     </AuthBase>

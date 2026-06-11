@@ -73,20 +73,20 @@ const uploadConnectionOptions = computed(() =>
 
 const columns = [
     { key: 'id', label: 'Id' },
-    { key: 'project_name', label: 'Project' },
-    { key: 'client_name', label: 'Client' },
+    { key: 'project_name', label: 'Proyek' },
+    { key: 'client_name', label: 'Klien' },
     { key: 'invoice_number', label: 'Invoice No.' },
-    { key: 'amount', label: 'Amount' },
-    { key: 'tax_amount', label: 'Tax' },
+    { key: 'amount', label: 'Nilai' },
+    { key: 'tax_amount', label: 'Pajak' },
     { key: 'invoice_date', label: 'Invoice Date' },
-    { key: 'due_date', label: 'Due Date' },
+    { key: 'due_date', label: 'Jatuh Tempo' },
     { key: 'status', label: 'Status' },
 ] satisfies SpreadsheetColumn[];
 
 const fields = [
     {
         name: 'project_id',
-        label: 'Project',
+        label: 'Proyek',
         type: 'select',
         options: props.projectOptions,
         required: true,
@@ -95,18 +95,18 @@ const fields = [
         name: 'invoice_number',
         label: 'Invoice Number',
         type: 'text',
-        placeholder: 'Invoice or billing reference number',
+        placeholder: 'Nomor invoice atau referensi billing',
     },
-    { name: 'amount', label: 'Amount', type: 'number', min: 0, step: '0.01' },
+    { name: 'amount', label: 'Nilai', type: 'number', min: 0, step: '0.01' },
     {
         name: 'tax_amount',
-        label: 'Tax Amount',
+        label: 'Nilai Pajak',
         type: 'number',
         min: 0,
         step: '0.01',
     },
     { name: 'invoice_date', label: 'Invoice Date', type: 'date' },
-    { name: 'due_date', label: 'Due Date', type: 'date' },
+    { name: 'due_date', label: 'Jatuh Tempo', type: 'date' },
     {
         name: 'status',
         label: 'Status',
@@ -119,9 +119,9 @@ const fields = [
     },
     {
         name: 'description',
-        label: 'Description',
+        label: 'Deskripsi',
         type: 'textarea',
-        placeholder: 'Invoice notes, billing milestone, or work scope',
+        placeholder: 'Catatan invoice, milestone billing, atau lingkup kerja',
     },
 ] as const;
 
@@ -140,7 +140,7 @@ const openInvoicePreview = () => {
     <CrudPrototypePage
         head-title="Invoices"
         title="Invoices"
-        description="Manage project billing against approved progress and track due dates for receivables."
+        description="Kelola invoice proyek berdasarkan progress yang disetujui dan pantau jatuh tempo pembayaran."
         :breadcrumbs="breadcrumbs"
         :rows="props.records"
         :columns="columns"
@@ -154,7 +154,7 @@ const openInvoicePreview = () => {
         :uploaded-documents="props.uploadedDocuments"
         :upload-connection-options="uploadConnectionOptions"
         :pagination="props.pagination"
-        create-label="New Invoice"
+        create-label="Tambah Invoice"
     >
         <template #toolbar-actions>
             <div
@@ -203,8 +203,8 @@ const openInvoicePreview = () => {
                     <div>
                         <DialogTitle>Invoice Template</DialogTitle>
                         <DialogDescription>
-                            Change the printable style used for invoice
-                            previews.
+                            Ubah tampilan cetak yang digunakan untuk preview
+                            invoice.
                         </DialogDescription>
                     </div>
                 </div>
@@ -214,18 +214,18 @@ const openInvoicePreview = () => {
                 class="grid min-h-0 flex-1 gap-4 overflow-x-hidden overflow-y-auto py-2 pr-1 sm:grid-cols-2"
             >
                 <div class="min-w-0 space-y-1.5">
-                    <Label for="invoice_template_title">Title</Label>
+                    <Label for="invoice_template_title">Judul</Label>
                     <Input
                         id="invoice_template_title"
                         v-model="template.title"
                     />
                 </div>
                 <div class="min-w-0 space-y-1.5">
-                    <Label for="invoice_footer">Footer Text</Label>
+                    <Label for="invoice_footer">Teks Footer</Label>
                     <Input id="invoice_footer" v-model="template.footerText" />
                 </div>
                 <div class="min-w-0 space-y-1.5">
-                    <Label for="invoice_accent">Accent Color</Label>
+                    <Label for="invoice_accent">Warna Aksen</Label>
                     <Input
                         id="invoice_accent"
                         v-model="template.accentColor"
@@ -233,7 +233,7 @@ const openInvoicePreview = () => {
                     />
                 </div>
                 <div class="min-w-0 space-y-1.5">
-                    <Label for="invoice_text">Text Color</Label>
+                    <Label for="invoice_text">Warna Teks</Label>
                     <Input
                         id="invoice_text"
                         v-model="template.textColor"
@@ -241,7 +241,7 @@ const openInvoicePreview = () => {
                     />
                 </div>
                 <div class="min-w-0 space-y-1.5">
-                    <Label for="invoice_paper">Paper Color</Label>
+                    <Label for="invoice_paper">Warna Kertas</Label>
                     <Input
                         id="invoice_paper"
                         v-model="template.paperColor"
@@ -249,7 +249,7 @@ const openInvoicePreview = () => {
                     />
                 </div>
                 <div class="min-w-0 space-y-1.5">
-                    <Label for="invoice_border">Border Color</Label>
+                    <Label for="invoice_border">Warna Border</Label>
                     <Input
                         id="invoice_border"
                         v-model="template.borderColor"
@@ -258,18 +258,18 @@ const openInvoicePreview = () => {
                 </div>
                 <label class="flex items-center gap-2 text-sm">
                     <input v-model="template.showBankDetails" type="checkbox" />
-                    Show bank details
+                    Tampilkan detail bank
                 </label>
                 <label class="flex items-center gap-2 text-sm">
                     <input v-model="template.showNotes" type="checkbox" />
-                    Show notes
+                    Tampilkan catatan
                 </label>
                 <label class="flex items-center gap-2 text-sm">
                     <input v-model="template.showSignature" type="checkbox" />
-                    Show signature
+                    Tampilkan tanda tangan
                 </label>
                 <div class="min-w-0 space-y-1.5 sm:col-span-2">
-                    <Label for="invoice_bank">Bank Details</Label>
+                    <Label for="invoice_bank">Detail Bank</Label>
                     <textarea
                         id="invoice_bank"
                         v-model="template.bankDetails"
@@ -277,7 +277,7 @@ const openInvoicePreview = () => {
                     ></textarea>
                 </div>
                 <div class="min-w-0 space-y-1.5 sm:col-span-2">
-                    <Label for="invoice_notes">Notes</Label>
+                    <Label for="invoice_notes">Catatan</Label>
                     <textarea
                         id="invoice_notes"
                         v-model="template.notes"
@@ -288,7 +288,7 @@ const openInvoicePreview = () => {
 
             <DialogFooter class="mt-4 shrink-0">
                 <Button @click="isTemplateModalOpen = false">
-                    Apply Template
+                    Terapkan Template
                 </Button>
             </DialogFooter>
         </DialogContent>

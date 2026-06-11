@@ -254,7 +254,7 @@ const submitHeader = () => {
 };
 
 const destroyItem = (item: DetailItem) => {
-    if (!window.confirm('Delete this item?')) {
+    if (!window.confirm('Hapus item ini?')) {
         return;
     }
 
@@ -269,7 +269,7 @@ const destroyItem = (item: DetailItem) => {
 };
 
 const itemDialogTitle = computed(() =>
-    editingItemId.value === null ? 'Add item' : 'Edit item',
+    editingItemId.value === null ? 'Tambah item' : 'Edit item',
 );
 </script>
 
@@ -281,7 +281,7 @@ const itemDialogTitle = computed(() =>
             class="flex min-h-[calc(100vh-8rem)] min-w-0 flex-1 flex-col gap-3 rounded-xl p-2 sm:gap-4 sm:p-4"
         >
             <EntityDetailHero
-                back-label="Back"
+                back-label="Kembali"
                 :title="props.record.projectName"
                 :description="`${props.recordLabel} #${props.record.id}`"
                 :badge-text="props.recordLabel"
@@ -295,14 +295,14 @@ const itemDialogTitle = computed(() =>
                         @click="backToList"
                     >
                         <ArrowLeft class="mr-2 size-4" />
-                        Back
+                        Kembali
                     </Button>
                 </template>
             </EntityDetailHero>
 
             <section class="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <EntityMetricCard
-                    label="Items"
+                    label="Item"
                     :value="props.summary.itemCount"
                 />
                 <EntityMetricCard
@@ -314,26 +314,26 @@ const itemDialogTitle = computed(() =>
                     :value="formatCurrency(props.record.totalBudget)"
                 />
                 <EntityMetricCard
-                    label="Difference"
+                    label="Selisih"
                     :value="formatCurrency(props.summary.difference)"
                 />
             </section>
 
             <section class="grid min-w-0 gap-4">
                 <EntityPageSection
-                    title="Record Fields"
-                    :description="`Edit the header fields captured from this ${props.recordLabel} document.`"
+                    title="Field Data"
+                    :description="`Edit field header yang diambil dari dokumen ${props.recordLabel}.`"
                 >
                     <form
                         class="grid min-w-0 gap-4 sm:grid-cols-2"
                         @submit.prevent="submitHeader"
                     >
                         <div class="min-w-0 space-y-2">
-                            <Label for="document_number">Document Number</Label>
+                            <Label for="document_number">Nomor Dokumen</Label>
                             <Input
                                 id="document_number"
                                 v-model="headerForm.document_number"
-                                placeholder="Document or contract number"
+                                placeholder="Nomor dokumen atau kontrak"
                             />
                             <InputError
                                 :message="headerForm.errors.document_number"
@@ -341,7 +341,7 @@ const itemDialogTitle = computed(() =>
                         </div>
 
                         <div class="min-w-0 space-y-2">
-                            <Label for="document_date">Document Date</Label>
+                            <Label for="document_date">Tanggal Dokumen</Label>
                             <Input
                                 id="document_date"
                                 v-model="headerForm.document_date"
@@ -356,8 +356,8 @@ const itemDialogTitle = computed(() =>
                             <Label for="total_budget">
                                 {{
                                     props.kind === 'rab'
-                                        ? 'Total / Contract Value'
-                                        : 'Total Execution Budget'
+                                        ? 'Total / Nilai Kontrak'
+                                        : 'Total Budget Pelaksanaan'
                                 }}
                             </Label>
                             <Input
@@ -375,12 +375,12 @@ const itemDialogTitle = computed(() =>
                         </div>
 
                         <div class="min-w-0 space-y-2 sm:col-span-2">
-                            <Label for="notes">Notes</Label>
+                            <Label for="notes">Catatan</Label>
                             <textarea
                                 id="notes"
                                 v-model="headerForm.notes"
                                 class="flex min-h-28 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs"
-                                placeholder="Terbilang, deviation, or remarks"
+                                placeholder="Terbilang, deviasi, atau catatan"
                             />
                             <InputError :message="headerForm.errors.notes" />
                         </div>
@@ -390,29 +390,29 @@ const itemDialogTitle = computed(() =>
                                 type="submit"
                                 :disabled="headerForm.processing"
                             >
-                                Save Record Fields
+                                Simpan Field Data
                             </Button>
                         </div>
                     </form>
                 </EntityPageSection>
 
                 <EntityPageSection
-                    title="Uploaded Files"
-                    :description="`Files attached to this ${props.recordLabel}.`"
+                    title="File Terunggah"
+                    :description="`File yang terlampir ke ${props.recordLabel}.`"
                 >
                     <DocumentUploadPanel
                         :project-id="props.record.projectId"
                         :component-type="props.kind"
                         :component-id="props.record.id"
                         :documents="props.uploadedDocuments"
-                        :title="`${props.recordLabel} files`"
-                        :description="`Upload source documents, approvals, and supporting files for this ${props.recordLabel}.`"
+                        :title="`File ${props.recordLabel}`"
+                        :description="`Upload dokumen sumber, persetujuan, dan file pendukung untuk ${props.recordLabel}.`"
                     />
                 </EntityPageSection>
 
                 <EntityPageSection
-                    title="Item Details"
-                    :description="`Detail list for ${props.record.projectName}.`"
+                    title="Detail Item"
+                    :description="`Daftar detail untuk ${props.record.projectName}.`"
                 >
                     <div
                         class="flex min-w-0 flex-wrap items-center justify-between gap-3 border-b border-sidebar-border/70 px-3 py-3 sm:px-5 sm:py-4"
@@ -420,7 +420,7 @@ const itemDialogTitle = computed(() =>
                         <div class="flex flex-wrap gap-2">
                             <Button @click="openCreate">
                                 <Plus class="mr-2 size-4" />
-                                Add row
+                                Tambah baris
                             </Button>
                         </div>
                     </div>
@@ -437,7 +437,7 @@ const itemDialogTitle = computed(() =>
                                         <th
                                             class="min-w-[16rem] px-3 py-2.5 font-medium sm:min-w-[20rem] sm:px-4 sm:py-3"
                                         >
-                                            Description
+                                            Deskripsi
                                         </th>
                                         <th
                                             class="min-w-[6rem] px-3 py-2.5 font-medium sm:min-w-[7rem] sm:px-4 sm:py-3"
@@ -452,17 +452,17 @@ const itemDialogTitle = computed(() =>
                                         <th
                                             class="min-w-[9rem] px-3 py-2.5 font-medium sm:min-w-[10rem] sm:px-4 sm:py-3"
                                         >
-                                            Unit Price
+                                            Harga Satuan
                                         </th>
                                         <th
                                             class="min-w-[9rem] px-3 py-2.5 font-medium sm:min-w-[10rem] sm:px-4 sm:py-3"
                                         >
-                                            Amount
+                                            Nilai
                                         </th>
                                         <th
                                             class="min-w-[6rem] px-3 py-2.5 text-right font-medium sm:min-w-[7rem] sm:px-4 sm:py-3"
                                         >
-                                            Action
+                                            Aksi
                                         </th>
                                     </tr>
                                 </thead>
@@ -612,7 +612,7 @@ const itemDialogTitle = computed(() =>
                                             colspan="6"
                                             class="px-4 py-8 text-center text-sm text-muted-foreground"
                                         >
-                                            No items yet.
+                                            Belum ada item.
                                         </td>
                                     </tr>
                                 </tbody>
@@ -636,19 +636,19 @@ const itemDialogTitle = computed(() =>
                     @submit.prevent="submitItem"
                 >
                     <div class="min-w-0 space-y-2">
-                        <Label for="category">Category</Label>
+                        <Label for="category">Kategori</Label>
                         <Input id="category" v-model="form.category" />
                         <InputError :message="form.errors.category" />
                     </div>
 
                     <div class="min-w-0 space-y-2">
-                        <Label for="sub_category">Sub Category</Label>
+                        <Label for="sub_category">Sub Kategori</Label>
                         <Input id="sub_category" v-model="form.sub_category" />
                         <InputError :message="form.errors.sub_category" />
                     </div>
 
                     <div class="min-w-0 space-y-2 sm:col-span-2">
-                        <Label for="description">Description</Label>
+                        <Label for="description">Deskripsi</Label>
                         <Input id="description" v-model="form.description" />
                         <InputError :message="form.errors.description" />
                     </div>
@@ -672,7 +672,7 @@ const itemDialogTitle = computed(() =>
                     </div>
 
                     <div class="min-w-0 space-y-2">
-                        <Label for="unit_price">Unit Price</Label>
+                        <Label for="unit_price">Harga Satuan</Label>
                         <Input
                             id="unit_price"
                             v-model.number="form.unit_price"
@@ -684,7 +684,7 @@ const itemDialogTitle = computed(() =>
                     </div>
 
                     <div class="min-w-0 space-y-2">
-                        <Label for="total_price">Total Price</Label>
+                        <Label for="total_price">Total Harga</Label>
                         <Input
                             id="total_price"
                             v-model.number="form.total_price"
@@ -703,13 +703,13 @@ const itemDialogTitle = computed(() =>
                         </div>
 
                         <div class="min-w-0 space-y-2">
-                            <Label for="spec_size">Size</Label>
+                            <Label for="spec_size">Ukuran</Label>
                             <Input id="spec_size" v-model="form.spec_size" />
                             <InputError :message="form.errors.spec_size" />
                         </div>
 
                         <div class="min-w-0 space-y-2 sm:col-span-2">
-                            <Label for="spec_strength">Strength</Label>
+                            <Label for="spec_strength">Kekuatan</Label>
                             <Input
                                 id="spec_strength"
                                 v-model="form.spec_strength"
@@ -723,10 +723,10 @@ const itemDialogTitle = computed(() =>
                             type="button"
                             variant="outline"
                             @click="closeModal"
-                            >Cancel</Button
+                            >Batal</Button
                         >
                         <Button type="submit" :disabled="form.processing">
-                            {{ editingItemId === null ? 'Save' : 'Update' }}
+                            {{ editingItemId === null ? 'Simpan' : 'Update' }}
                         </Button>
                     </DialogFooter>
                 </form>

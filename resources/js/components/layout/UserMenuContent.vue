@@ -38,7 +38,7 @@ defineProps<Props>();
     <DropdownMenuGroup>
         <DropdownMenuItem class="cursor-pointer" @click="goToSettings">
             <Settings class="mr-2 h-4 w-4" />
-            Settings
+            Pengaturan
         </DropdownMenuItem>
     </DropdownMenuGroup>
     <DropdownMenuSeparator />
@@ -48,6 +48,6 @@ defineProps<Props>();
         @click="handleLogout"
     >
         <LogOut class="mr-2 h-4 w-4" />
-        Log out
+        Logout
     </DropdownMenuItem>
 </template>

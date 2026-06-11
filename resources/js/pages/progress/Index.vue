@@ -42,36 +42,36 @@ const uploadConnectionOptions = computed(() =>
 
 const columns = [
     { key: 'id', label: 'Id' },
-    { key: 'project_name', label: 'Project' },
-    { key: 'client_name', label: 'Client' },
-    { key: 'document_number', label: 'Document No.' },
-    { key: 'document_type', label: 'Document Type' },
+    { key: 'project_name', label: 'Proyek' },
+    { key: 'client_name', label: 'Klien' },
+    { key: 'document_number', label: 'No. Dokumen' },
+    { key: 'document_type', label: 'Jenis Dokumen' },
     { key: 'progress_percent', label: 'Progress %' },
-    { key: 'period_start', label: 'Period Start' },
-    { key: 'period_end', label: 'Period End' },
-    { key: 'report_date', label: 'Report Date' },
-    { key: 'approved_by_client', label: 'Client OK' },
+    { key: 'period_start', label: 'Awal Periode' },
+    { key: 'period_end', label: 'Akhir Periode' },
+    { key: 'report_date', label: 'Tanggal Laporan' },
+    { key: 'approved_by_client', label: 'Klien OK' },
     { key: 'approved_by_internal', label: 'Internal OK' },
-    { key: 'description', label: 'Summary' },
+    { key: 'description', label: 'Ringkasan' },
 ] satisfies SpreadsheetColumn[];
 
 const fields = [
     {
         name: 'project_id',
-        label: 'Project',
+        label: 'Proyek',
         type: 'select',
         options: props.projectOptions,
         required: true,
     },
     {
         name: 'document_number',
-        label: 'Document Number',
+        label: 'Nomor Dokumen',
         type: 'text',
-        placeholder: 'BA/MC/C3 document number',
+        placeholder: 'Nomor dokumen BA/MC/C3',
     },
     {
         name: 'document_type',
-        label: 'Document Type',
+        label: 'Jenis Dokumen',
         type: 'select',
         options: [
             { value: 'BA MC', label: 'BA MC / Mutual Check' },
@@ -82,38 +82,38 @@ const fields = [
     },
     {
         name: 'progress_percent',
-        label: 'Progress Percent',
+        label: 'Persentase Progress',
         type: 'number',
         min: 0,
         max: 100,
         step: '0.01',
     },
-    { name: 'period_start', label: 'Period Start', type: 'date' },
-    { name: 'period_end', label: 'Period End', type: 'date' },
-    { name: 'report_date', label: 'Report Date', type: 'date' },
+    { name: 'period_start', label: 'Awal Periode', type: 'date' },
+    { name: 'period_end', label: 'Akhir Periode', type: 'date' },
+    { name: 'report_date', label: 'Tanggal Laporan', type: 'date' },
     {
         name: 'approved_by_client',
-        label: 'Client Approval',
+        label: 'Approval Klien',
         type: 'select',
         options: [
-            { value: '0', label: 'No' },
-            { value: '1', label: 'Yes' },
+            { value: '0', label: 'Tidak' },
+            { value: '1', label: 'Ya' },
         ],
     },
     {
         name: 'approved_by_internal',
-        label: 'Internal Approval',
+        label: 'Approval Internal',
         type: 'select',
         options: [
-            { value: '0', label: 'No' },
-            { value: '1', label: 'Yes' },
+            { value: '0', label: 'Tidak' },
+            { value: '1', label: 'Ya' },
         ],
     },
     {
         name: 'description',
-        label: 'Summary',
+        label: 'Ringkasan',
         type: 'textarea',
-        placeholder: 'What happened in this update?',
+        placeholder: 'Apa yang terjadi pada update ini?',
     },
 ] as const;
 </script>
@@ -122,7 +122,7 @@ const fields = [
     <CrudPrototypePage
         head-title="Progress / BAMC"
         title="Progress / BAMC"
-        description="Record physical progress milestones and client/internal approvals used for official billing."
+        description="Catat milestone progress fisik dan approval klien/internal yang digunakan untuk tagihan resmi."
         :breadcrumbs="breadcrumbs"
         :rows="props.records"
         :columns="columns"
@@ -136,13 +136,13 @@ const fields = [
         :uploaded-documents="props.uploadedDocuments"
         :upload-connection-options="uploadConnectionOptions"
         :pagination="props.pagination"
-        create-label="New Progress Report"
+        create-label="Tambah Laporan Progress"
     >
         <template #cell-approved_by_client="{ value }">
-            {{ value === '1' || value === 1 ? 'Yes' : 'No' }}
+            {{ value === '1' || value === 1 ? 'Ya' : 'Tidak' }}
         </template>
         <template #cell-approved_by_internal="{ value }">
-            {{ value === '1' || value === 1 ? 'Yes' : 'No' }}
+            {{ value === '1' || value === 1 ? 'Ya' : 'Tidak' }}
         </template>
     </CrudPrototypePage>
 </template>

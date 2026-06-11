@@ -90,8 +90,8 @@ const handleInput = (event: Event) => {
             v-model="selectValue"
             :options="props.field.options ?? []"
             :trigger-id="props.field.name"
-            placeholder="Select one"
-            empty-label="Select one"
+            placeholder="Pilih salah satu"
+            empty-label="Pilih salah satu"
             allow-empty
         />
 

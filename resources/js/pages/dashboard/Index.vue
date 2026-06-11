@@ -84,37 +84,37 @@ const breadcrumbs: BreadcrumbItem[] = [
 const defaultWidgets: DashboardWidget[] = [
     {
         id: 'revenue-overview',
-        title: 'Contract & invoice overview',
+        title: 'Ringkasan Kontrak & Invoice',
         description:
-            'Contract value, billing, and realized cost summary for active monitoring.',
+            'Ringkasan nilai kontrak, tagihan, dan realisasi biaya untuk monitoring aktif.',
         heightClass: 'min-h-72',
     },
     {
         id: 'conversion-trend',
-        title: 'Pipeline and billing trend',
+        title: 'Tren Pipeline dan Tagihan',
         description:
-            'Tender, invoice, and cashflow movement for the current demo data.',
+            'Pergerakan tender, invoice, dan cashflow dari data saat ini.',
         heightClass: 'min-h-56',
     },
     {
         id: 'team-activity',
-        title: 'Recent monitoring activity',
+        title: 'Aktivitas Monitoring Terbaru',
         description:
-            'Latest project, progress, and finance activity that needs review.',
+            'Aktivitas proyek, progress, dan finance terbaru yang perlu direview.',
         heightClass: 'min-h-56',
     },
     {
         id: 'projects-health',
-        title: 'Project health',
+        title: 'Kesehatan Proyek',
         description:
-            'Status distribution based on budget, progress, and payment warnings.',
+            'Distribusi status berdasarkan budget, progress, dan peringatan pembayaran.',
         heightClass: 'min-h-56',
     },
     {
         id: 'upcoming-items',
-        title: 'Upcoming attention',
+        title: 'Perlu Perhatian',
         description:
-            'Open items that management should check before the next review.',
+            'Item terbuka yang perlu dicek manajemen sebelum review berikutnya.',
         heightClass: 'min-h-56',
     },
 ];
@@ -122,53 +122,53 @@ const defaultWidgets: DashboardWidget[] = [
 const dataSourceOptions = [
     {
         value: 'projectStatus',
-        label: 'Projects by status',
+        label: 'Proyek berdasarkan status',
         defaultFormat: 'number',
     },
     {
         value: 'invoiceStatus',
-        label: 'Invoice amount by status',
+        label: 'Nilai invoice berdasarkan status',
         defaultFormat: 'currency',
     },
     {
         value: 'costCategory',
-        label: 'Costs by category',
+        label: 'Biaya berdasarkan kategori',
         defaultFormat: 'currency',
     },
     {
         value: 'monthlyInvoices',
-        label: 'Monthly invoices',
+        label: 'Invoice bulanan',
         defaultFormat: 'currency',
     },
     {
         value: 'monthlyCosts',
-        label: 'Monthly costs',
+        label: 'Biaya bulanan',
         defaultFormat: 'currency',
     },
     {
         value: 'progressTrend',
-        label: 'Progress trend',
+        label: 'Tren progress',
         defaultFormat: 'percent',
     },
-    { value: 'totals', label: 'Executive totals', defaultFormat: 'currency' },
+    { value: 'totals', label: 'Total ringkasan', defaultFormat: 'currency' },
 ] as const;
 const chartTypeOptions: Array<{ value: ChartType; label: string }> = [
-    { value: 'bar', label: 'Bar' },
-    { value: 'line', label: 'Line' },
+    { value: 'bar', label: 'Batang' },
+    { value: 'line', label: 'Garis' },
     { value: 'donut', label: 'Donut' },
-    { value: 'metric', label: 'Metric' },
+    { value: 'metric', label: 'Metrik' },
 ];
 const valueFormatOptions: Array<{ value: ValueFormat; label: string }> = [
-    { value: 'number', label: 'Number' },
-    { value: 'currency', label: 'Currency' },
-    { value: 'percent', label: 'Percent' },
+    { value: 'number', label: 'Angka' },
+    { value: 'currency', label: 'Mata Uang' },
+    { value: 'percent', label: 'Persen' },
 ];
 
 const defaultWidgetIds = defaultWidgets.map((widget) => widget.id);
 const fixedDashboardSections = [
-    { id: 'project-summary', title: 'Project summary' },
-    { id: 'problem-projects', title: 'Problem projects' },
-    { id: 'recent-progress', title: 'Recent progress / BAMC' },
+    { id: 'project-summary', title: 'Ringkasan Proyek' },
+    { id: 'problem-projects', title: 'Proyek Bermasalah' },
+    { id: 'recent-progress', title: 'Progress Terbaru / BAMC' },
 ] as const;
 const fixedDashboardSectionIds = fixedDashboardSections.map(
     (section): string => section.id,
@@ -510,6 +510,14 @@ const statusClass = (status: string) =>
         'On Hold': 'bg-slate-500/15 text-slate-600 ring-1 ring-slate-500/25',
     })[status] ?? 'bg-slate-500/15 text-slate-600 ring-1 ring-slate-500/25';
 
+const statusLabel = (status: string) =>
+    ({
+        'On Track': 'Sesuai Rencana',
+        Warning: 'Perhatian',
+        Critical: 'Kritis',
+        'On Hold': 'Ditahan',
+    })[status] ?? status;
+
 const summaryCardClass = (tone: SummaryTone = 'neutral') =>
     ({
         neutral:
@@ -705,7 +713,7 @@ onBeforeUnmount(() => {
                             "
                         >
                             <Settings2 class="size-4" />
-                            Options
+                            Opsi
                             <ChevronDown
                                 class="size-4 transition-transform"
                                 :class="{
@@ -722,7 +730,7 @@ onBeforeUnmount(() => {
                             <p
                                 class="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase"
                             >
-                                Show items
+                                Tampilkan item
                             </p>
                             <div class="mt-1 max-h-80 overflow-y-auto">
                                 <label
@@ -770,7 +778,8 @@ onBeforeUnmount(() => {
                 v-if="!hasAnyVisibleDashboardSection"
                 class="rounded-2xl border border-dashed border-sidebar-border/70 bg-background/70 p-8 text-center text-sm text-muted-foreground dark:border-sidebar-border"
             >
-                No widgets are visible. Turn one back on from the filter above.
+                Tidak ada widget yang terlihat. Aktifkan salah satu dari filter
+                di atas.
             </div>
 
             <div
@@ -798,11 +807,11 @@ onBeforeUnmount(() => {
                                 <h2
                                     class="min-w-0 text-sm font-semibold text-foreground"
                                 >
-                                    Project summary
+                                    Ringkasan Proyek
                                 </h2>
                                 <span
                                     class="inline-flex shrink-0 items-center justify-center rounded-lg border border-sidebar-border/70 bg-background/80 p-2 text-muted-foreground dark:border-sidebar-border"
-                                    aria-label="Drag Project summary"
+                                    aria-label="Geser Ringkasan Proyek"
                                 >
                                     <GripVertical class="size-4" />
                                 </span>
@@ -940,7 +949,11 @@ onBeforeUnmount(() => {
                                                             )
                                                         "
                                                     >
-                                                        {{ project.status }}
+                                                        {{
+                                                            statusLabel(
+                                                                project.status,
+                                                            )
+                                                        }}
                                                     </span>
                                                 </td>
                                                 <td class="px-3 py-3">
@@ -1006,11 +1019,11 @@ onBeforeUnmount(() => {
                                 <h2
                                     class="min-w-0 text-sm font-semibold text-foreground"
                                 >
-                                    Recent Progress / BAMC
+                                    Progress Terbaru / BAMC
                                 </h2>
                                 <span
                                     class="inline-flex shrink-0 items-center justify-center rounded-lg border border-sidebar-border/70 bg-background/80 p-2 text-muted-foreground dark:border-sidebar-border"
-                                    aria-label="Drag Recent Progress / BAMC"
+                                    aria-label="Geser Progress Terbaru / BAMC"
                                 >
                                     <GripVertical class="size-4" />
                                 </span>
@@ -1053,7 +1066,9 @@ onBeforeUnmount(() => {
                                 >
                                     {{ progress.percent }}%
                                     {{
-                                        progress.approved ? 'approved' : 'draft'
+                                        progress.approved
+                                            ? 'disetujui'
+                                            : 'draft'
                                     }}
                                 </span>
                             </button>
@@ -1109,7 +1124,7 @@ onBeforeUnmount(() => {
                                     <button
                                         type="button"
                                         class="inline-flex items-center justify-center rounded-lg border border-sidebar-border/70 bg-background/80 p-2 text-muted-foreground transition hover:text-foreground dark:border-sidebar-border"
-                                        :aria-label="`Configure ${widget.title}`"
+                                        :aria-label="`Atur ${widget.title}`"
                                         @click.stop="
                                             openSettingsWidgetId =
                                                 openSettingsWidgetId ===
@@ -1122,7 +1137,7 @@ onBeforeUnmount(() => {
                                     </button>
                                     <span
                                         class="inline-flex items-center justify-center rounded-lg border border-sidebar-border/70 bg-background/80 p-2 text-muted-foreground dark:border-sidebar-border"
-                                        :aria-label="`Drag ${widget.title}`"
+                                        :aria-label="`Geser ${widget.title}`"
                                     >
                                         <GripVertical class="size-4" />
                                     </span>
@@ -1136,7 +1151,7 @@ onBeforeUnmount(() => {
                                 <label class="space-y-1.5">
                                     <span
                                         class="text-xs font-medium text-muted-foreground"
-                                        >Graph</span
+                                        >Grafik</span
                                     >
                                     <select
                                         class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
@@ -1163,7 +1178,7 @@ onBeforeUnmount(() => {
                                 <label class="space-y-1.5">
                                     <span
                                         class="text-xs font-medium text-muted-foreground"
-                                        >Value</span
+                                        >Nilai</span
                                     >
                                     <select
                                         class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
@@ -1227,7 +1242,7 @@ onBeforeUnmount(() => {
                                 v-if="widgetData(widget.id).length === 0"
                                 class="flex h-full min-h-40 items-center justify-center rounded-xl border border-dashed border-sidebar-border/70 text-sm text-muted-foreground"
                             >
-                                No data yet.
+                                Belum ada data.
                             </div>
 
                             <div

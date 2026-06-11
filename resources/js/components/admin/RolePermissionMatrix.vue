@@ -182,18 +182,19 @@ const saveDirtyRoles = () => {
         >
             <div class="min-w-0">
                 <p class="text-xs font-medium text-muted-foreground uppercase">
-                    Access Settings
+                    Pengaturan Akses
                 </p>
                 <h2
                     class="mt-1 text-base font-semibold break-words text-foreground sm:text-lg"
                 >
-                    Role Permission Table
+                    Tabel Permission Role
                 </h2>
                 <p
                     class="mt-1 max-w-3xl text-xs break-words text-muted-foreground"
                 >
-                    Set which pages, menus, and actions each role can use.
-                    Related permissions are added automatically when saved.
+                    Atur halaman, menu, dan aksi yang bisa digunakan setiap
+                    role. Permission terkait ditambahkan otomatis saat
+                    disimpan.
                 </p>
             </div>
         </div>
@@ -203,7 +204,7 @@ const saveDirtyRoles = () => {
         >
             <Input
                 v-model="searchTerm"
-                placeholder="Search roles, permissions, descriptions"
+                placeholder="Cari role, permission, deskripsi"
                 class="min-w-0 text-sm"
             />
         </div>
@@ -212,7 +213,7 @@ const saveDirtyRoles = () => {
             v-if="visibleRoles.length === 0 || visibleGroups.length === 0"
             class="m-4 rounded-lg border border-dashed border-sidebar-border/70 bg-muted/20 p-4 text-sm text-muted-foreground"
         >
-            No matching roles or permissions.
+            Role atau permission tidak ditemukan.
         </div>
 
         <div v-else class="min-w-0 overflow-hidden">
@@ -220,7 +221,7 @@ const saveDirtyRoles = () => {
                 class="flex min-w-0 flex-col gap-3 border-b border-sidebar-border/70 p-3 lg:flex-row lg:items-center lg:justify-between"
             >
                 <p class="text-xs text-muted-foreground">
-                    Toggle cells, then save the changed role columns.
+                    Aktifkan sel yang dibutuhkan, lalu simpan perubahan role.
                 </p>
                 <div class="flex min-w-0 flex-wrap gap-2">
                     <Button
@@ -233,8 +234,8 @@ const saveDirtyRoles = () => {
                         <Save class="mr-2 size-4" />
                         {{
                             isSavingChanges
-                                ? 'Saving'
-                                : `Save Changes (${dirtyRoles.length})`
+                                ? 'Menyimpan'
+                                : `Simpan Perubahan (${dirtyRoles.length})`
                         }}
                     </Button>
                 </div>
@@ -270,7 +271,7 @@ const saveDirtyRoles = () => {
                                         <span
                                             class="text-[11px] text-muted-foreground sm:text-xs"
                                         >
-                                            {{ role.userCount }} users
+                                            {{ role.userCount }} user
                                         </span>
                                     </div>
                                 </th>

@@ -15,7 +15,7 @@ const rows = computed(() => props.clients ?? props.data ?? []);
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Clients',
+        title: 'Klien',
         href: '/client',
     },
 ];
@@ -33,7 +33,7 @@ const clientColumns = [
     { key: 'id', label: 'Id' },
     {
         key: 'name',
-        label: 'Client Name',
+        label: 'Nama Klien',
         accessor: (row: Record<string, unknown>) =>
             (row as ClientItem).name ?? '-',
     },
@@ -45,7 +45,7 @@ const clientColumns = [
     },
     {
         key: 'projectCount',
-        label: 'Projects',
+        label: 'Proyek',
         accessor: (row: Record<string, unknown>) =>
             (row as ClientItem).projectCount,
     },
@@ -54,15 +54,15 @@ const clientColumns = [
 
 <template>
     <EntityIndexPage
-        head-title="Clients"
-        title="Clients"
+        head-title="Klien"
+        title="Klien"
         :rows="rows"
         :columns="clientColumns"
         :breadcrumbs="breadcrumbs"
-        description="Review client contacts and the projects connected to each account."
+        description="Review kontak klien dan proyek yang terhubung ke tiap akun."
         row-key-field="id"
         show-create-button
-        create-label="New Client"
+        create-label="Tambah Klien"
         @create="createClient"
         @row-click="openClient"
     />

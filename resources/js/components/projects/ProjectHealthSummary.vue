@@ -22,6 +22,16 @@ const projectHealthStatus = computed(
     () => props.project.projectHealthStatus ?? 'On Track',
 );
 
+const projectHealthStatusLabel = computed(
+    () =>
+        ({
+            'On Track': 'Sesuai Rencana',
+            Warning: 'Perhatian',
+            Critical: 'Kritis',
+            'On Hold': 'Ditahan',
+        })[projectHealthStatus.value] ?? projectHealthStatus.value,
+);
+
 const projectHealthPanelClass = computed(
     () =>
         ({
@@ -81,14 +91,14 @@ const progressHealthTone = computed<HealthTone>(() => {
 
 <template>
     <EntityPageSection
-        title="Project Health Summary"
+        title="Ringkasan Kesehatan Proyek"
         description="Ringkasan kondisi proyek berdasarkan anggaran, realisasi biaya, dan progress."
         :icon="FileText"
         :class="projectHealthPanelClass"
     >
         <div class="flex flex-wrap items-center gap-2 pb-3">
             <Badge :class="getProjectHealthStatusClass(projectHealthStatus)">
-                {{ projectHealthStatus }}
+                {{ projectHealthStatusLabel }}
             </Badge>
             <span class="text-xs text-muted-foreground">
                 Warna berubah mengikuti kondisi proyek.
@@ -117,7 +127,7 @@ const progressHealthTone = computed<HealthTone>(() => {
                 class="rounded-xl border p-4"
                 :class="healthCardClass(realizedCostTone)"
             >
-                <p class="text-xs font-semibold uppercase">Realized Cost</p>
+                <p class="text-xs font-semibold uppercase">Realisasi Biaya</p>
                 <p class="mt-1 text-sm font-semibold">
                     {{ formatCurrency(project.realizedCostTotal ?? 0) }}
                 </p>
@@ -127,13 +137,13 @@ const progressHealthTone = computed<HealthTone>(() => {
                 class="rounded-xl border p-4"
                 :class="healthCardClass(progressHealthTone)"
             >
-                <p class="text-xs font-semibold uppercase">Latest Progress</p>
+                <p class="text-xs font-semibold uppercase">Progress Terbaru</p>
                 <p class="mt-1 text-sm font-semibold">
                     {{ project.latestProgressPercent ?? 0 }}%
                     <span class="font-normal opacity-80">
                         {{
                             project.latestProgressApproved
-                                ? 'approved'
+                                ? 'disetujui'
                                 : 'draft'
                         }}
                     </span>

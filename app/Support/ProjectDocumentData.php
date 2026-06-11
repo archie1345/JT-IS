@@ -130,7 +130,7 @@ class ProjectDocumentData
                     ->map(fn (Invoice $invoice): array => [
                         'id' => $invoice->id,
                         'title' => $invoice->invoice_number ?: 'Invoice #'.$invoice->id,
-                        'detail' => trim(($invoice->status ?? 'pending').' - '.optional($invoice->invoice_date)->format('Y-m-d')),
+                        'detail' => trim(($this->statusLabel($invoice->status ?? 'pending')).' - '.optional($invoice->invoice_date)->format('Y-m-d')),
                         'value' => $this->formatMoney((float) $invoice->amount),
                         'url' => route('invoices.show', $invoice->id),
                     ])
@@ -173,7 +173,7 @@ class ProjectDocumentData
                     ->map(fn (Tender $tender): array => [
                         'id' => $tender->id,
                         'title' => $tender->document_number ?: ($tender->title ?: 'Pipeline #'.$tender->id),
-                        'detail' => trim(($tender->status ?? 'open').' - '.optional($tender->document_date)->format('Y-m-d')),
+                        'detail' => trim(($this->statusLabel($tender->status ?? 'open')).' - '.optional($tender->document_date)->format('Y-m-d')),
                         'value' => $tender->value ? $this->formatMoney((float) $tender->value) : null,
                         'url' => route('pipeline.show', $tender->id),
                     ])
@@ -193,7 +193,7 @@ class ProjectDocumentData
                     ->map(fn (FundRequest $request): array => [
                         'id' => $request->id,
                         'title' => 'Fund Request #'.$request->id,
-                        'detail' => $request->status ?? 'pending',
+                        'detail' => $this->statusLabel($request->status ?? 'pending'),
                         'value' => $this->formatMoney((float) $request->amount),
                         'url' => route('fund-requests.index', ['project' => $project->id]),
                     ])
@@ -211,7 +211,7 @@ class ProjectDocumentData
         $connections = [
             [
                 'value' => 'project:general',
-                'label' => 'Project general',
+                'label' => 'Dokumen umum proyek',
                 'hint' => $project->name,
                 'componentType' => 'project',
                 'componentId' => null,
@@ -255,8 +255,8 @@ class ProjectDocumentData
         foreach ($project->projectCosts()->latest('date')->latest('id')->get(['id', 'project_id', 'category', 'date']) as $cost) {
             $connections[] = [
                 'value' => 'project_cost:'.$cost->id,
-                'label' => 'Cost #'.$cost->id,
-                'hint' => trim(($cost->category ?? 'Cost').' '.optional($cost->date)->format('Y-m-d')),
+                'label' => 'Biaya #'.$cost->id,
+                'hint' => trim(($cost->category ?? 'Biaya').' '.optional($cost->date)->format('Y-m-d')),
                 'componentType' => 'project_cost',
                 'componentId' => $cost->id,
                 'projectId' => $project->id,
@@ -289,7 +289,7 @@ class ProjectDocumentData
             $connections[] = [
                 'value' => 'fund_request:'.$request->id,
                 'label' => 'Fund Request #'.$request->id,
-                'hint' => trim(($request->status ?? '').' '.number_format((float) $request->amount, 0, ',', '.')),
+                'hint' => trim($this->statusLabel($request->status ?? '').' '.number_format((float) $request->amount, 0, ',', '.')),
                 'componentType' => 'fund_request',
                 'componentId' => $request->id,
                 'projectId' => $project->id,
@@ -302,5 +302,18 @@ class ProjectDocumentData
     private function formatMoney(float $value): string
     {
         return 'Rp '.number_format($value, 0, ',', '.');
+    }
+
+    private function statusLabel(?string $status): string
+    {
+        return [
+            'pending' => 'Menunggu',
+            'paid' => 'Lunas',
+            'overdue' => 'Terlambat',
+            'open' => 'Terbuka',
+            'submitted' => 'Diajukan',
+            'won' => 'Menang',
+            'lost' => 'Kalah',
+        ][$status ?? ''] ?? ($status ?? '');
     }
 }

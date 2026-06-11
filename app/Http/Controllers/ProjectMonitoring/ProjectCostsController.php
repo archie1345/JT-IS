@@ -86,7 +86,7 @@ class ProjectCostsController extends CrudResourceController
                 ->get(['id', 'client_id', 'name'])
                 ->map(fn (Project $project): array => [
                     'value' => $project->id,
-                    'label' => $project->name ?? 'Untitled project',
+                    'label' => $project->name ?? 'Proyek tanpa nama',
                     'hint' => $project->client?->name,
                 ])
                 ->all(),
@@ -109,15 +109,15 @@ class ProjectCostsController extends CrudResourceController
 
         return Inertia::render('finance/FinancialDocumentDetails', [
             'kind' => 'cost',
-            'title' => 'Cost Realization Detail',
-            'recordLabel' => 'Cost Realization',
+            'title' => 'Detail Realisasi Biaya',
+            'recordLabel' => 'Realisasi Biaya',
             'indexUrl' => route('project-costs.index'),
             'updateUrl' => route('project-costs.update', $record->id),
             'itemStoreUrl' => route('project-costs.items.store', $record->id),
             'itemUpdateUrlBase' => url('project-cost-items'),
             'breadcrumbs' => [
-                ['title' => 'Cost Realization', 'href' => route('project-costs.index')],
-                ['title' => 'Cost #'.$record->id, 'href' => route('project-costs.show', $record->id)],
+                ['title' => 'Realisasi Biaya', 'href' => route('project-costs.index')],
+                ['title' => 'Biaya #'.$record->id, 'href' => route('project-costs.show', $record->id)],
             ],
             'record' => $this->transformRecord($record, request()),
             'fields' => $this->detailFields(),
@@ -172,7 +172,7 @@ class ProjectCostsController extends CrudResourceController
                 'value' => 'rab:'.$item->id,
                 'sourceType' => 'rab',
                 'sourceItemId' => $item->id,
-                'label' => $item->description ?? 'RAB item #'.$item->id,
+                'label' => $item->description ?? 'Item RAB #'.$item->id,
                 'hint' => trim(implode(' / ', array_filter([$item->category, $item->sub_category]))),
                 'category' => $item->category,
                 'description' => $item->description,
@@ -191,7 +191,7 @@ class ProjectCostsController extends CrudResourceController
                 'value' => 'rap:'.$item->id,
                 'sourceType' => 'rap',
                 'sourceItemId' => $item->id,
-                'label' => $item->description ?? 'RAP item #'.$item->id,
+                'label' => $item->description ?? 'Item RAP #'.$item->id,
                 'hint' => trim(implode(' / ', array_filter([$item->category, $item->sub_category]))),
                 'category' => $item->category,
                 'description' => $item->description,
@@ -207,13 +207,13 @@ class ProjectCostsController extends CrudResourceController
     protected function detailFields(): array
     {
         return [
-            ['name' => 'project_id', 'label' => 'Project', 'type' => 'select', 'required' => true, 'options' => $this->projectOptions()],
-            ['name' => 'reference_number', 'label' => 'Reference Number', 'type' => 'text'],
-            ['name' => 'category', 'label' => 'Category', 'type' => 'text'],
-            ['name' => 'vendor', 'label' => 'Vendor / Payee', 'type' => 'text'],
-            ['name' => 'amount', 'label' => 'Amount', 'type' => 'number', 'min' => 0, 'step' => '0.01'],
-            ['name' => 'date', 'label' => 'Date', 'type' => 'date'],
-            ['name' => 'description', 'label' => 'Description', 'type' => 'textarea'],
+            ['name' => 'project_id', 'label' => 'Proyek', 'type' => 'select', 'required' => true, 'options' => $this->projectOptions()],
+            ['name' => 'reference_number', 'label' => 'Nomor Referensi', 'type' => 'text'],
+            ['name' => 'category', 'label' => 'Kategori', 'type' => 'text'],
+            ['name' => 'vendor', 'label' => 'Vendor / Penerima', 'type' => 'text'],
+            ['name' => 'amount', 'label' => 'Nilai', 'type' => 'number', 'min' => 0, 'step' => '0.01'],
+            ['name' => 'date', 'label' => 'Tanggal', 'type' => 'date'],
+            ['name' => 'description', 'label' => 'Deskripsi', 'type' => 'textarea'],
         ];
     }
 
@@ -225,7 +225,7 @@ class ProjectCostsController extends CrudResourceController
             ->get(['id', 'client_id', 'name'])
             ->map(fn (Project $project): array => [
                 'value' => $project->id,
-                'label' => $project->name ?? 'Untitled project',
+                'label' => $project->name ?? 'Proyek tanpa nama',
                 'hint' => $project->client?->name,
             ])
             ->all();

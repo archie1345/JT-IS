@@ -27,7 +27,7 @@ const internalHref = computed(() =>
 const navItems = [
     { label: 'Profil', href: '#profil' },
     { label: 'Produk', href: '#produk' },
-    { label: 'Project', href: '#project' },
+    { label: 'Proyek', href: '#project' },
     { label: 'Kontak', href: '#kontak' },
 ];
 
@@ -37,7 +37,7 @@ const products = [
     'Sewa Peralatan',
     'Solar Panel',
     'Telemetri',
-    'Project EPC',
+    'Proyek EPC',
 ];
 
 const portfolioItems = [
@@ -174,11 +174,11 @@ const strengths = [
                         <div class="mt-5 grid grid-cols-2 gap-3 text-sm">
                             <div class="rounded-md bg-white/10 p-3">
                                 <p class="text-2xl font-semibold">200+</p>
-                                <p class="text-white/70">Client</p>
+                                <p class="text-white/70">Klien</p>
                             </div>
                             <div class="rounded-md bg-white/10 p-3">
                                 <p class="text-2xl font-semibold">1000+</p>
-                                <p class="text-white/70">Project</p>
+                                <p class="text-white/70">Proyek</p>
                             </div>
                         </div>
                     </div>

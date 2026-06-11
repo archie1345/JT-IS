@@ -50,7 +50,7 @@ class RabsPageController extends Controller
                 ->get(['id', 'name'])
                 ->map(fn (Project $project): array => [
                     'value' => $project->id,
-                    'label' => $project->name ?? 'Project #'.$project->id,
+                    'label' => $project->name ?? 'Proyek #'.$project->id,
                 ])
                 ->values(),
             'uploadedDocuments' => ProjectDocument::query()

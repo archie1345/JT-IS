@@ -12,17 +12,11 @@ const props = withDefaults(
     }>(),
     {
         endpoint: '/projects/documents/ocr',
-        label: 'Upload File',
+        label: 'Upload Dokumen',
     },
 );
 
-const {
-    error,
-    extractFile,
-    isReading,
-    status,
-    text,
-} = useDocumentOcr({
+const { error, extractFile, isReading, status, text } = useDocumentOcr({
     emptyTextMessage: 'Tidak ada teks yang bisa dibaca dari dokumen.',
     failedStatus: 'Gagal memproses dokumen.',
     initialStatus: 'Membaca dokumen...',
@@ -45,7 +39,9 @@ const handleFile = async (event: Event) => {
             emit('data-extracted', result.text);
             toast.success('Dokumen berhasil diproses!');
         } else {
-            toast.error(error.value ?? 'Tidak ada teks yang bisa dibaca dari dokumen.');
+            toast.error(
+                error.value ?? 'Tidak ada teks yang bisa dibaca dari dokumen.',
+            );
         }
     } catch {
         toast.error(error.value ?? 'Gagal memproses dokumen.');
@@ -54,19 +50,34 @@ const handleFile = async (event: Event) => {
 </script>
 
 <template>
-    <div class="space-y-4 rounded-xl border border-dashed border-sidebar-border/70 bg-muted/20 p-4">
-        <label class="flex cursor-pointer flex-col items-center justify-center gap-2 py-4">
+    <div
+        class="space-y-4 rounded-xl border border-dashed border-sidebar-border/70 bg-muted/20 p-4"
+    >
+        <label
+            class="flex cursor-pointer flex-col items-center justify-center gap-2 py-4"
+        >
             <Upload class="size-6 text-primary" />
             <span class="text-sm font-medium">{{ props.label }}</span>
-            <input type="file" class="hidden" @change="handleFile" accept=".pdf,.png,.jpg" />
+            <input
+                type="file"
+                class="hidden"
+                @change="handleFile"
+                accept=".pdf,.png,.jpg"
+            />
         </label>
 
-        <div v-if="isReading" class="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+        <div
+            v-if="isReading"
+            class="flex items-center justify-center gap-2 text-sm text-muted-foreground"
+        >
             <LoaderCircle class="size-4 animate-spin" />
             <span>{{ status ?? 'Membaca dokumen...' }}</span>
         </div>
 
-        <div v-if="fileName && !isReading && text" class="flex items-center justify-center gap-2 text-sm text-emerald-600">
+        <div
+            v-if="fileName && !isReading && text"
+            class="flex items-center justify-center gap-2 text-sm text-emerald-600"
+        >
             <CheckCircle class="size-4" />
             <span>{{ fileName }} siap diproses</span>
         </div>

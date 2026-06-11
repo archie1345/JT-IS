@@ -16,7 +16,7 @@ const rows = computed(() => props.projects ?? props.data ?? []);
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Projects',
+        title: 'Proyek',
         href: '/projects',
     },
 ];
@@ -55,22 +55,30 @@ const getProjectHealthStatusClass = (status: string) =>
         'On Hold': 'bg-slate-500/15 text-slate-600 ring-1 ring-slate-500/25',
     })[status] ?? 'bg-slate-500/15 text-slate-600 ring-1 ring-slate-500/25';
 
+const formatProjectHealthStatus = (status: string) =>
+    ({
+        'On Track': 'Sesuai Rencana',
+        Warning: 'Perhatian',
+        Critical: 'Kritis',
+        'On Hold': 'Ditahan',
+    })[status] ?? status;
+
 const projectColumns = [
     { key: 'id', label: 'Id' },
     {
         key: 'projectName',
-        label: 'Project Name',
+        label: 'Nama Proyek',
         accessor: (row: Record<string, unknown>) =>
             (row as ProjectItem).projectName,
     },
     {
         key: 'client',
-        label: 'Client',
+        label: 'Klien',
         accessor: (row: Record<string, unknown>) => (row as ProjectItem).client,
     },
     {
         key: 'estPrice',
-        label: 'Est. Value',
+        label: 'Estimasi Nilai',
         accessor: (row: Record<string, unknown>) =>
             (row as ProjectItem).estPrice,
     },
@@ -82,30 +90,30 @@ const projectColumns = [
     },
     {
         key: 'paymentStatus',
-        label: 'Payment Status',
+        label: 'Status Pembayaran',
         accessor: (row: Record<string, unknown>) =>
             ({
-                pending: 'Pending',
-                partial: 'Partial',
-                paid: 'Paid',
-                overdue: 'Overdue',
+                pending: 'Menunggu',
+                partial: 'Sebagian',
+                paid: 'Lunas',
+                overdue: 'Terlambat',
             })[(row as ProjectItem).paymentStatus] ??
             (row as ProjectItem).paymentStatus,
     },
     {
         key: 'projectStatus',
-        label: 'DB Status',
+        label: 'Status Data',
         accessor: (row: Record<string, unknown>) =>
             ({
-                planning: 'Planning',
-                ongoing: 'Ongoing',
-                completed: 'Completed',
+                planning: 'Perencanaan',
+                ongoing: 'Berjalan',
+                completed: 'Selesai',
             })[(row as ProjectItem).projectStatus] ??
             (row as ProjectItem).projectStatus,
     },
     {
         key: 'projectHealthStatus',
-        label: 'Health Status',
+        label: 'Status Kesehatan',
         accessor: (row: Record<string, unknown>) =>
             (row as ProjectItem).projectHealthStatus ?? 'On Track',
     },
@@ -114,14 +122,14 @@ const projectColumns = [
 
 <template>
     <EntityIndexPage
-        head-title="Projects"
-        title="Projects"
+        head-title="Proyek"
+        title="Proyek"
         :rows="rows"
         :columns="projectColumns"
         :breadcrumbs="breadcrumbs"
-        description="Monitor active contracts, payment condition, project status, and project health warning level."
+        description="Pantau kontrak aktif, kondisi pembayaran, status proyek, dan level peringatan kesehatan proyek."
         row-key-field="id"
-        create-label="New Project"
+        create-label="Tambah Proyek"
         show-create-button
         @row-click="openProject"
         @create="createProject"
@@ -142,7 +150,7 @@ const projectColumns = [
                     getProjectHealthStatusClass(String(value ?? 'On Track'))
                 "
             >
-                {{ value ?? 'On Track' }}
+                {{ formatProjectHealthStatus(String(value ?? 'On Track')) }}
             </span>
         </template>
     </EntityIndexPage>

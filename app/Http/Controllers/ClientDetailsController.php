@@ -73,18 +73,18 @@ class ClientDetailsController extends Controller
             'projects' => $projects,
             'quickLinks' => [
                 [
-                    'label' => 'Open Projects',
-                    'detail' => 'View all projects for this client',
+                    'label' => 'Buka Proyek',
+                    'detail' => 'Lihat semua proyek untuk klien ini',
                     'url' => route('projects', ['client' => $client->id]),
                 ],
                 [
-                    'label' => 'Open Invoices',
-                    'detail' => 'Go to invoice management',
+                    'label' => 'Buka Invoice',
+                    'detail' => 'Buka manajemen invoice',
                     'url' => route('invoices.index'),
                 ],
                 [
-                    'label' => 'Open Fund Requests',
-                    'detail' => 'Review funding requests',
+                    'label' => 'Buka Fund Request',
+                    'detail' => 'Review pengajuan dana',
                     'url' => route('fund-requests.index'),
                 ],
             ],
@@ -100,7 +100,7 @@ class ClientDetailsController extends Controller
 
         $client = Client::create($data);
 
-        return to_route('client.show', $client)->with('success', 'Client created successfully.');
+        return to_route('client.show', $client)->with('success', 'Klien berhasil dibuat.');
     }
 
     public function update(Request $request, Client $client): RedirectResponse
@@ -112,6 +112,6 @@ class ClientDetailsController extends Controller
 
         $client->update($data);
 
-        return to_route('client.show', $client)->with('success', 'Client updated successfully.');
+        return to_route('client.show', $client)->with('success', 'Klien berhasil diupdate.');
     }
 }

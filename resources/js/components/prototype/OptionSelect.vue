@@ -26,8 +26,8 @@ const props = withDefaults(
         triggerId?: string;
     }>(),
     {
-        placeholder: 'Select one',
-        emptyLabel: 'Select one',
+        placeholder: 'Pilih salah satu',
+        emptyLabel: 'Pilih salah satu',
         allowEmpty: false,
         triggerId: undefined,
     },

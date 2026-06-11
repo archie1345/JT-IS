@@ -38,9 +38,7 @@ const props = defineProps<{
     };
 }>();
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Invoices', href: '/invoices' },
-];
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'Invoice', href: '/invoices' }];
 const selectedInvoiceId = ref(
     props.records.length > 0 ? String(props.records[0].id) : '',
 );
@@ -52,9 +50,9 @@ const template = reactive({
     textColor: '#111827',
     paperColor: '#ffffff',
     borderColor: '#d1d5db',
-    footerText: 'Thank you for your business.',
-    bankDetails: 'Bank: \nAccount Name: \nAccount No: ',
-    notes: 'Please make payment according to the bank information below.',
+    footerText: 'Terima kasih atas kerja samanya.',
+    bankDetails: 'Bank: \nNama Rekening: \nNo. Rekening: ',
+    notes: 'Silakan lakukan pembayaran sesuai informasi bank di bawah.',
     showBankDetails: true,
     showNotes: true,
     showSignature: true,
@@ -78,7 +76,7 @@ const columns = [
     { key: 'invoice_number', label: 'Invoice No.' },
     { key: 'amount', label: 'Nilai' },
     { key: 'tax_amount', label: 'Pajak' },
-    { key: 'invoice_date', label: 'Invoice Date' },
+    { key: 'invoice_date', label: 'Tanggal Invoice' },
     { key: 'due_date', label: 'Jatuh Tempo' },
     { key: 'status', label: 'Status' },
 ] satisfies SpreadsheetColumn[];
@@ -93,7 +91,7 @@ const fields = [
     },
     {
         name: 'invoice_number',
-        label: 'Invoice Number',
+        label: 'Nomor Invoice',
         type: 'text',
         placeholder: 'Nomor invoice atau referensi billing',
     },
@@ -105,16 +103,16 @@ const fields = [
         min: 0,
         step: '0.01',
     },
-    { name: 'invoice_date', label: 'Invoice Date', type: 'date' },
+    { name: 'invoice_date', label: 'Tanggal Invoice', type: 'date' },
     { name: 'due_date', label: 'Jatuh Tempo', type: 'date' },
     {
         name: 'status',
         label: 'Status',
         type: 'select',
         options: [
-            { value: 'pending', label: 'Pending' },
-            { value: 'paid', label: 'Paid' },
-            { value: 'overdue', label: 'Overdue' },
+            { value: 'pending', label: 'Menunggu' },
+            { value: 'paid', label: 'Lunas' },
+            { value: 'overdue', label: 'Terlambat' },
         ],
     },
     {
@@ -138,8 +136,8 @@ const openInvoicePreview = () => {
 
 <template>
     <CrudPrototypePage
-        head-title="Invoices"
-        title="Invoices"
+        head-title="Invoice"
+        title="Invoice"
         description="Kelola invoice proyek berdasarkan progress yang disetujui dan pantau jatuh tempo pembayaran."
         :breadcrumbs="breadcrumbs"
         :rows="props.records"

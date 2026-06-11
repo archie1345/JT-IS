@@ -29,14 +29,14 @@ const props = defineProps<{
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Account Management',
+        title: 'Manajemen Akun',
         href: '/Admin_acc_mgmt',
     },
 ];
 </script>
 
 <template>
-    <Head title="Account Management" />
+    <Head title="Manajemen Akun" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex flex-col gap-4 rounded-xl p-4">

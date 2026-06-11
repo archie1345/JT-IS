@@ -68,7 +68,7 @@ const rightNavItems: NavItem[] = [
         icon: Folder,
     },
     {
-        title: 'Documentation',
+        title: 'Dokumentasi',
         href: 'https://laravel.com/docs/starter-kits#vue',
         icon: BookOpen,
     },
@@ -79,7 +79,6 @@ const rightNavItems: NavItem[] = [
     <div>
         <div class="border-b border-sidebar-border/80">
             <div class="mx-auto flex h-16 items-center px-4 md:max-w-7xl">
-
                 <div class="lg:hidden">
                     <Sheet>
                         <SheetTrigger :as-child="true">
@@ -93,7 +92,7 @@ const rightNavItems: NavItem[] = [
                         </SheetTrigger>
                         <SheetContent side="left" class="w-[300px] p-6">
                             <SheetTitle class="sr-only"
-                                >Navigation menu</SheetTitle
+                                >Menu navigasi</SheetTitle
                             >
                             <SheetHeader class="flex justify-start text-left">
                                 <AppLogoIcon

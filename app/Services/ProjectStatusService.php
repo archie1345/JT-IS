@@ -18,13 +18,13 @@ class ProjectStatusService
             $warnings[] = [
                 'type' => 'budget',
                 'level' => 'critical',
-                'message' => 'Budget Critical: realized cost is above RAP.',
+                'message' => 'Budget kritis: realisasi biaya sudah melebihi RAP.',
             ];
         } elseif ($rapTotal > 0 && $realizedCost >= ($rapTotal * 0.9)) {
             $warnings[] = [
                 'type' => 'budget',
                 'level' => 'warning',
-                'message' => 'Budget Warning: realized cost has reached at least 90% of RAP.',
+                'message' => 'Peringatan budget: realisasi biaya sudah mencapai minimal 90% dari RAP.',
             ];
         }
 
@@ -32,7 +32,7 @@ class ProjectStatusService
             $warnings[] = [
                 'type' => 'payment',
                 'level' => 'warning',
-                'message' => 'Payment Warning: project has overdue invoice.',
+                'message' => 'Peringatan pembayaran: proyek memiliki invoice terlambat.',
             ];
         }
 
@@ -41,7 +41,7 @@ class ProjectStatusService
             $warnings[] = [
                 'type' => 'progress',
                 'level' => 'critical',
-                'message' => 'Progress Critical: project end date has passed without 100% approved progress.',
+                'message' => 'Progress kritis: tanggal selesai proyek sudah lewat tanpa progress 100% disetujui.',
             ];
         }
 

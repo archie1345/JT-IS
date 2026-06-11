@@ -40,7 +40,7 @@ class DashboardController extends Controller
             ->orderBy('status')
             ->get()
             ->map(fn ($row): array => [
-                'label' => ucfirst((string) $row->label),
+                'label' => $this->projectStatusLabel((string) $row->label),
                 'value' => (float) $row->value,
             ])
             ->values()
@@ -55,7 +55,7 @@ class DashboardController extends Controller
             ->orderBy('status')
             ->get()
             ->map(fn ($row): array => [
-                'label' => ucfirst((string) $row->label),
+                'label' => $this->invoiceStatusLabel((string) $row->label),
                 'value' => (float) $row->value,
             ])
             ->values()
@@ -65,7 +65,7 @@ class DashboardController extends Controller
     private function costCategory(): array
     {
         return ProjectCost::query()
-            ->select(DB::raw("COALESCE(category, 'Uncategorized') as label"), DB::raw('SUM(amount) as value'))
+            ->select(DB::raw("COALESCE(category, 'Tanpa Kategori') as label"), DB::raw('SUM(amount) as value'))
             ->groupBy('category')
             ->orderByDesc('value')
             ->limit(8)
@@ -132,11 +132,11 @@ class DashboardController extends Controller
     private function totals(): array
     {
         return [
-            ['label' => 'Projects', 'value' => (float) Project::query()->count(), 'format' => 'number'],
-            ['label' => 'Contract Value', 'value' => (float) Project::query()->sum('contract_value'), 'format' => 'currency'],
-            ['label' => 'Invoices', 'value' => (float) Invoice::query()->sum('amount'), 'format' => 'currency'],
-            ['label' => 'Payments', 'value' => (float) Payment::query()->sum('amount'), 'format' => 'currency'],
-            ['label' => 'Costs', 'value' => (float) ProjectCost::query()->sum('amount'), 'format' => 'currency'],
+            ['label' => 'Proyek', 'value' => (float) Project::query()->count(), 'format' => 'number'],
+            ['label' => 'Nilai Kontrak', 'value' => (float) Project::query()->sum('contract_value'), 'format' => 'currency'],
+            ['label' => 'Invoice', 'value' => (float) Invoice::query()->sum('amount'), 'format' => 'currency'],
+            ['label' => 'Pembayaran', 'value' => (float) Payment::query()->sum('amount'), 'format' => 'currency'],
+            ['label' => 'Biaya', 'value' => (float) ProjectCost::query()->sum('amount'), 'format' => 'currency'],
         ];
     }
 
@@ -157,7 +157,7 @@ class DashboardController extends Controller
                 'tone' => 'success',
             ],
             [
-                'label' => 'Proyek Warning',
+                'label' => 'Proyek Perhatian',
                 'value' => (float) $statuses
                     ->filter(fn (string $status): bool => $status === 'Warning')
                     ->count(),
@@ -165,7 +165,7 @@ class DashboardController extends Controller
                 'tone' => 'warning',
             ],
             [
-                'label' => 'Proyek Critical',
+                'label' => 'Proyek Kritis',
                 'value' => (float) $statuses
                     ->filter(fn (string $status): bool => $status === 'Critical')
                     ->count(),
@@ -184,7 +184,7 @@ class DashboardController extends Controller
             ->map(function (Project $project): array {
                 return [
                     'id' => $project->id,
-                    'name' => $project->name ?? 'Untitled project',
+                    'name' => $project->name ?? 'Proyek tanpa nama',
                     'client' => $project->client?->name ?? '-',
                     'status' => $project->projectHealthStatus(),
                     'warnings' => $project->projectHealthWarnings(),
@@ -208,7 +208,7 @@ class DashboardController extends Controller
             ->get()
             ->map(fn (Project $project): array => [
                 'id' => $project->id,
-                'name' => $project->name ?? 'Untitled project',
+                'name' => $project->name ?? 'Proyek tanpa nama',
                 'client' => $project->client?->name ?? '-',
                 'status' => $project->projectHealthStatus(),
                 'dbStatus' => $project->status,
@@ -229,7 +229,7 @@ class DashboardController extends Controller
             ->map(fn (ProgressReport $report): array => [
                 'id' => $report->id,
                 'projectId' => $report->project_id,
-                'projectName' => $report->project?->name ?? 'Untitled project',
+                'projectName' => $report->project?->name ?? 'Proyek tanpa nama',
                 'client' => $report->project?->client?->name ?? '-',
                 'percent' => (float) ($report->progress_percent ?? 0),
                 'date' => optional($report->report_date)->format('Y-m-d'),
@@ -237,5 +237,24 @@ class DashboardController extends Controller
                 'documentNumber' => $report->document_number,
             ])
             ->all();
+    }
+
+    private function projectStatusLabel(string $status): string
+    {
+        return [
+            'planning' => 'Perencanaan',
+            'ongoing' => 'Berjalan',
+            'completed' => 'Selesai',
+        ][$status] ?? ucfirst($status);
+    }
+
+    private function invoiceStatusLabel(string $status): string
+    {
+        return [
+            'pending' => 'Menunggu',
+            'paid' => 'Lunas',
+            'overdue' => 'Terlambat',
+            'partial' => 'Sebagian',
+        ][$status] ?? ucfirst($status);
     }
 }

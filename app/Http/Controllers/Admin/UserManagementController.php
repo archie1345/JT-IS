@@ -33,7 +33,7 @@ class UserManagementController extends Controller
                 'userType' => $user->user_type,
                 'userTypeLabel' => match ($user->user_type) {
                     'admin' => 'Admin',
-                    'employee' => 'Employee',
+                    'employee' => 'Karyawan',
                     default => ucfirst((string) $user->user_type),
                 },
                 'employeeRole' => $this->normalizeEmployeeRole($user->employee_role),
@@ -64,7 +64,7 @@ class UserManagementController extends Controller
             ->map(fn(Role $role): array => [
                 'id' => $role->id,
                 'name' => $role->name,
-                'label' => Str::headline($role->name),
+                'label' => $this->roleDisplayLabel($role->name),
                 'permissions' => $role->permissions->pluck('name')->sort()->values()->all(),
                 'userCount' => User::role($role->name)->count(),
                 'isLocked' => $role->name === 'admin',
@@ -79,7 +79,7 @@ class UserManagementController extends Controller
             'stats' => $stats,
             'userTypes' => [
                 ['value' => 'admin', 'label' => 'Admin'],
-                ['value' => 'employee', 'label' => 'Employee'],
+                ['value' => 'employee', 'label' => 'Karyawan'],
             ],
             'employeeRoleSuggestions' => AccessControl::employeeRoleSuggestions(),
             'roles' => $roles,
@@ -106,7 +106,7 @@ class UserManagementController extends Controller
             $user->assignRole($data['employee_role']);
         }
 
-        return to_route('admin.acc_mgmt')->with('success', 'Account created successfully.');
+        return to_route('admin.acc_mgmt')->with('success', 'Akun berhasil dibuat.');
     }
 
     public function update(Request $request, User $user): RedirectResponse
@@ -128,7 +128,7 @@ class UserManagementController extends Controller
             $user->syncRoles([$data['employee_role']]);
         }
 
-        return to_route('admin.acc_mgmt')->with('success', 'Account updated successfully.');
+        return to_route('admin.acc_mgmt')->with('success', 'Akun berhasil diupdate.');
     }
 
     public function updateRolePermissions(Request $request, Role $role): RedirectResponse
@@ -136,7 +136,7 @@ class UserManagementController extends Controller
         AccessControl::sync();
 
         if ($role->name === 'admin') {
-            return to_route('admin.acc_mgmt')->with('success', 'Admin always has access to all permissions.');
+            return to_route('admin.acc_mgmt')->with('success', 'Admin selalu memiliki akses ke semua permission.');
         }
 
         $data = $request->validate([
@@ -144,9 +144,12 @@ class UserManagementController extends Controller
             'permissions.*' => ['string', Rule::in(AccessControl::permissionNames())],
         ]);
 
-        $role->syncPermissions(AccessControl::expandPermissions($data['permissions'] ?? []));
+        AccessControl::replaceRolePermissions(
+            $role,
+            AccessControl::expandPermissions($data['permissions'] ?? []),
+        );
 
-        return to_route('admin.acc_mgmt')->with('success', 'Role permissions updated successfully.');
+        return to_route('admin.acc_mgmt')->with('success', 'Permission role berhasil diupdate.');
     }
 
     protected function validatePayload(Request $request, ?int $userId = null, bool $updating = false): array
@@ -187,5 +190,18 @@ class UserManagementController extends Controller
         }
 
         return Str::slug($value);
+    }
+
+    protected function roleDisplayLabel(string $role): string
+    {
+        return [
+            'employee' => 'Karyawan',
+            'marketing' => 'Marketing',
+            'finance' => 'Finance',
+            'operational' => 'Operational',
+            'management' => 'Management',
+            'procurement' => 'Procurement',
+            'hr' => 'HR',
+        ][$role] ?? Str::headline($role);
     }
 }

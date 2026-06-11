@@ -15,7 +15,7 @@ class InvoiceItemsController extends Controller
         $invoice->items()->create($this->validated($request));
         $this->syncTotal($invoice);
 
-        return redirect()->back()->with('success', 'Invoice item saved.');
+        return redirect()->back()->with('success', 'Item invoice berhasil disimpan.');
     }
 
     public function update(Request $request, int $id)
@@ -24,7 +24,7 @@ class InvoiceItemsController extends Controller
         $item->update($this->validated($request));
         $this->syncTotal($item->invoice);
 
-        return redirect()->back()->with('success', 'Invoice item updated.');
+        return redirect()->back()->with('success', 'Item invoice berhasil diupdate.');
     }
 
     public function destroy(int $id)
@@ -34,7 +34,7 @@ class InvoiceItemsController extends Controller
         $item->delete();
         $this->syncTotal($invoice);
 
-        return redirect()->back()->with('success', 'Invoice item deleted.');
+        return redirect()->back()->with('success', 'Item invoice berhasil dihapus.');
     }
 
     protected function validated(Request $request): array

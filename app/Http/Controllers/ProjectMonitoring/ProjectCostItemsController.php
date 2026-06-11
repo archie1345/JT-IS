@@ -15,7 +15,7 @@ class ProjectCostItemsController extends Controller
         $projectCost->items()->create($this->validated($request));
         $this->syncTotal($projectCost);
 
-        return redirect()->back()->with('success', 'Cost item saved.');
+        return redirect()->back()->with('success', 'Item biaya berhasil disimpan.');
     }
 
     public function update(Request $request, int $id)
@@ -24,7 +24,7 @@ class ProjectCostItemsController extends Controller
         $item->update($this->validated($request));
         $this->syncTotal($item->projectCost);
 
-        return redirect()->back()->with('success', 'Cost item updated.');
+        return redirect()->back()->with('success', 'Item biaya berhasil diupdate.');
     }
 
     public function destroy(int $id)
@@ -34,7 +34,7 @@ class ProjectCostItemsController extends Controller
         $item->delete();
         $this->syncTotal($projectCost);
 
-        return redirect()->back()->with('success', 'Cost item deleted.');
+        return redirect()->back()->with('success', 'Item biaya berhasil dihapus.');
     }
 
     protected function validated(Request $request): array

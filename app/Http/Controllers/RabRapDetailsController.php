@@ -15,7 +15,7 @@ class RabRapDetailsController extends Controller
     {
         return $this->renderDetails(
             kind: 'rab',
-            title: 'RAB Detail',
+            title: 'Detail RAB',
             recordLabel: 'RAB',
             projectName: $rab->project?->name ?? '-',
             projectId: $rab->project_id,
@@ -50,7 +50,7 @@ class RabRapDetailsController extends Controller
     {
         return $this->renderDetails(
             kind: 'rap',
-            title: 'RAP Detail',
+            title: 'Detail RAP',
             recordLabel: 'RAP',
             projectName: $rap->project?->name ?? '-',
             projectId: $rap->project_id,

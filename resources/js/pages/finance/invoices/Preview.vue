@@ -27,9 +27,9 @@ const printPreview = () => {
 <template>
     <Head :title="`Preview ${invoiceNumber}`" />
 
-    <main class="min-h-screen bg-muted/40 p-3 sm:p-6">
+    <main class="invoice-preview-page min-h-screen bg-muted/40 p-3 sm:p-6">
         <div
-            class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 pb-4"
+            class="no-print mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 pb-4"
         >
             <Button variant="outline" @click="router.get('/invoices')">
                 <ArrowLeft class="size-4" />

@@ -81,25 +81,40 @@ const invoiceStyle = computed(() => ({
     '--invoice-paper': template.value.paperColor,
     '--invoice-border': template.value.borderColor,
 }));
+
+const invoiceStatusLabels: Record<string, string> = {
+    pending: 'Menunggu',
+    paid: 'Lunas',
+    overdue: 'Terlambat',
+};
+
+const lineItemColspan = computed(() => (props.variant === 'summary' ? 4 : 5));
+
+const statusLabel = computed(
+    () =>
+        invoiceStatusLabels[String(props.status ?? '').toLowerCase()] ??
+        props.status ??
+        'Menunggu',
+);
 </script>
 
 <template>
     <section
-        class="invoice-print-area max-w-full overflow-hidden rounded-lg bg-muted/30 p-3"
+        class="invoice-print-area max-w-full rounded-lg bg-muted/30 p-3 sm:p-4"
     >
         <div
-            class="invoice-sheet mx-auto flex min-h-[297mm] w-[210mm] max-w-full flex-col bg-white text-[#111827] shadow-lg"
+            class="invoice-sheet mx-auto flex flex-col bg-white text-[#111827] shadow-lg"
             :style="invoiceStyle"
         >
             <div
-                class="px-10 py-8"
+                class="invoice-header px-8 py-7"
                 :style="{
                     background: 'var(--invoice-accent)',
                     color: 'white',
                 }"
             >
-                <div class="flex items-start justify-between gap-8">
-                    <div class="flex items-start gap-4">
+                <div class="grid gap-6 sm:grid-cols-[1fr_auto]">
+                    <div class="flex min-w-0 items-start gap-4">
                         <div
                             class="flex size-16 shrink-0 items-center justify-center rounded-lg bg-white p-2"
                         >
@@ -109,15 +124,15 @@ const invoiceStyle = computed(() => ({
                                 class="max-h-full max-w-full object-contain"
                             />
                         </div>
-                        <div>
+                        <div class="min-w-0">
                             <p class="text-sm tracking-[0.2em] uppercase">
                                 PT. Jasa Tirta Energi
                             </p>
-                            <h1 class="mt-3 text-4xl font-semibold">
+                            <h1 class="mt-3 text-3xl font-semibold sm:text-4xl">
                                 {{ template.title }}
                             </h1>
                             <p
-                                class="mt-3 max-w-sm text-xs leading-relaxed text-white/80"
+                                class="invoice-wrap mt-3 max-w-sm text-xs leading-relaxed text-white/80"
                             >
                                 Jl. Surabaya No. 2A, Malang, Indonesia<br />
                                 finance@jasatirtaenergi.co.id | +62 341 000 000
@@ -125,7 +140,7 @@ const invoiceStyle = computed(() => ({
                         </div>
                     </div>
                     <div
-                        class="max-w-64 min-w-48 rounded-lg bg-white/10 p-4 text-right text-sm"
+                        class="min-w-0 rounded-lg bg-white/10 p-4 text-left text-sm sm:min-w-48 sm:text-right"
                     >
                         <p class="text-xs text-white/70 uppercase">
                             No. Invoice
@@ -144,15 +159,15 @@ const invoiceStyle = computed(() => ({
                         <p class="mt-3 text-xs text-white/70 uppercase">
                             Status
                         </p>
-                        <p class="capitalize">
-                            {{ props.status || 'pending' }}
+                        <p>
+                            {{ statusLabel }}
                         </p>
                     </div>
                 </div>
             </div>
 
             <div
-                class="flex flex-1 flex-col gap-8 px-10 py-8 text-sm"
+                class="invoice-body flex flex-1 flex-col gap-7 px-8 py-7 text-sm"
                 :style="{
                     color: 'var(--invoice-text)',
                     background: 'var(--invoice-paper)',
@@ -181,7 +196,7 @@ const invoiceStyle = computed(() => ({
                             {{ props.description || 'Invoice proyek' }}
                         </p>
                         <p class="mt-2 capitalize opacity-75">
-                            Status: {{ props.status || 'pending' }}
+                            Status: {{ statusLabel }}
                         </p>
                     </div>
                 </div>
@@ -235,129 +250,123 @@ const invoiceStyle = computed(() => ({
                     class="invoice-table-frame rounded-lg border"
                     :style="{ borderColor: 'var(--invoice-border)' }"
                 >
-                    <table
-                        class="invoice-line-table w-full table-fixed border-collapse"
-                    >
+                    <table class="invoice-line-table">
                         <colgroup>
                             <col
                                 :style="{
                                     width:
                                         props.variant === 'summary'
-                                            ? '34%'
-                                            : '38%',
+                                            ? '50%'
+                                            : '40%',
                                 }"
                             />
                             <col
-                                v-if="props.variant === 'summary'"
-                                style="width: 26%"
+                                :style="{
+                                    width:
+                                        props.variant === 'summary'
+                                            ? '10%'
+                                            : '10%',
+                                }"
                             />
-                            <col style="width: 10%" />
                             <col
                                 v-if="props.variant === 'detail'"
                                 style="width: 12%"
                             />
-                            <col style="width: 15%" />
-                            <col style="width: 15%" />
+                            <col
+                                :style="{
+                                    width:
+                                        props.variant === 'summary'
+                                            ? '20%'
+                                            : '19%',
+                                }"
+                            />
+                            <col
+                                :style="{
+                                    width:
+                                        props.variant === 'summary'
+                                            ? '20%'
+                                            : '19%',
+                                }"
+                            />
                         </colgroup>
-                        <thead
-                            :style="{
-                                background: 'var(--invoice-accent)',
-                                color: 'white',
-                            }"
-                        >
+
+                        <thead>
                             <tr>
-                                <th
-                                    class="invoice-wrap px-3 py-3 text-left align-top sm:px-4"
-                                >
-                                    Deskripsi
-                                </th>
-                                <th
-                                    v-if="props.variant === 'summary'"
-                                    class="invoice-wrap px-3 py-3 text-left align-top sm:px-4"
-                                >
-                                    Proyek
-                                </th>
-                                <th
-                                    class="invoice-wrap px-2 py-3 text-right align-top sm:px-4"
-                                >
-                                    Qty
-                                </th>
+                                <th class="invoice-table-desc">Deskripsi</th>
+                                <th class="invoice-table-qty">Qty</th>
                                 <th
                                     v-if="props.variant === 'detail'"
-                                    class="invoice-wrap px-2 py-3 text-left align-top sm:px-4"
+                                    class="invoice-table-unit"
                                 >
                                     Unit
                                 </th>
-                                <th
-                                    class="invoice-wrap px-2 py-3 text-right align-top sm:px-4"
-                                >
+                                <th class="invoice-table-money">
                                     Harga Satuan
                                 </th>
-                                <th
-                                    class="invoice-wrap px-2 py-3 text-right align-top sm:px-4"
-                                >
-                                    Jumlah
-                                </th>
+                                <th class="invoice-table-money">Jumlah</th>
                             </tr>
                         </thead>
+
                         <tbody>
                             <tr
                                 v-for="(item, index) in props.lineItems"
                                 :key="item.id ?? index"
-                                class="border-b"
-                                :style="{
-                                    borderColor: 'var(--invoice-border)',
-                                }"
                             >
-                                <td class="px-3 py-3 align-top sm:px-4">
+                                <td class="invoice-table-desc">
                                     <p class="invoice-wrap font-medium">
                                         {{ item.description || '-' }}
                                     </p>
+
                                     <p
                                         v-if="item.category"
                                         class="invoice-wrap text-xs opacity-60"
                                     >
                                         {{ item.category }}
                                     </p>
+
+                                    <p
+                                        v-if="
+                                            props.variant === 'summary' &&
+                                            (item.projectName ||
+                                                props.projectName)
+                                        "
+                                        class="invoice-wrap text-xs opacity-60"
+                                    >
+                                        {{
+                                            item.projectName ||
+                                            props.projectName
+                                        }}
+                                    </p>
                                 </td>
-                                <td
-                                    v-if="props.variant === 'summary'"
-                                    class="invoice-wrap px-3 py-3 align-top sm:px-4"
-                                >
-                                    {{
-                                        item.projectName ||
-                                        props.projectName ||
-                                        '-'
-                                    }}
-                                </td>
-                                <td
-                                    class="invoice-wrap px-2 py-3 text-right align-top sm:px-4"
-                                >
+
+                                <td class="invoice-table-qty">
                                     {{ item.quantity ?? 1 }}
                                 </td>
+
                                 <td
                                     v-if="props.variant === 'detail'"
-                                    class="invoice-wrap px-2 py-3 align-top sm:px-4"
+                                    class="invoice-table-unit"
                                 >
                                     {{ item.unit || '-' }}
                                 </td>
-                                <td
-                                    class="invoice-wrap px-2 py-3 text-right align-top sm:px-4"
-                                >
-                                    {{ formatCurrency(item.unitPrice) }}
+
+                                <td class="invoice-table-money">
+                                    <span class="invoice-money">
+                                        {{ formatCurrency(item.unitPrice) }}
+                                    </span>
                                 </td>
-                                <td
-                                    class="invoice-wrap px-2 py-3 text-right align-top sm:px-4"
-                                >
-                                    {{ formatCurrency(item.totalPrice) }}
+
+                                <td class="invoice-table-money">
+                                    <span class="invoice-money">
+                                        {{ formatCurrency(item.totalPrice) }}
+                                    </span>
                                 </td>
                             </tr>
+
                             <tr v-if="props.lineItems.length === 0">
                                 <td
-                                    :colspan="
-                                        props.variant === 'summary' ? 5 : 5
-                                    "
-                                    class="px-4 py-8 text-center opacity-60"
+                                    :colspan="lineItemColspan"
+                                    class="invoice-table-empty"
                                 >
                                     Belum ada item invoice.
                                 </td>
@@ -366,92 +375,100 @@ const invoiceStyle = computed(() => ({
                     </table>
                 </div>
 
-                <div class="grid gap-6 sm:grid-cols-[1fr_18rem]">
-                    <div class="space-y-4">
-                        <div
-                            v-if="
-                                template.showBankDetails &&
-                                props.variant === 'summary'
-                            "
-                        >
-                            <p class="font-medium">Detail Bank</p>
-                            <p
-                                class="invoice-wrap mt-1 whitespace-pre-line opacity-75"
+                <div class="invoice-ending space-y-7">
+                    <div class="grid gap-6 sm:grid-cols-[minmax(0,1fr)_16rem]">
+                        <div class="space-y-4">
+                            <div
+                                v-if="
+                                    template.showBankDetails &&
+                                    props.variant === 'summary'
+                                "
                             >
-                                {{ template.bankDetails }}
-                            </p>
+                                <p class="font-medium">Detail Bank</p>
+                                <p
+                                    class="invoice-wrap mt-1 whitespace-pre-line opacity-75"
+                                >
+                                    {{ template.bankDetails }}
+                                </p>
+                            </div>
+                            <div v-if="template.showNotes">
+                                <p class="font-medium">Catatan</p>
+                                <p
+                                    class="invoice-wrap mt-1 whitespace-pre-line opacity-75"
+                                >
+                                    {{ template.notes }}
+                                </p>
+                            </div>
                         </div>
-                        <div v-if="template.showNotes">
-                            <p class="font-medium">Catatan</p>
-                            <p
-                                class="invoice-wrap mt-1 whitespace-pre-line opacity-75"
+
+                        <div class="invoice-total-box space-y-2">
+                            <div class="flex justify-between gap-4">
+                                <span>Subtotal</span>
+                                <span class="shrink-0">{{
+                                    formatCurrency(props.subtotal)
+                                }}</span>
+                            </div>
+                            <div class="flex justify-between gap-4">
+                                <span>Pajak</span>
+                                <span class="shrink-0">{{
+                                    formatCurrency(props.tax)
+                                }}</span>
+                            </div>
+                            <div
+                                class="mt-3 flex justify-between gap-4 border-t pt-3 text-base font-semibold"
+                                :style="{
+                                    borderColor: 'var(--invoice-border)',
+                                }"
                             >
-                                {{ template.notes }}
-                            </p>
+                                <span>Total</span>
+                                <span class="shrink-0">{{
+                                    formatCurrency(props.total)
+                                }}</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="space-y-2">
-                        <div class="flex justify-between gap-4">
-                            <span>Subtotal</span>
-                            <span class="shrink-0">{{
-                                formatCurrency(props.subtotal)
-                            }}</span>
-                        </div>
-                        <div class="flex justify-between gap-4">
-                            <span>Pajak</span>
-                            <span class="shrink-0">{{
-                                formatCurrency(props.tax)
-                            }}</span>
-                        </div>
-                        <div
-                            class="mt-3 flex justify-between gap-4 border-t pt-3 text-base font-semibold"
-                            :style="{ borderColor: 'var(--invoice-border)' }"
-                        >
-                            <span>Total</span>
-                            <span class="shrink-0">{{
-                                formatCurrency(props.total)
-                            }}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div
-                    v-if="template.showSignature"
-                    class="mt-auto grid gap-8 pt-8 sm:grid-cols-2"
-                >
                     <div
-                        class="rounded-lg border p-4"
-                        :style="{ borderColor: 'var(--invoice-border)' }"
+                        v-if="template.showSignature"
+                        class="invoice-signature mt-auto grid gap-8 pt-8 sm:grid-cols-2"
                     >
-                        <p class="font-medium">
-                            {{
-                                props.variant === 'summary'
-                                    ? 'Approval'
-                                    : 'Catatan'
-                            }}
-                        </p>
-                        <p class="invoice-wrap mt-2 leading-relaxed opacity-75">
-                            {{
-                                props.variant === 'summary'
-                                    ? 'Invoice ini diterbitkan untuk lingkup proyek di atas dan sah saat dicetak dari sistem.'
-                                    : template.notes
-                            }}
-                        </p>
-                    </div>
-                    <div class="ml-auto w-48 text-center">
                         <div
-                            class="mb-16 border-t"
+                            class="rounded-lg border p-4"
                             :style="{ borderColor: 'var(--invoice-border)' }"
-                        ></div>
-                        <p class="font-medium">Tanda Tangan Berwenang</p>
+                        >
+                            <p class="font-medium">
+                                {{
+                                    props.variant === 'summary'
+                                        ? 'Approval'
+                                        : 'Catatan'
+                                }}
+                            </p>
+                            <p
+                                class="invoice-wrap mt-2 leading-relaxed opacity-75"
+                            >
+                                {{
+                                    props.variant === 'summary'
+                                        ? 'Invoice ini diterbitkan untuk lingkup proyek di atas dan sah saat dicetak dari sistem.'
+                                        : template.notes
+                                }}
+                            </p>
+                        </div>
+                        <div class="ml-auto w-48 text-center">
+                            <div
+                                class="mb-16 border-t"
+                                :style="{
+                                    borderColor: 'var(--invoice-border)',
+                                }"
+                            ></div>
+                            <p class="font-medium">Tanda Tangan Berwenang</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div
                 v-if="template.footerText"
-                class="border-t px-10 py-4 text-center text-xs opacity-70"
+                class="invoice-footer border-t px-10 py-4 text-center text-xs opacity-70"
                 :style="{
                     borderColor: 'var(--invoice-border)',
                     color: 'var(--invoice-text)',
@@ -465,14 +482,22 @@ const invoiceStyle = computed(() => ({
 </template>
 
 <style>
+.invoice-print-area {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+}
+
 .invoice-sheet {
     color: var(--invoice-text);
     background: var(--invoice-paper);
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
-    width: min(210mm, 100%);
+    width: min(210mm, calc(100vw - 2rem));
     max-width: 210mm;
-    aspect-ratio: 210 / 297;
+    min-height: min(297mm, calc(141.4286vw - 2.8286rem));
+    overflow-x: hidden;
+    overflow-y: visible;
 }
 
 .invoice-sheet,
@@ -482,29 +507,124 @@ const invoiceStyle = computed(() => ({
 
 .invoice-wrap {
     min-width: 0;
-    overflow-wrap: anywhere;
-    word-break: break-word;
+    max-width: 100%;
+    overflow-wrap: break-word;
+    word-break: normal;
     white-space: normal;
 }
 
 .invoice-table-frame {
+    width: 100%;
     max-width: 100%;
+    min-width: 0;
     overflow: hidden;
+    border-radius: 0.5rem;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.invoice-table-frame::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
 }
 
 .invoice-line-table {
     table-layout: fixed;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    border-collapse: collapse;
 }
 
 .invoice-line-table th,
 .invoice-line-table td {
     min-width: 0;
-    overflow: hidden;
-    overflow-wrap: anywhere;
-    word-break: break-word;
+    max-width: 100%;
+    padding: 0.75rem 1rem;
+    overflow-wrap: break-word;
+    word-break: normal;
+    white-space: normal;
+    line-height: 1.35;
+    vertical-align: top;
+}
+
+.invoice-line-table th {
+    background: var(--invoice-accent);
+    color: white;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.invoice-line-table tbody tr {
+    border-bottom: 1px solid var(--invoice-border);
+}
+
+.invoice-line-table tbody tr:last-child {
+    border-bottom: 0;
+}
+
+.invoice-table-desc {
+    text-align: left;
+}
+
+.invoice-table-qty,
+.invoice-table-money {
+    text-align: right;
+}
+
+.invoice-table-unit {
+    text-align: left;
+}
+
+.invoice-money {
+    white-space: nowrap;
+    overflow-wrap: normal;
+    word-break: normal;
+}
+
+.invoice-table-empty {
+    padding: 2rem 1rem;
+    text-align: center;
+    opacity: 0.6;
+}
+
+.invoice-ending,
+.invoice-signature,
+.invoice-footer {
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.invoice-total-box {
+    min-width: 0;
+}
+
+.invoice-total-box span {
+    min-width: 0;
+    overflow-wrap: break-word;
+    word-break: normal;
+}
+
+@media (max-width: 640px) {
+    .invoice-body {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+
+    .invoice-line-table {
+        font-size: 0.75rem;
+    }
+
+    .invoice-line-table th,
+    .invoice-line-table td {
+        padding: 0.65rem 0.5rem;
+    }
+
+    .invoice-money {
+        white-space: normal;
+        overflow-wrap: break-word;
+    }
 }
 
 @media print {
@@ -525,16 +645,22 @@ const invoiceStyle = computed(() => ({
         visibility: hidden;
     }
 
+    .invoice-preview-page {
+        min-height: auto !important;
+        padding: 0 !important;
+        background: white !important;
+    }
+
     .invoice-print-area,
     .invoice-print-area * {
         visibility: visible;
     }
 
     .invoice-print-area {
-        position: fixed !important;
-        inset: 0 !important;
-        width: 100% !important;
-        min-height: 100% !important;
+        position: static !important;
+        width: auto !important;
+        max-width: none !important;
+        min-height: auto !important;
         padding: 0 !important;
         overflow: visible !important;
         border-radius: 0 !important;
@@ -544,13 +670,49 @@ const invoiceStyle = computed(() => ({
     .invoice-sheet {
         width: 190mm !important;
         max-width: 190mm !important;
-        min-height: 277mm !important;
-        aspect-ratio: auto !important;
+        min-height: auto !important;
+        overflow: visible !important;
         margin: 0 auto !important;
         box-shadow: none !important;
-        page-break-after: avoid;
         print-color-adjust: exact;
         -webkit-print-color-adjust: exact;
+    }
+
+    .invoice-header,
+    .invoice-body > .grid,
+    .invoice-body > .rounded-lg,
+    .invoice-ending,
+    .invoice-signature,
+    .invoice-footer {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .invoice-table-frame {
+        overflow: visible !important;
+        break-inside: auto;
+        page-break-inside: auto;
+    }
+
+    .invoice-line-table {
+        page-break-inside: auto;
+    }
+
+    .invoice-line-table thead {
+        display: table-header-group;
+    }
+
+    .invoice-line-table tbody {
+        display: table-row-group;
+    }
+
+    .invoice-line-table tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .invoice-ending {
+        margin-top: 1.75rem;
     }
 
     .no-print {

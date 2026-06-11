@@ -93,7 +93,7 @@ class ProgressReportsController extends CrudResourceController
                 ->get(['id', 'client_id', 'name'])
                 ->map(fn (Project $project): array => [
                     'value' => $project->id,
-                    'label' => $project->name ?? 'Untitled project',
+                    'label' => $project->name ?? 'Proyek tanpa nama',
                     'hint' => $project->client?->name,
                 ])
                 ->all(),
@@ -115,7 +115,7 @@ class ProgressReportsController extends CrudResourceController
             ->findOrFail($id);
 
         return Inertia::render('shared/RecordDetails', [
-            'title' => 'Progress Detail',
+            'title' => 'Detail Progress',
             'subtitle' => trim(($record->progress_percent ?? 0).'% '.$record->project?->name),
             'indexUrl' => route('progress-updates.index'),
             'updateUrl' => route('progress-updates.update', $record->id),
@@ -144,27 +144,27 @@ class ProgressReportsController extends CrudResourceController
     protected function detailFields(): array
     {
         return [
-            ['name' => 'project_id', 'label' => 'Project', 'type' => 'select', 'required' => true, 'options' => $this->projectOptions()],
-            ['name' => 'document_number', 'label' => 'Document Number', 'type' => 'text'],
-            ['name' => 'document_type', 'label' => 'Document Type', 'type' => 'select', 'options' => [
+            ['name' => 'project_id', 'label' => 'Proyek', 'type' => 'select', 'required' => true, 'options' => $this->projectOptions()],
+            ['name' => 'document_number', 'label' => 'Nomor Dokumen', 'type' => 'text'],
+            ['name' => 'document_type', 'label' => 'Jenis Dokumen', 'type' => 'select', 'options' => [
                 ['value' => 'BA MC', 'label' => 'BA MC / Mutual Check'],
                 ['value' => 'BAHPP', 'label' => 'BAHPP'],
                 ['value' => 'C3', 'label' => 'C3'],
                 ['value' => 'Laporan Akhir', 'label' => 'Laporan Akhir'],
             ]],
-            ['name' => 'progress_percent', 'label' => 'Progress Percent', 'type' => 'number', 'min' => 0, 'max' => 100, 'step' => '0.01'],
-            ['name' => 'period_start', 'label' => 'Period Start', 'type' => 'date'],
-            ['name' => 'period_end', 'label' => 'Period End', 'type' => 'date'],
-            ['name' => 'report_date', 'label' => 'Report Date', 'type' => 'date'],
-            ['name' => 'approved_by_client', 'label' => 'Client Approval', 'type' => 'select', 'options' => [
-                ['value' => '0', 'label' => 'No'],
-                ['value' => '1', 'label' => 'Yes'],
+            ['name' => 'progress_percent', 'label' => 'Persentase Progress', 'type' => 'number', 'min' => 0, 'max' => 100, 'step' => '0.01'],
+            ['name' => 'period_start', 'label' => 'Awal Periode', 'type' => 'date'],
+            ['name' => 'period_end', 'label' => 'Akhir Periode', 'type' => 'date'],
+            ['name' => 'report_date', 'label' => 'Tanggal Laporan', 'type' => 'date'],
+            ['name' => 'approved_by_client', 'label' => 'Approval Klien', 'type' => 'select', 'options' => [
+                ['value' => '0', 'label' => 'Tidak'],
+                ['value' => '1', 'label' => 'Ya'],
             ]],
-            ['name' => 'approved_by_internal', 'label' => 'Internal Approval', 'type' => 'select', 'options' => [
-                ['value' => '0', 'label' => 'No'],
-                ['value' => '1', 'label' => 'Yes'],
+            ['name' => 'approved_by_internal', 'label' => 'Approval Internal', 'type' => 'select', 'options' => [
+                ['value' => '0', 'label' => 'Tidak'],
+                ['value' => '1', 'label' => 'Ya'],
             ]],
-            ['name' => 'description', 'label' => 'Summary', 'type' => 'textarea'],
+            ['name' => 'description', 'label' => 'Ringkasan', 'type' => 'textarea'],
         ];
     }
 
@@ -176,7 +176,7 @@ class ProgressReportsController extends CrudResourceController
             ->get(['id', 'client_id', 'name'])
             ->map(fn (Project $project): array => [
                 'value' => $project->id,
-                'label' => $project->name ?? 'Untitled project',
+                'label' => $project->name ?? 'Proyek tanpa nama',
                 'hint' => $project->client?->name,
             ])
             ->all();

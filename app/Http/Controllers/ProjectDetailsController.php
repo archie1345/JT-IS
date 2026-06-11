@@ -43,7 +43,7 @@ class ProjectDetailsController extends Controller
         ]);
 
         $this->syncPaymentStatus($project, $data['payment_status'], (float) $data['contract_value']);
-        return to_route('projects.show', $project)->with('success', 'Project created successfully.');
+        return to_route('projects.show', $project)->with('success', 'Proyek berhasil dibuat.');
     }
 
     public function show(Project $project): Response
@@ -69,7 +69,7 @@ class ProjectDetailsController extends Controller
         ]);
 
         $this->syncPaymentStatus($project, $data['payment_status'], (float) $data['contract_value']);
-        return to_route('projects.show', $project)->with('success', 'Project updated successfully.');
+        return to_route('projects.show', $project)->with('success', 'Proyek berhasil diupdate.');
     }
 
     protected function validatePayload(Request $request, ?int $projectId = null): array

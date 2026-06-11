@@ -26,13 +26,13 @@ const props = defineProps<{
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Cost Realization', href: '/project-costs' },
+    { title: 'Realisasi Biaya', href: '/project-costs' },
 ];
 
 const uploadConnectionOptions = computed(() =>
     props.records.map((record) => ({
         value: `project_cost:${record.id}`,
-        label: `Cost #${record.id}`,
+        label: `Biaya #${record.id}`,
         hint: String(record.project_name ?? record.category ?? ''),
         componentType: 'project_cost',
         componentId: Number(record.id),
@@ -42,57 +42,57 @@ const uploadConnectionOptions = computed(() =>
 
 const columns = [
     { key: 'id', label: 'Id' },
-    { key: 'project_name', label: 'Project' },
-    { key: 'client_name', label: 'Client' },
-    { key: 'reference_number', label: 'Reference No.' },
-    { key: 'category', label: 'Category' },
+    { key: 'project_name', label: 'Proyek' },
+    { key: 'client_name', label: 'Klien' },
+    { key: 'reference_number', label: 'No. Referensi' },
+    { key: 'category', label: 'Kategori' },
     { key: 'vendor', label: 'Vendor' },
-    { key: 'amount', label: 'Amount' },
-    { key: 'date', label: 'Date' },
+    { key: 'amount', label: 'Nilai' },
+    { key: 'date', label: 'Tanggal' },
 ] satisfies SpreadsheetColumn[];
 
 const fields = [
     {
         name: 'project_id',
-        label: 'Project',
+        label: 'Proyek',
         type: 'select',
         options: props.projectOptions,
         required: true,
     },
     {
         name: 'reference_number',
-        label: 'Reference Number',
+        label: 'Nomor Referensi',
         type: 'text',
-        placeholder: 'Receipt, PO, or vendor document number',
+        placeholder: 'Nomor receipt, PO, atau dokumen vendor',
     },
     {
         name: 'category',
-        label: 'Category',
+        label: 'Kategori',
         type: 'text',
-        placeholder: 'Material, labor, transport...',
+        placeholder: 'Material, tenaga kerja, transport...',
     },
     {
         name: 'vendor',
-        label: 'Vendor / Payee',
+        label: 'Vendor / Penerima',
         type: 'text',
-        placeholder: 'Example: CV. Solusi Mandiri',
+        placeholder: 'Contoh: CV. Solusi Mandiri',
     },
-    { name: 'amount', label: 'Amount', type: 'number', min: 0, step: '0.01' },
-    { name: 'date', label: 'Date', type: 'date' },
+    { name: 'amount', label: 'Nilai', type: 'number', min: 0, step: '0.01' },
+    { name: 'date', label: 'Tanggal', type: 'date' },
     {
         name: 'description',
-        label: 'Description',
+        label: 'Deskripsi',
         type: 'textarea',
-        placeholder: 'Cost detail or supporting note',
+        placeholder: 'Detail biaya atau catatan pendukung',
     },
 ] as const;
 </script>
 
 <template>
     <CrudPrototypePage
-        head-title="Cost Realization"
-        title="Cost Realization"
-        description="Record project spending so management can compare realized costs against RAP."
+        head-title="Realisasi Biaya"
+        title="Realisasi Biaya"
+        description="Catat pengeluaran proyek agar manajemen bisa membandingkan realisasi biaya dengan RAP."
         :breadcrumbs="breadcrumbs"
         :rows="props.records"
         :columns="columns"
@@ -106,7 +106,7 @@ const fields = [
         :uploaded-documents="props.uploadedDocuments"
         :upload-connection-options="uploadConnectionOptions"
         :pagination="props.pagination"
-        create-label="New Cost Entry"
+        create-label="Tambah Biaya"
     >
         <template #cell-amount="{ value }">
             {{

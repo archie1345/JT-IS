@@ -92,18 +92,18 @@ class TendersController extends CrudResourceController
 
         if ($tender->status !== 'won') {
             return redirect()->back()->withErrors([
-                'status' => 'Only won tenders can be converted to projects.',
+                'status' => 'Hanya tender yang menang yang bisa dikonversi menjadi proyek.',
             ]);
         }
 
         if ($tender->project_id !== null) {
             return to_route('projects.show', $tender->project_id)
-                ->with('success', 'Tender is already connected to a project.');
+                ->with('success', 'Tender sudah terhubung ke proyek.');
         }
 
         if (blank($tender->title)) {
             return redirect()->back()->withErrors([
-                'title' => 'Tender title is required before conversion.',
+                'title' => 'Judul tender wajib diisi sebelum konversi.',
             ]);
         }
 
@@ -138,7 +138,7 @@ class TendersController extends CrudResourceController
         });
 
         return to_route('projects.show', $project)
-            ->with('success', 'Won tender converted to an active project.');
+            ->with('success', 'Tender menang berhasil dikonversi menjadi proyek aktif.');
     }
 
     protected function pageProps(Request $request): array
@@ -150,7 +150,7 @@ class TendersController extends CrudResourceController
                 ->get(['id', 'client_id', 'name'])
                 ->map(fn (Project $project): array => [
                     'value' => $project->id,
-                    'label' => $project->name ?? 'Untitled project',
+                    'label' => $project->name ?? 'Proyek tanpa nama',
                     'hint' => $project->client?->name,
                 ])
                 ->all(),
@@ -172,13 +172,13 @@ class TendersController extends CrudResourceController
             ->findOrFail($id);
 
         return Inertia::render('shared/RecordDetails', [
-            'title' => 'Report Detail',
+            'title' => 'Detail Laporan',
             'subtitle' => $record->title,
             'indexUrl' => route('pipeline'),
             'updateUrl' => route('pipeline.update', $record->id),
             'breadcrumbs' => [
-                ['title' => 'Reports', 'href' => route('pipeline')],
-                ['title' => 'Report #'.$record->id, 'href' => route('pipeline.show', $record->id)],
+                ['title' => 'Laporan', 'href' => route('pipeline')],
+                ['title' => 'Laporan #'.$record->id, 'href' => route('pipeline.show', $record->id)],
             ],
             'record' => $this->transformRecord($record, request()),
             'fields' => $this->detailFields(),
@@ -201,20 +201,20 @@ class TendersController extends CrudResourceController
     protected function detailFields(): array
     {
         return [
-            ['name' => 'project_id', 'label' => 'Project', 'type' => 'select', 'options' => $this->projectOptions()],
-            ['name' => 'document_number', 'label' => 'Document Number', 'type' => 'text', 'placeholder' => 'Example: 001/SPH/JTE/II/2026'],
-            ['name' => 'document_date', 'label' => 'Document Date', 'type' => 'date'],
-            ['name' => 'title', 'label' => 'Work / Package Title', 'type' => 'text'],
-            ['name' => 'owner', 'label' => 'Owner / Client', 'type' => 'text'],
-            ['name' => 'location', 'label' => 'Location', 'type' => 'textarea'],
-            ['name' => 'value', 'label' => 'Offer / Contract Value', 'type' => 'number', 'min' => 0, 'step' => '0.01'],
+            ['name' => 'project_id', 'label' => 'Proyek', 'type' => 'select', 'options' => $this->projectOptions()],
+            ['name' => 'document_number', 'label' => 'Nomor Dokumen', 'type' => 'text', 'placeholder' => 'Contoh: 001/SPH/JTE/II/2026'],
+            ['name' => 'document_date', 'label' => 'Tanggal Dokumen', 'type' => 'date'],
+            ['name' => 'title', 'label' => 'Nama Pekerjaan / Paket', 'type' => 'text'],
+            ['name' => 'owner', 'label' => 'Owner / Klien', 'type' => 'text'],
+            ['name' => 'location', 'label' => 'Lokasi', 'type' => 'textarea'],
+            ['name' => 'value', 'label' => 'Nilai Penawaran / Kontrak', 'type' => 'number', 'min' => 0, 'step' => '0.01'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => [
-                ['value' => 'open', 'label' => 'Open'],
-                ['value' => 'submitted', 'label' => 'Submitted'],
-                ['value' => 'won', 'label' => 'Won'],
-                ['value' => 'lost', 'label' => 'Lost'],
+                ['value' => 'open', 'label' => 'Terbuka'],
+                ['value' => 'submitted', 'label' => 'Diajukan'],
+                ['value' => 'won', 'label' => 'Menang'],
+                ['value' => 'lost', 'label' => 'Kalah'],
             ]],
-            ['name' => 'notes', 'label' => 'Notes', 'type' => 'textarea'],
+            ['name' => 'notes', 'label' => 'Catatan', 'type' => 'textarea'],
         ];
     }
 
@@ -226,7 +226,7 @@ class TendersController extends CrudResourceController
             ->get(['id', 'client_id', 'name'])
             ->map(fn (Project $project): array => [
                 'value' => $project->id,
-                'label' => $project->name ?? 'Untitled project',
+                'label' => $project->name ?? 'Proyek tanpa nama',
                 'hint' => $project->client?->name,
             ])
             ->all();

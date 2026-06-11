@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -180,11 +182,14 @@ class AccessControl
 
         foreach (self::defaultPermissionsByRole() as $roleName => $permissions) {
             $role = Role::findOrCreate($roleName, 'web');
+            $expandedPermissions = $roleName === 'admin'
+                ? self::permissionNames()
+                : self::expandPermissions($permissions);
 
             if ($roleName === 'admin') {
-                $role->syncPermissions(self::permissionNames());
+                self::grantPermissionsWithoutDuplicates($role, $expandedPermissions);
             } elseif ($role->permissions()->count() === 0) {
-                $role->syncPermissions(self::expandPermissions($permissions));
+                self::grantPermissionsWithoutDuplicates($role, $expandedPermissions);
             }
         }
 
@@ -218,6 +223,68 @@ class AccessControl
         } while ($changed);
 
         return array_values(array_keys($expanded));
+    }
+
+    public static function replaceRolePermissions(Role $role, array $permissions): void
+    {
+        $table = config('permission.table_names.role_has_permissions', 'role_has_permissions');
+        $rolePivot = config('permission.column_names.role_pivot_key') ?: 'role_id';
+
+        DB::transaction(function () use ($role, $permissions, $rolePivot, $table): void {
+            DB::table($table)
+                ->where($rolePivot, $role->getKey())
+                ->delete();
+
+            self::grantPermissionsWithoutDuplicates($role, $permissions);
+        });
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+    }
+
+    protected static function grantPermissionsWithoutDuplicates(Role $role, array $permissions): void
+    {
+        $permissionIds = self::permissionIds($permissions);
+
+        if ($permissionIds->isEmpty()) {
+            return;
+        }
+
+        $table = config('permission.table_names.role_has_permissions', 'role_has_permissions');
+        $rolePivot = config('permission.column_names.role_pivot_key') ?: 'role_id';
+        $permissionPivot = config('permission.column_names.permission_pivot_key') ?: 'permission_id';
+
+        $rows = $permissionIds
+            ->map(fn (int $permissionId): array => [
+                $permissionPivot => $permissionId,
+                $rolePivot => $role->getKey(),
+            ])
+            ->all();
+
+        foreach (array_chunk($rows, 100) as $chunk) {
+            DB::table($table)->insertOrIgnore($chunk);
+        }
+
+        $role->unsetRelation('permissions');
+    }
+
+    protected static function permissionIds(array $permissions): Collection
+    {
+        $permissionNames = array_values(array_unique($permissions));
+
+        if ($permissionNames === []) {
+            return collect();
+        }
+
+        $idsByName = Permission::query()
+            ->where('guard_name', 'web')
+            ->whereIn('name', $permissionNames)
+            ->pluck('id', 'name');
+
+        return collect($permissionNames)
+            ->map(fn (string $permissionName): ?int => $idsByName[$permissionName] ?? null)
+            ->filter()
+            ->unique()
+            ->values();
     }
 
     protected static function defaultRoleNames(): array

@@ -91,7 +91,7 @@ class InvoicesController extends CrudResourceController
                 ->get(['id', 'client_id', 'name'])
                 ->map(fn (Project $project): array => [
                     'value' => $project->id,
-                    'label' => $project->name ?? 'Untitled project',
+                    'label' => $project->name ?? 'Proyek tanpa nama',
                     'hint' => $project->client?->name,
                 ])
                 ->all(),
@@ -139,14 +139,14 @@ class InvoicesController extends CrudResourceController
 
         return Inertia::render('finance/FinancialDocumentDetails', [
             'kind' => 'invoice',
-            'title' => 'Billing Detail',
-            'recordLabel' => 'Billing',
+            'title' => 'Detail Invoice',
+            'recordLabel' => 'Invoice',
             'indexUrl' => route('invoices.index'),
             'updateUrl' => route('invoices.update', $record->id),
             'itemStoreUrl' => route('invoices.items.store', $record->id),
             'itemUpdateUrlBase' => url('invoice-items'),
             'breadcrumbs' => [
-                ['title' => 'Billing', 'href' => route('invoices.index')],
+                ['title' => 'Invoice', 'href' => route('invoices.index')],
                 ['title' => 'Invoice #'.$record->id, 'href' => route('invoices.show', $record->id)],
             ],
             'record' => $this->transformRecord($record, request()),
@@ -217,7 +217,7 @@ class InvoicesController extends CrudResourceController
             $items = [[
                 'description' => $invoice->description
                     ?: $invoice->project?->name
-                    ?: 'Project invoice',
+                    ?: 'Invoice proyek',
                 'projectName' => $invoice->project?->name,
                 'quantity' => 1,
                 'unitPrice' => (float) ($invoice->amount ?? 0),
@@ -285,18 +285,18 @@ class InvoicesController extends CrudResourceController
     protected function detailFields(): array
     {
         return [
-            ['name' => 'project_id', 'label' => 'Project', 'type' => 'select', 'required' => true, 'options' => $this->projectOptions()],
-            ['name' => 'invoice_number', 'label' => 'Invoice Number', 'type' => 'text'],
-            ['name' => 'amount', 'label' => 'Amount', 'type' => 'number', 'min' => 0, 'step' => '0.01'],
-            ['name' => 'tax_amount', 'label' => 'Tax Amount', 'type' => 'number', 'min' => 0, 'step' => '0.01'],
-            ['name' => 'invoice_date', 'label' => 'Invoice Date', 'type' => 'date'],
-            ['name' => 'due_date', 'label' => 'Due Date', 'type' => 'date'],
+            ['name' => 'project_id', 'label' => 'Proyek', 'type' => 'select', 'required' => true, 'options' => $this->projectOptions()],
+            ['name' => 'invoice_number', 'label' => 'Nomor Invoice', 'type' => 'text'],
+            ['name' => 'amount', 'label' => 'Nilai', 'type' => 'number', 'min' => 0, 'step' => '0.01'],
+            ['name' => 'tax_amount', 'label' => 'Nilai Pajak', 'type' => 'number', 'min' => 0, 'step' => '0.01'],
+            ['name' => 'invoice_date', 'label' => 'Tanggal Invoice', 'type' => 'date'],
+            ['name' => 'due_date', 'label' => 'Jatuh Tempo', 'type' => 'date'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => [
-                ['value' => 'pending', 'label' => 'Pending'],
-                ['value' => 'paid', 'label' => 'Paid'],
-                ['value' => 'overdue', 'label' => 'Overdue'],
+                ['value' => 'pending', 'label' => 'Menunggu'],
+                ['value' => 'paid', 'label' => 'Lunas'],
+                ['value' => 'overdue', 'label' => 'Terlambat'],
             ]],
-            ['name' => 'description', 'label' => 'Description', 'type' => 'textarea'],
+            ['name' => 'description', 'label' => 'Deskripsi', 'type' => 'textarea'],
         ];
     }
 
@@ -308,7 +308,7 @@ class InvoicesController extends CrudResourceController
             ->get(['id', 'client_id', 'name'])
             ->map(fn (Project $project): array => [
                 'value' => $project->id,
-                'label' => $project->name ?? 'Untitled project',
+                'label' => $project->name ?? 'Proyek tanpa nama',
                 'hint' => $project->client?->name,
             ])
             ->all();
@@ -328,13 +328,13 @@ class InvoicesController extends CrudResourceController
 
         if ($contractValue <= 0) {
             throw ValidationException::withMessages([
-                'amount' => 'Cannot create invoice: project contract value is empty.',
+                'amount' => 'Invoice tidak bisa dibuat: nilai kontrak proyek masih kosong.',
             ]);
         }
 
         if ($approvedProgress === null) {
             throw ValidationException::withMessages([
-                'amount' => 'Cannot create invoice: project has no fully approved progress yet.',
+                'amount' => 'Invoice tidak bisa dibuat: proyek belum memiliki progress yang disetujui penuh.',
             ]);
         }
 
@@ -344,7 +344,7 @@ class InvoicesController extends CrudResourceController
         if ($amount > $remainingBillable) {
             throw ValidationException::withMessages([
                 'amount' => sprintf(
-                    'Invoice exceeds approved progress billing. Remaining billable amount is Rp%s.',
+                    'Invoice melebihi progress tagihan yang disetujui. Sisa nilai yang bisa ditagih adalah Rp%s.',
                     number_format(max(0, $remainingBillable), 0, ',', '.'),
                 ),
             ]);

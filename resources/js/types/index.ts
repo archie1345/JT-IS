@@ -8,3 +8,4 @@ export * from './rap';
 export * from './sidebar';
 export * from './user';
 export * from './ui';
+export * from './options';

@@ -1,24 +1,17 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
-import { FolderOpen, Plus, Upload } from 'lucide-vue-next';
+import { FolderOpen, Plus, Upload, RefreshCw, Trash2 } from 'lucide-vue-next';
 import EntityPageSection from '@/components/entity/EntityPageSection.vue';
-import DocumentUploadPanel from '@/components/shared/DocumentUploadPanel.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
 import type {
     DocumentConnectionOption,
     ProjectDocumentGroup,
     ProjectDocumentGroupRecord,
     UploadedDocument,
 } from '@/types/project';
+import DocumentList from '../shared/DocumentList.vue';
 
 const props = defineProps<{
     connectionOptions: DocumentConnectionOption[];
@@ -49,6 +42,25 @@ const visibleGroupRecords = (group: ProjectDocumentGroup) =>
 
 const hiddenGroupRecordCount = (group: ProjectDocumentGroup) =>
     Math.max(0, group.count - visibleGroupRecords(group).length);
+
+const refreshGroups = () => {
+    router.reload({
+        only: ['groups']
+    });
+};
+
+const destroyRecord = (record: ProjectDocumentGroupRecord) => {
+    if (!window.confirm(`Hapus data ${record.title}?`)) {
+        return;
+    }
+
+    router.delete(record.url, {
+        preserveScroll: true,
+        onSuccess: () => {
+            refreshGroups();
+        },
+    });
+};
 </script>
 
 <template>
@@ -65,26 +77,14 @@ const hiddenGroupRecordCount = (group: ProjectDocumentGroup) =>
         </div>
 
         <div v-else class="min-w-0 space-y-4">
-            <div
-                class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sidebar-border/70 bg-muted/10 p-3"
-            >
-                <div class="min-w-0">
-                    <p class="text-sm font-medium text-foreground">
-                        File pendukung & OCR
-                    </p>
-                    <p class="text-xs text-muted-foreground">
-                        Upload file proyek saat dibutuhkan.
-                    </p>
-                </div>
-                <Button
-                    type="button"
-                    variant="outline"
-                    @click="isImportDialogOpen = true"
-                >
-                    <Upload class="size-4" />
-                    Import Dokumen
-                </Button>
-            </div>
+            <DocumentList
+                :project-id="props.projectId"
+                component-type="project"
+                :documents="props.documents"
+                :project-options="[]"
+                :connection-options="props.connectionOptions"
+                @upload-success="refreshGroups"
+            />
 
             <div class="grid min-w-0 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
                 <div
@@ -132,34 +132,48 @@ const hiddenGroupRecordCount = (group: ProjectDocumentGroup) =>
                     </div>
 
                     <div class="min-w-0 space-y-2">
-                        <button
+                        <div
                             v-for="record in visibleGroupRecords(group)"
                             :key="record.id"
-                            type="button"
-                            class="flex w-full min-w-0 items-start justify-between gap-3 rounded-lg border border-sidebar-border/70 bg-background px-3 py-2 text-left transition hover:bg-muted/40"
-                            @click="openDocumentRecord(record)"
+                            class="group/record flex w-full min-w-0 items-start justify-between gap-2 rounded-lg border border-sidebar-border/70 bg-background px-3 py-2 transition hover:bg-muted/40"
                         >
-                            <div class="min-w-0">
-                                <p
-                                    class="truncate text-sm font-medium text-foreground"
-                                    :title="record.title"
-                                >
-                                    {{ record.title }}
-                                </p>
-                                <p
-                                    class="line-clamp-2 text-xs text-muted-foreground"
-                                    :title="record.detail"
-                                >
-                                    {{ record.detail }}
-                                </p>
-                            </div>
-                            <span
-                                v-if="record.value"
-                                class="shrink-0 text-xs font-medium text-foreground"
+                            <button
+                                type="button"
+                                class="flex min-w-0 flex-1 items-start justify-between gap-3 text-left"
+                                @click="openDocumentRecord(record)"
                             >
-                                {{ record.value }}
-                            </span>
-                        </button>
+                                <div class="min-w-0">
+                                    <p
+                                        class="truncate text-sm font-medium text-foreground hover:underline"
+                                        :title="record.title"
+                                    >
+                                        {{ record.title }}
+                                    </p>
+                                    <p
+                                        class="line-clamp-2 text-xs text-muted-foreground"
+                                        :title="record.detail"
+                                    >
+                                        {{ record.detail }}
+                                    </p>
+                                </div>
+                                <span
+                                    v-if="record.value"
+                                    class="shrink-0 text-xs font-medium text-foreground"
+                                >
+                                    {{ record.value }}
+                                </span>
+                            </button>
+
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                class="shrink-0 text-destructive"
+                                @click="destroyRecord(record)"
+                            >
+                                <Trash2 class="size-4" />
+                            </Button>
+                        </div>
 
                         <div
                             v-if="group.records.length === 0"
@@ -180,31 +194,5 @@ const hiddenGroupRecordCount = (group: ProjectDocumentGroup) =>
                 </div>
             </div>
         </div>
-
-        <Dialog v-model:open="isImportDialogOpen">
-            <DialogContent
-                class="flex max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] !max-w-4xl flex-col overflow-hidden p-4 sm:p-6"
-            >
-                <DialogHeader class="shrink-0">
-                    <DialogTitle>Import Dokumen</DialogTitle>
-                    <DialogDescription>
-                        Pilih lokasi dokumen, upload file, lalu jalankan OCR
-                        bila tersedia.
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div class="min-h-0 flex-1 overflow-y-auto pr-1">
-                    <DocumentUploadPanel
-                        :project-id="projectId"
-                        component-type="project"
-                        :connection-options="connectionOptions"
-                        :documents="documents"
-                        title="Dokumen & OCR"
-                        description="Unggah file proyek, jalankan OCR bila tersedia, lalu review hasilnya."
-                        empty-text="Belum ada dokumen proyek."
-                    />
-                </div>
-            </DialogContent>
-        </Dialog>
     </EntityPageSection>
 </template>

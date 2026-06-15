@@ -339,7 +339,7 @@ const getCurrentLocation = () => {
                 />
 
                 <div
-                    class="grid min-h-0 min-w-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]"
+                    class="grid min-h-0 min-w-0 flex-1 gap-4"
                 >
                     <div class="flex min-h-0 min-w-0 flex-col gap-4">
                         <EntityDetailHero
@@ -452,36 +452,6 @@ const getCurrentLocation = () => {
                             </template>
                         </EntityDetailHero>
 
-                        <EntityPageSection
-                            v-if="
-                                !isCreateMode &&
-                                (props.project.warnings?.length ?? 0) > 0
-                            "
-                            title="Peringatan Awal"
-                            :icon="CircleAlert"
-                        >
-                            <div class="grid gap-2">
-                                <div
-                                    v-for="warning in props.project.warnings"
-                                    :key="`${warning.type}-${warning.message}`"
-                                    class="rounded-xl border border-sidebar-border/70 bg-muted/20 p-3 text-sm"
-                                >
-                                    <Badge
-                                        :class="
-                                            warning.level === 'critical'
-                                                ? 'bg-rose-500/15 text-rose-600 ring-1 ring-rose-500/25'
-                                                : 'bg-amber-500/15 text-amber-600 ring-1 ring-amber-500/25'
-                                        "
-                                    >
-                                        {{ warning.level }}
-                                    </Badge>
-                                    <p class="mt-2 text-foreground">
-                                        {{ warning.message }}
-                                    </p>
-                                </div>
-                            </div>
-                        </EntityPageSection>
-
                         <EntityPageSection>
                             <div class="space-y-3">
                                 <div class="flex items-center justify-between">
@@ -551,6 +521,37 @@ const getCurrentLocation = () => {
                                 </div>
                             </div>
                         </EntityPageSection>
+
+                        <EntityPageSection
+                            v-if="
+                                !isCreateMode &&
+                                (props.project.warnings?.length ?? 0) > 0
+                            "
+                            title="Peringatan Awal"
+                            :icon="CircleAlert"
+                        >
+                            <div class="grid gap-2">
+                                <div
+                                    v-for="warning in props.project.warnings"
+                                    :key="`${warning.type}-${warning.message}`"
+                                    class="rounded-xl border border-sidebar-border/70 bg-muted/20 p-3 text-sm"
+                                >
+                                    <Badge
+                                        :class="
+                                            warning.level === 'critical'
+                                                ? 'bg-rose-500/15 text-rose-600 ring-1 ring-rose-500/25'
+                                                : 'bg-amber-500/15 text-amber-600 ring-1 ring-amber-500/25'
+                                        "
+                                    >
+                                        {{ warning.level }}
+                                    </Badge>
+                                    <p class="mt-2 text-foreground">
+                                        {{ warning.message }}
+                                    </p>
+                                </div>
+                            </div>
+                        </EntityPageSection>
+
                     </div>
 
                     <div class="flex min-h-0 min-w-0 flex-col gap-4">
@@ -710,10 +711,6 @@ const getCurrentLocation = () => {
                                         :message="form.errors.payment_status"
                                     />
                                 </label>
-
-                                <div
-                                    class="my-3 border-t border-sidebar-border/70"
-                                ></div>
                             </div>
                         </EntityPageSection>
                     </div>

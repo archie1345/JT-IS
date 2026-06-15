@@ -239,43 +239,75 @@ class InvoicesController extends CrudResourceController
     {
         $rabItems = Rab::query()
             ->where('project_id', $projectId)
-            ->with('items')
+            ->with([
+                'items' => fn ($query) => $query->orderBy('id'),
+            ])
             ->latest('id')
             ->get()
-            ->flatMap(fn (Rab $rab) => $rab->items->map(fn ($item): array => [
-                'value' => 'rab:'.$item->id,
-                'sourceType' => 'rab',
-                'sourceItemId' => $item->id,
-                'label' => $item->description ?? 'RAB item #'.$item->id,
-                'hint' => trim(implode(' / ', array_filter([$item->category, $item->sub_category]))),
-                'category' => $item->category,
-                'description' => $item->description,
-                'unit' => $item->unit,
-                'quantity' => (float) ($item->quantity ?? 0),
-                'unitPrice' => (float) ($item->unit_price ?? 0),
-                'totalPrice' => (float) ($item->total_price ?? 0),
-            ]));
+            ->flatMap(function (Rab $rab): array {
+                return $rab->items->map(fn ($item): array => [
+                    'value' => 'rab:'.$rab->id.':'.$item->id,
+                    'sourceType' => 'rab',
+                    'sourceItemId' => $item->id,
+                    'label' => trim(implode(' - ', array_filter([
+                        $rab->document_number ?: 'RAB #'.$rab->id,
+                        $item->description ?: $item->category ?: 'Item',
+                    ]))),
+                    'hint' => trim(implode(' / ', array_filter([
+                        optional($rab->document_date)->format('Y-m-d'),
+                        $item->sub_category ?: $item->category,
+                    ]))),
+                    'category' => $item->category ?: $rab->document_number ?: 'RAB',
+                    'description' => $item->description ?: $item->sub_category ?: $item->category ?: 'Item RAB',
+                    'unit' => $item->unit ?: 'ls',
+                    'quantity' => (float) ($item->quantity ?? 0),
+                    'unitPrice' => (float) ($item->unit_price ?? 0),
+                    'totalPrice' => (float) ($item->total_price ?? 0),
+                    'documentNumber' => $rab->document_number,
+                    'documentDate' => optional($rab->document_date)->format('Y-m-d'),
+                    'itemCount' => 1,
+                    'totalBudget' => (float) ($item->total_price ?? 0),
+                ])->all();
+            })
+            ->values()
+            ->all();
 
         $rapItems = Rap::query()
             ->where('project_id', $projectId)
-            ->with('items')
+            ->with([
+                'items' => fn ($query) => $query->orderBy('id'),
+            ])
             ->latest('id')
             ->get()
-            ->flatMap(fn (Rap $rap) => $rap->items->map(fn ($item): array => [
-                'value' => 'rap:'.$item->id,
-                'sourceType' => 'rap',
-                'sourceItemId' => $item->id,
-                'label' => $item->description ?? 'RAP item #'.$item->id,
-                'hint' => trim(implode(' / ', array_filter([$item->category, $item->sub_category]))),
-                'category' => $item->category,
-                'description' => $item->description,
-                'unit' => $item->unit,
-                'quantity' => (float) ($item->quantity ?? 0),
-                'unitPrice' => (float) ($item->unit_price ?? 0),
-                'totalPrice' => (float) ($item->total_price ?? 0),
-            ]));
+            ->flatMap(function (Rap $rap): array {
+                return $rap->items->map(fn ($item): array => [
+                    'value' => 'rap:'.$rap->id.':'.$item->id,
+                    'sourceType' => 'rap',
+                    'sourceItemId' => $item->id,
+                    'label' => trim(implode(' - ', array_filter([
+                        $rap->document_number ?: 'RAP #'.$rap->id,
+                        $item->description ?: $item->category ?: 'Item',
+                    ]))),
+                    'hint' => trim(implode(' / ', array_filter([
+                        optional($rap->document_date)->format('Y-m-d'),
+                        $item->sub_category ?: $item->category,
+                    ]))),
+                    'category' => $item->category ?: $rap->document_number ?: 'RAP',
+                    'description' => $item->description ?: $item->sub_category ?: $item->category ?: 'Item RAP',
+                    'unit' => $item->unit ?: 'ls',
+                    'quantity' => (float) ($item->quantity ?? 0),
+                    'unitPrice' => (float) ($item->unit_price ?? 0),
+                    'totalPrice' => (float) ($item->total_price ?? 0),
+                    'documentNumber' => $rap->document_number,
+                    'documentDate' => optional($rap->document_date)->format('Y-m-d'),
+                    'itemCount' => 1,
+                    'totalBudget' => (float) ($item->total_price ?? 0),
+                ])->all();
+            })
+            ->values()
+            ->all();
 
-        return $rabItems->concat($rapItems)->values()->all();
+        return array_merge($rabItems, $rapItems);
     }
 
     protected function detailFields(): array

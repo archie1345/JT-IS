@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import {
     ArrowLeft,
     FileText,
     Pencil,
     Plus,
     Save,
+    Search,
     Trash2,
+    LoaderCircle,
 } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
 import EntityDetailHero from '@/components/entity/EntityDetailHero.vue';
@@ -15,7 +17,6 @@ import EntityMetricCard from '@/components/entity/EntityMetricCard.vue';
 import EntityPageSection from '@/components/entity/EntityPageSection.vue';
 import InputError from '@/components/InputError.vue';
 import DocumentUploadPanel from '@/components/shared/DocumentUploadPanel.vue';
-import ProjectOCRScanner from '@/components/ProjectOCRScanner.vue';
 import RecordFieldInput from '@/components/prototype/RecordFieldInput.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,10 +29,11 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { extractImportantDocumentData } from '@/lib/documentExtraction';
+import { csrfFetch } from '@/lib/ocr';
 import { formatCurrency } from '@/lib/formatters';
 import type { BreadcrumbItem } from '@/types';
 import type { UploadedDocument } from '@/types/project';
+import DocumentList from '@/components/shared/DocumentList.vue';
 
 type RecordValue = null | number | string;
 type Option = { value: number | string; label: string; hint?: null | string };
@@ -71,6 +73,10 @@ type BudgetItemOption = {
     quantity: number;
     unitPrice: number;
     totalPrice: number;
+    documentNumber?: null | string;
+    documentDate?: null | string;
+    itemCount?: number;
+    totalBudget?: number;
 };
 
 const props = defineProps<{
@@ -102,10 +108,196 @@ const props = defineProps<{
 
 const isItemOpen = ref(false);
 const editingItemId = ref<null | number>(null);
-const selectedSource = ref('');
+const selectedBudgetValues = ref<string[]>([]);
 const deletingItemId = ref<null | number>(null);
-const scannerText = ref('');
-const scannerApplied = ref(false);
+const activeBudgetType = ref<'rab' | 'rap'>('rab');
+const isBulkSubmitting = ref(false);
+const budgetSearchQuery = ref('');
+
+const itemEntryMode = ref<'select' | 'manual'>('select');
+
+const normalizeSourceType = (sourceType?: null | string) =>
+    String(sourceType ?? '').toLowerCase();
+
+const syncBudgetType = (sourceType?: null | string) => {
+    const normalized = normalizeSourceType(sourceType);
+    if (normalized === 'rab' || normalized === 'rap') {
+        activeBudgetType.value = normalized as 'rab' | 'rap';
+    }
+};
+
+const availableBudgetTypes = computed(() => {
+    const types = new Set(
+        props.budgetItemOptions.map((item) =>
+            normalizeSourceType(item.sourceType ?? (item as any).source_type),
+        ),
+    );
+
+    return ['rab', 'rap'].filter((type) => types.has(type)) as Array<
+        'rab' | 'rap'
+    >;
+});
+
+const syncActiveBudgetType = (preferred?: null | string) => {
+    if (preferred === 'rab' || preferred === 'rap') {
+        activeBudgetType.value = preferred;
+        return;
+    }
+
+    activeBudgetType.value =
+        availableBudgetTypes.value[0] ?? activeBudgetType.value;
+};
+
+const getOptionValue = (row: any) => {
+    if (!row) return '';
+
+    if (row.value !== undefined && row.value !== null) {
+        return String(row.value);
+    }
+
+    if (row.id !== undefined && row.id !== null) {
+        return String(row.id);
+    }
+
+    if (row.sourceType && row.sourceItemId) {
+        return `${row.sourceType}:${row.sourceItemId}`;
+    }
+
+    return JSON.stringify(row);
+};
+
+const isBudgetSelected = (row: any) =>
+    selectedBudgetValues.value.includes(getOptionValue(row));
+
+const toggleBudgetSelection = (row: any, checked: boolean) => {
+    const optionValue = getOptionValue(row);
+
+    if (!optionValue) {
+        return;
+    }
+
+    syncBudgetType(row?.sourceType);
+
+    if (checked) {
+        if (!selectedBudgetValues.value.includes(optionValue)) {
+            selectedBudgetValues.value.push(optionValue);
+        }
+
+        return;
+    }
+
+    selectedBudgetValues.value = selectedBudgetValues.value.filter(
+        (value) => value !== optionValue,
+    );
+};
+
+const budgetTypeCounts = computed(() => ({
+    rab: props.budgetItemOptions.filter(
+        (item) => normalizeSourceType(item.sourceType) === 'rab',
+    ).length,
+    rap: props.budgetItemOptions.filter(
+        (item) => normalizeSourceType(item.sourceType) === 'rap',
+    ).length,
+}));
+
+const filteredBudgetOptions = computed(() =>
+    props.budgetItemOptions.filter(
+        (item) =>
+            normalizeSourceType(item.sourceType ?? (item as any).source_type) ===
+            activeBudgetType.value,
+    ),
+);
+
+const visibleBudgetOptions = computed(() => {
+    const query = budgetSearchQuery.value.trim().toLowerCase();
+
+    if (!query) {
+        return filteredBudgetOptions.value;
+    }
+
+    return filteredBudgetOptions.value.filter((item) =>
+        [
+            item.label,
+            item.hint,
+            item.category,
+            item.description,
+            item.unit,
+            item.documentNumber,
+            item.documentDate,
+        ]
+            .filter(Boolean)
+            .some((value) => String(value).toLowerCase().includes(query)),
+    );
+});
+
+const existingBudgetKeys = computed(() => {
+    return props.items
+        .filter(
+            (item) =>
+                item.sourceType &&
+                item.sourceItemId,
+        )
+        .map(
+            (item) =>
+                `${item.sourceType}:${item.sourceItemId}`,
+        );
+});
+
+const existingBudgetMap = computed(() => {
+    const map = new Map<string, FinancialItem>();
+
+    props.items.forEach((item) => {
+        if (item.sourceType && item.sourceItemId) {
+            map.set(
+                `${item.sourceType}:${item.sourceItemId}`,
+                item,
+            );
+        }
+    });
+
+    return map;
+});
+
+const isExistingBudgetItem = (
+    option: BudgetItemOption,
+) => {
+    return existingBudgetKeys.value.includes(
+        `${option.sourceType}:${option.sourceItemId}`,
+    );
+};
+
+const allVisibleSelected = computed(() => {
+    return (
+        visibleBudgetOptions.value.length > 0 &&
+        visibleBudgetOptions.value.every((option) =>
+            selectedBudgetValues.value.includes(getOptionValue(option)),
+        )
+    );
+});
+
+const toggleAllVisible = (checked: boolean) => {
+    const visibleValues = visibleBudgetOptions.value.map((option) =>
+        getOptionValue(option),
+    );
+
+    if (checked) {
+        selectedBudgetValues.value = [
+            ...new Set([
+                ...selectedBudgetValues.value,
+                ...visibleValues,
+            ]),
+        ];
+        return;
+    }
+
+    selectedBudgetValues.value = selectedBudgetValues.value.filter(
+        (value) => !visibleValues.includes(value),
+    );
+};
+
+const clearBudgetSelection = () => {
+    selectedBudgetValues.value = [];
+};
 
 const headerForm = useForm<Record<string, number | string>>(
     Object.fromEntries(
@@ -138,60 +330,15 @@ const documentTitle = computed(() =>
 );
 
 const itemDialogTitle = computed(() =>
-    editingItemId.value === null ? 'Tambah item' : 'Edit item',
+    editingItemId.value === null ? 'Tambah baris item' : 'Edit item manual',
 );
 
 const itemTotal = computed(
     () => Number(itemForm.quantity || 0) * Number(itemForm.unit_price || 0),
 );
-const scannerData = computed(() =>
-    scannerText.value.trim()
-        ? extractImportantDocumentData(
-              scannerText.value,
-              props.upload.componentType,
-          )
-        : null,
-);
-const scannerRows = computed(() =>
-    (scannerData.value?.grouping_results ?? []).flatMap((category) =>
-        category.sub_categories.flatMap((subCategory) =>
-            subCategory.items.map((item) => ({
-                category: category.category,
-                description: item.description,
-                unit: item.unit ?? '',
-                quantity: item.volume ?? 1,
-                unitPrice: item.unit_price ?? 0,
-                totalPrice:
-                    item.total ??
-                    Number(item.volume ?? 0) * Number(item.unit_price ?? 0),
-            })),
-        ),
-    ),
-);
-const scannerSummary = computed(() => {
-    if (!scannerData.value) {
-        return 'Upload file untuk scan detail invoice atau biaya.';
-    }
-
-    const metadata = scannerData.value.metadata;
-    const detected = [
-        metadata.doc_number ? 'nomor dokumen' : null,
-        metadata.contract_value ? 'nilai' : null,
-        metadata.contract_date ? 'tanggal' : null,
-        scannerRows.value.length > 0
-            ? `${scannerRows.value.length} baris item`
-            : null,
-    ].filter(Boolean);
-
-    return detected.length > 0
-        ? `Terdeteksi ${detected.join(', ')}.`
-        : 'OCR selesai, tetapi tidak ada field terstruktur yang terdeteksi.';
-});
 
 const backToList = () => router.get(props.indexUrl);
 const refreshPage = () => router.reload();
-const toDateInputValue = (value: null | string | undefined) =>
-    value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : '';
 
 const submitHeader = () => {
     headerForm.patch(props.updateUrl, {
@@ -202,7 +349,7 @@ const submitHeader = () => {
 
 const resetItemForm = () => {
     editingItemId.value = null;
-    selectedSource.value = '';
+    selectedBudgetValues.value = [];
     itemForm.defaults({
         source_type: 'manual',
         source_item_id: '',
@@ -221,15 +368,34 @@ const resetItemForm = () => {
 
 const openCreateItem = () => {
     resetItemForm();
+
+    selectedBudgetValues.value =
+        props.budgetItemOptions
+            .filter((option) =>
+                isExistingBudgetItem(option),
+            )
+            .map((option) =>
+                getOptionValue(option),
+            );
+
+    syncActiveBudgetType();
+
+    itemEntryMode.value =
+        availableBudgetTypes.value.length > 0
+            ? 'select'
+            : 'manual';
+
     isItemOpen.value = true;
 };
 
 const openEditItem = (item: FinancialItem) => {
     editingItemId.value = item.id;
-    selectedSource.value =
-        item.sourceType && item.sourceItemId
-            ? `${item.sourceType}:${item.sourceItemId}`
-            : '';
+    selectedBudgetValues.value = [];
+    syncBudgetType(item.sourceType);
+    syncActiveBudgetType(item.sourceType);
+
+    // Force manual mode for direct edits
+    itemEntryMode.value = 'manual';
 
     const payload = {
         source_type: item.sourceType ?? 'manual',
@@ -251,92 +417,145 @@ const openEditItem = (item: FinancialItem) => {
     isItemOpen.value = true;
 };
 
+watch(
+    () => props.budgetItemOptions,
+    () => {
+        syncActiveBudgetType(activeBudgetType.value);
+    },
+    { immediate: true, deep: true },
+);
+
 const closeItemModal = () => {
     isItemOpen.value = false;
     resetItemForm();
+    isBulkSubmitting.value = false;
 };
 
-const applyBudgetItem = () => {
-    const option = props.budgetItemOptions.find(
-        (item) => item.value === selectedSource.value,
-    );
+const selectedBudgetOptions = computed(() =>
+    props.budgetItemOptions.filter((item) =>
+        selectedBudgetValues.value.includes(getOptionValue(item)),
+    ),
+);
 
-    if (!option) {
-        itemForm.source_type = 'manual';
-        itemForm.source_item_id = '';
-        return;
-    }
+const submitSelectedBudgetItems = async () => {
+    isBulkSubmitting.value = true;
 
-    itemForm.source_type = option.sourceType;
-    itemForm.source_item_id = String(option.sourceItemId);
-    itemForm.category = option.category ?? '';
-    itemForm.description = option.description ?? '';
-    itemForm.unit = option.unit ?? '';
-    itemForm.quantity = option.quantity || 1;
-    itemForm.unit_price = option.unitPrice || 0;
-    itemForm.total_price = option.totalPrice || 0;
-};
-
-const handleScannerData = (text: string) => {
-    scannerText.value = text;
-    scannerApplied.value = false;
-};
-
-const applyScannerToHeader = () => {
-    const metadata = scannerData.value?.metadata;
-
-    if (!metadata) {
-        return;
-    }
-
-    if (props.kind === 'invoice') {
-        headerForm.invoice_number =
-            metadata.doc_number || headerForm.invoice_number || '';
-        headerForm.amount = metadata.contract_value ?? headerForm.amount ?? '';
-        headerForm.invoice_date =
-            toDateInputValue(metadata.contract_date) ||
-            headerForm.invoice_date ||
-            '';
-        headerForm.description =
-            metadata.project_name || headerForm.description || '';
-    } else {
-        headerForm.reference_number =
-            metadata.doc_number || headerForm.reference_number || '';
-        headerForm.amount = metadata.contract_value ?? headerForm.amount ?? '';
-        headerForm.date =
-            toDateInputValue(metadata.contract_date) || headerForm.date || '';
-        headerForm.description =
-            metadata.project_name || headerForm.description || '';
-        headerForm.vendor = metadata.owner || headerForm.vendor || '';
-    }
-
-    scannerApplied.value = true;
-};
-
-const openScannerItem = () => {
-    const row = scannerRows.value[0];
-
-    resetItemForm();
-
-    if (row) {
-        itemForm.category = row.category;
-        itemForm.description = row.description;
-        itemForm.unit = row.unit;
-        itemForm.quantity = Number(row.quantity || 1);
-        itemForm.unit_price = Number(row.unitPrice || 0);
-        itemForm.total_price = Number(row.totalPrice || 0);
-    } else if (scannerData.value?.metadata.contract_value) {
-        itemForm.description =
-            scannerData.value.metadata.project_name || documentTitle.value;
-        itemForm.quantity = 1;
-        itemForm.unit = 'ls';
-        itemForm.unit_price = Number(scannerData.value.metadata.contract_value);
-        itemForm.total_price = Number(
-            scannerData.value.metadata.contract_value,
+    try {
+        const selectedKeys = new Set(
+            selectedBudgetOptions.value.map(
+                (option) =>
+                    `${option.sourceType}:${option.sourceItemId}`,
+            ),
         );
-    }
 
-    isItemOpen.value = true;
+        const existingKeys = new Set(
+            existingBudgetMap.value.keys(),
+        );
+
+        const itemsToCreate = selectedBudgetOptions.value.filter(
+            (option) =>
+                !existingKeys.has(
+                    `${option.sourceType}:${option.sourceItemId}`,
+                ),
+        );
+
+        const itemsToDelete = Array.from(
+            existingBudgetMap.value.entries(),
+        )
+            .filter(([key]) => !selectedKeys.has(key))
+            .map(([, item]) => item);
+
+        for (const item of itemsToDelete) {
+            const response = await csrfFetch(
+                `${props.itemUpdateUrlBase}/${item.id}`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        Accept: 'application/json',
+                    },
+                },
+            );
+
+            if (!response.ok) {
+                throw new Error(
+                    `Gagal menghapus item ${item.description ?? item.id}`,
+                );
+            }
+        }
+
+        for (const option of itemsToCreate) {
+            const response = await csrfFetch(
+                props.itemStoreUrl,
+                {
+                    method: 'POST',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type':
+                            'application/json',
+                    },
+                    body: JSON.stringify({
+                        source_type:
+                            option.sourceType ??
+                            'manual',
+                        source_item_id:
+                            option.sourceItemId
+                                ? String(
+                                      option.sourceItemId,
+                                  )
+                                : '',
+                        category:
+                            option.category ??
+                            option.label ??
+                            '',
+                        description:
+                            option.description ??
+                            option.label ??
+                            '',
+                        unit:
+                            option.unit ??
+                            'ls',
+                        quantity:
+                            option.quantity > 0
+                                ? option.quantity
+                                : 1,
+                        unit_price:
+                            option.totalBudget ??
+                            option.totalPrice ??
+                            0,
+                        total_price:
+                            option.totalBudget ??
+                            option.totalPrice ??
+                            0,
+                        vendor: '',
+                        notes: '',
+                    }),
+                },
+            );
+
+            if (!response.ok) {
+                const payload =
+                    await response
+                        .json()
+                        .catch(() => ({}));
+
+                throw new Error(
+                    payload.message ??
+                        `Gagal menyimpan ${option.label}`,
+                );
+            }
+        }
+
+        closeItemModal();
+        refreshPage();
+    } catch (error) {
+        window.alert(
+            error instanceof Error
+                ? error.message
+                : 'Gagal sinkronisasi item.',
+        );
+    } finally {
+        isBulkSubmitting.value = false;
+    }
 };
 
 const submitItem = () => {
@@ -479,132 +698,8 @@ const openInvoicePreview = () => {
                     title="File Terunggah"
                     :description="`File yang terlampir ke data ${props.recordLabel.toLowerCase()} ini.`"
                 >
-                    <div
-                        class="mb-4 grid min-w-0 gap-3 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]"
-                    >
-                        <ProjectOCRScanner
-                            @data-extracted="handleScannerData"
-                        />
-                        <div
-                            class="min-w-0 rounded-xl border border-sidebar-border/70 bg-background p-3 shadow-xs sm:p-4 dark:border-sidebar-border"
-                        >
-                            <div
-                                class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
-                            >
-                                <div class="min-w-0">
-                                    <p class="text-sm font-medium">
-                                        Hasil Scanner OCR
-                                    </p>
-                                    <p
-                                        class="mt-1 text-sm text-muted-foreground"
-                                    >
-                                        {{ scannerSummary }}
-                                    </p>
-                                </div>
-                                <div class="flex flex-wrap gap-2">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        :disabled="!scannerData"
-                                        @click="applyScannerToHeader"
-                                    >
-                                        Isi Header
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        :disabled="!scannerData"
-                                        @click="openScannerItem"
-                                    >
-                                        Tambah Baris OCR
-                                    </Button>
-                                </div>
-                            </div>
-
-                            <div
-                                v-if="scannerData"
-                                class="mt-4 grid min-w-0 gap-3 text-xs sm:grid-cols-2 sm:text-sm"
-                            >
-                                <div
-                                    class="min-w-0 rounded-md bg-muted/40 px-3 py-2"
-                                >
-                                    <span
-                                        class="block text-xs text-muted-foreground"
-                                    >
-                                        Referensi
-                                    </span>
-                                    <span class="block truncate font-medium">
-                                        {{
-                                            scannerData.metadata.doc_number ||
-                                            '-'
-                                        }}
-                                    </span>
-                                </div>
-                                <div
-                                    class="min-w-0 rounded-md bg-muted/40 px-3 py-2"
-                                >
-                                    <span
-                                        class="block text-xs text-muted-foreground"
-                                    >
-                                        Nilai
-                                    </span>
-                                    <span class="block truncate font-medium">
-                                        {{
-                                            formatCurrency(
-                                                scannerData.metadata
-                                                    .contract_value,
-                                            )
-                                        }}
-                                    </span>
-                                </div>
-                                <div
-                                    class="min-w-0 rounded-md bg-muted/40 px-3 py-2"
-                                >
-                                    <span
-                                        class="block text-xs text-muted-foreground"
-                                    >
-                                        Proyek / Deskripsi
-                                    </span>
-                                    <span class="block font-medium break-words">
-                                        {{
-                                            scannerData.metadata.project_name ||
-                                            '-'
-                                        }}
-                                    </span>
-                                </div>
-                                <div
-                                    class="min-w-0 rounded-md bg-muted/40 px-3 py-2"
-                                >
-                                    <span
-                                        class="block text-xs text-muted-foreground"
-                                    >
-                                        Baris Terdeteksi
-                                    </span>
-                                    <span class="font-medium">
-                                        {{ scannerRows.length }}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <p
-                                v-if="scannerApplied"
-                                class="mt-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700"
-                            >
-                                Nilai OCR disalin ke form. Review dulu, lalu
-                                simpan field data.
-                            </p>
-
-                            <p
-                                v-if="scannerText"
-                                class="mt-3 max-h-28 overflow-y-auto rounded-md border border-sidebar-border/60 px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-muted-foreground"
-                            >
-                                {{ scannerText.slice(0, 800) }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <DocumentUploadPanel
+                    <DocumentList
+                        class="mt-2"
                         :project-id="props.upload.projectId"
                         :component-type="props.upload.componentType"
                         :component-id="props.upload.componentId"
@@ -775,40 +870,176 @@ const openInvoicePreview = () => {
 
         <Dialog v-model:open="isItemOpen">
             <DialogContent
-                class="flex max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] !max-w-2xl flex-col overflow-hidden p-4 sm:p-6"
+                class="flex h-[min(90dvh,48rem)] w-[calc(100vw-2rem)] !max-w-5xl flex-col overflow-hidden p-0"
             >
-                <DialogHeader class="shrink-0">
+                <DialogHeader class="shrink-0 border-b border-sidebar-border/70 px-5 py-4 sm:px-6">
                     <DialogTitle>{{ itemDialogTitle }}</DialogTitle>
-                    <DialogDescription>
-                        Hubungkan item budget proyek atau isi baris manual.
+                    <DialogDescription v-if="editingItemId === null">
+                        Pilih item dari data proyek atau buat baris manual baru.
                     </DialogDescription>
                 </DialogHeader>
 
-                <form
-                    class="grid min-h-0 min-w-0 flex-1 gap-4 overflow-x-hidden overflow-y-auto py-2 pr-1 sm:grid-cols-2"
-                    @submit.prevent="submitItem"
+                <div
+                    v-if="editingItemId === null"
+                    class="flex shrink-0 gap-2 border-b border-sidebar-border/70 px-5 py-3 sm:px-6"
                 >
-                    <div class="min-w-0 space-y-2 sm:col-span-2">
-                        <Label for="source_item">Pilih Item RAB/RAP</Label>
-                        <select
-                            id="source_item"
-                            v-model="selectedSource"
-                            class="h-10 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm"
-                            @change="applyBudgetItem"
-                        >
-                            <option value="">Item manual</option>
-                            <option
-                                v-for="option in props.budgetItemOptions"
-                                :key="option.value"
-                                :value="option.value"
+                    <Button
+                        type="button"
+                        :variant="itemEntryMode === 'select' ? 'default' : 'outline'"
+                        @click="itemEntryMode = 'select'"
+                    >
+                        Pilih dari RAB / RAP
+                    </Button>
+                    <Button
+                        type="button"
+                        :variant="itemEntryMode === 'manual' ? 'default' : 'outline'"
+                        @click="itemEntryMode = 'manual'"
+                    >
+                        Input Manual
+                    </Button>
+                </div>
+
+                <div
+                    v-if="itemEntryMode === 'select' && editingItemId === null"
+                    class="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-5 py-4 sm:px-6"
+                >
+                    <div class="grid gap-3 lg:grid-cols-[auto_minmax(16rem,1fr)_auto] lg:items-center">
+                        <div class="inline-flex rounded-md border border-sidebar-border/70 bg-muted/30 p-1">
+                            <button
+                                type="button"
+                                class="rounded px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40"
+                                :class="activeBudgetType === 'rab' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'"
+                                :disabled="!availableBudgetTypes.includes('rab')"
+                                @click="activeBudgetType = 'rab'"
                             >
-                                {{ option.sourceType.toUpperCase() }} -
-                                {{ option.label }}
-                                {{ option.hint ? `(${option.hint})` : '' }}
-                            </option>
-                        </select>
+                                RAB
+                                <span class="ml-1 text-xs text-muted-foreground">
+                                    {{ budgetTypeCounts.rab }}
+                                </span>
+                            </button>
+                            <button
+                                type="button"
+                                class="rounded px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40"
+                                :class="activeBudgetType === 'rap' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'"
+                                :disabled="!availableBudgetTypes.includes('rap')"
+                                @click="activeBudgetType = 'rap'"
+                            >
+                                RAP
+                                <span class="ml-1 text-xs text-muted-foreground">
+                                    {{ budgetTypeCounts.rap }}
+                                </span>
+                            </button>
+                        </div>
+
+                        <div class="relative min-w-0">
+                            <Search class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                                v-model="budgetSearchQuery"
+                                class="h-10 pl-9"
+                                placeholder="Cari item, kategori, dokumen..."
+                            />
+                        </div>
+
+                        <div class="flex items-center justify-between gap-3 text-sm lg:justify-end">
+                            <span class="font-medium text-muted-foreground">
+                                {{ selectedBudgetValues.length }} dipilih
+                            </span>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                :disabled="selectedBudgetValues.length === 0"
+                                @click="clearBudgetSelection"
+                            >
+                                Bersihkan
+                            </Button>
+                        </div>
                     </div>
 
+                    <div class="min-h-0 flex-1 overflow-auto rounded-md border border-sidebar-border/70">
+                        <div class="grid min-w-[51rem] grid-cols-[3rem_minmax(18rem,1.4fr)_minmax(12rem,1fr)_8rem_10rem] border-b border-sidebar-border/70 bg-muted/60 text-xs font-medium text-muted-foreground">
+                            <div class="flex items-center justify-center px-4 py-3">
+                                <input
+                                    type="checkbox"
+                                    class="size-4 cursor-pointer"
+                                    :checked="allVisibleSelected"
+                                    @change="
+                                        toggleAllVisible(
+                                            ($event.target as HTMLInputElement).checked
+                                        )
+                                    "
+                                />
+                            </div>
+                            <div class="px-4 py-3">Dokumen / Item</div>
+                            <div class="px-4 py-3">Kategori</div>
+                            <div class="px-4 py-3 text-right">Qty</div>
+                            <div class="px-4 py-3 text-right">Total</div>
+                        </div>
+
+                        <div class="min-w-[51rem] pb-12">
+                            <button
+                                v-for="option in visibleBudgetOptions"
+                                :key="getOptionValue(option)"
+                                type="button"
+                                class="grid w-full grid-cols-[3rem_minmax(18rem,1.4fr)_minmax(12rem,1fr)_8rem_10rem] border-b border-sidebar-border/60 text-left text-sm transition hover:bg-muted/40"
+                                :class="isBudgetSelected(option) ? 'bg-primary/10' : 'bg-background'"
+                                @click="toggleBudgetSelection(option, !isBudgetSelected(option))"
+                            >
+                                <div class="flex items-center justify-center px-4 py-3">
+                                    <input
+                                        type="checkbox"
+                                        class="size-4 rounded border-sidebar-border accent-primary"
+                                        :checked="isBudgetSelected(option)"
+                                        @click.stop
+                                        @change="toggleBudgetSelection(option, ($event.target as HTMLInputElement).checked)"
+                                    />
+                                </div>
+                                <div class="min-w-0 px-4 py-3">
+                                    <p class="truncate font-medium text-foreground">
+                                        {{ option.label }}
+                                    </p>
+
+                                    <p
+                                        v-if="isExistingBudgetItem(option)"
+                                        class="mt-1 text-xs font-medium text-emerald-500"
+                                    >
+                                        Sudah ditambahkan
+                                    </p>
+                                    <p class="mt-1 truncate text-xs text-muted-foreground">
+                                        {{ option.description || option.hint || '-' }}
+                                    </p>
+                                </div>
+                                <div class="min-w-0 px-4 py-3 text-muted-foreground">
+                                    <p class="truncate">
+                                        {{ option.category || '-' }}
+                                    </p>
+                                    <p class="mt-1 truncate text-xs">
+                                        {{ option.unit || '-' }}
+                                    </p>
+                                </div>
+                                <div class="px-4 py-3 text-right tabular-nums">
+                                    {{ option.quantity || 0 }}
+                                </div>
+                                <div class="px-4 py-3 text-right font-medium tabular-nums">
+                                    {{ formatCurrency(option.totalBudget ?? option.totalPrice ?? 0) }}
+                                </div>
+                            </button>
+
+                            <div
+                                v-if="visibleBudgetOptions.length === 0"
+                                class="px-4 py-10 text-center text-sm text-muted-foreground"
+                            >
+                                Tidak ada item yang cocok.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <form
+                    v-else
+                    class="grid min-h-0 min-w-0 flex-1 gap-4 overflow-x-hidden overflow-y-auto px-5 py-4 sm:grid-cols-2 sm:px-6"
+                    @submit.prevent="submitItem"
+                >
                     <div class="min-w-0 space-y-2">
                         <Label for="category">Kategori</Label>
                         <Input id="category" v-model="itemForm.category" />
@@ -877,19 +1108,36 @@ const openInvoicePreview = () => {
                         />
                         <InputError :message="itemForm.errors.notes" />
                     </div>
-
-                    <DialogFooter class="shrink-0 sm:col-span-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            @click="closeItemModal"
-                            >Batal</Button
-                        >
-                        <Button type="submit" :disabled="itemForm.processing">
-                            {{ editingItemId === null ? 'Simpan' : 'Update' }}
-                        </Button>
-                    </DialogFooter>
                 </form>
+
+                <DialogFooter class="shrink-0 border-t border-sidebar-border/70 bg-background px-5 py-4 sm:px-6">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="closeItemModal"
+                    >
+                        Batal
+                    </Button>
+
+                    <Button
+                        v-if="itemEntryMode === 'select' && editingItemId === null"
+                        type="button"
+                        :disabled="selectedBudgetValues.length === 0 || isBulkSubmitting"
+                        @click="submitSelectedBudgetItems"
+                    >
+                        <LoaderCircle v-if="isBulkSubmitting" class="mr-2 size-4 animate-spin" />
+                        Tambahkan Terpilih ({{ selectedBudgetValues.length }})
+                    </Button>
+
+                    <Button
+                        v-else
+                        type="button"
+                        :disabled="itemForm.processing"
+                        @click="submitItem"
+                    >
+                        {{ editingItemId === null ? 'Simpan' : 'Update' }}
+                    </Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     </AppLayout>

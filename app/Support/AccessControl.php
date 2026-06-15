@@ -170,15 +170,20 @@ class AccessControl
             Role::findOrCreate($roleName, 'web');
         }
 
+        $roles = Role::withCount('permissions')->get()->keyBy('name');
+
         foreach (self::defaultPermissionsByRole() as $roleName => $permissions) {
-            $role = Role::findOrCreate($roleName, 'web');
+            $role = $roles->get($roleName);
+
+            if (! $role) {
+                continue;
+            }
+
             $expandedPermissions = $roleName === 'admin'
                 ? self::permissionNames()
                 : self::expandPermissions($permissions);
 
-            if ($roleName === 'admin') {
-                self::grantPermissionsWithoutDuplicates($role, $expandedPermissions);
-            } elseif ($role->permissions()->count() === 0) {
+            if ($roleName === 'admin' || $role->permissions_count === 0) {
                 self::grantPermissionsWithoutDuplicates($role, $expandedPermissions);
             }
         }

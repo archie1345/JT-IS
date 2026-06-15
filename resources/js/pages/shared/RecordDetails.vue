@@ -1,20 +1,14 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { ArrowLeft, FileText, Save } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import EntityPageSection from '@/components/entity/EntityPageSection.vue';
-import DocumentUploadPanel from '@/components/shared/DocumentUploadPanel.vue';
 import RecordFieldInput from '@/components/prototype/RecordFieldInput.vue';
 import { Button } from '@/components/ui/button';
 import type { BreadcrumbItem } from '@/types';
 import type { UploadedDocument } from '@/types/project';
-
-type Option = {
-    value: number | string;
-    label: string;
-    hint?: null | string;
-};
+import type { ProjectOption, ConnectionOption } from '@/types/options';
 
 type Field = {
     name: string;
@@ -25,7 +19,7 @@ type Field = {
     min?: number;
     max?: number;
     step?: string;
-    options?: Option[];
+    options?: ProjectOption[];
 };
 
 type RecordValue = null | number | string;
@@ -38,6 +32,8 @@ const props = defineProps<{
     breadcrumbs: BreadcrumbItem[];
     fields: Field[];
     record: Record<string, RecordValue>;
+    projectOptions: readonly ProjectOption[];
+    connectionOptions: readonly ConnectionOption[];
     upload?: {
         componentType: string;
         componentId: number;
@@ -54,6 +50,22 @@ const form = useForm<Record<string, number | string>>(
         ]),
     ),
 );
+
+watch(
+    () => props.record,
+    (newRecord) => {
+        const updatedData = Object.fromEntries(
+            props.fields.map((field) => [
+                field.name,
+                newRecord[field.name] ?? '',
+            ])
+        );
+        form.defaults(updatedData);
+        form.reset();
+    },
+    { deep: true }
+);
+
 const isInvoiceRecord = computed(
     () => props.upload?.componentType === 'invoice',
 );
@@ -130,7 +142,7 @@ const openInvoicePreview = () => {
             </section>
 
             <section
-                class="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]"
+                class="grid min-w-0 gap-4"
             >
                 <EntityPageSection
                     title="Field Data"
@@ -155,21 +167,6 @@ const openInvoicePreview = () => {
                             </Button>
                         </div>
                     </form>
-                </EntityPageSection>
-
-                <EntityPageSection
-                    v-if="props.upload"
-                    title="File Terlampir"
-                    description="Dokumen yang terhubung ke data ini."
-                >
-                    <DocumentUploadPanel
-                        :project-id="props.upload.projectId"
-                        :component-type="props.upload.componentType"
-                        :component-id="props.upload.componentId"
-                        :documents="props.upload.documents"
-                        title="File Data"
-                        description="Upload file sumber dan bukti pendukung untuk data ini."
-                    />
                 </EntityPageSection>
             </section>
         </div>

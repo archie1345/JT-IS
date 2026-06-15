@@ -25,21 +25,7 @@ import { useDocumentOcr } from '@/composables/useDocumentOcr';
 import { extractImportantDocumentData } from '@/lib/documentExtraction';
 import { csrfFetch, type OcrResponse } from '@/lib/ocr';
 import type { UploadedDocument } from '@/types/project';
-
-type ProjectOption = {
-    value: number;
-    label: string;
-    hint?: null | string;
-};
-
-type ConnectionOption = {
-    value: string;
-    label: string;
-    hint?: null | string;
-    componentType: string;
-    componentId?: null | number;
-    projectId?: null | number;
-};
+import type { ConnectionOption, ProjectOption } from '@/types/options';
 
 type SharedOcrProps = {
     features?: {
@@ -134,7 +120,7 @@ const selectedProjectValue = computed({
 const documentTypeOptions = [
     { value: 'contract', label: 'Kontrak' },
     { value: 'rab', label: 'RAB' },
-    { value: 'rap', label: 'rap' },
+    { value: 'rap', label: 'RAP' },
     { value: 'bamc', label: 'BAMC / Berita Acara' },
     { value: 'invoice', label: 'Tagihan' },
     { value: 'receipt', label: 'Bukti Pembayaran' },
@@ -281,7 +267,7 @@ const extractionComponentId = computed(() => {
         appliedExtractionComponent.value?.type ===
         extractionComponentType.value
     ) {
-        return appliedExtractionComponent.value.id;
+        return appliedExtractionComponent.value?.id;
     }
 
     return null;
@@ -670,6 +656,11 @@ const applyExtraction = async () => {
             };
         }
         isPreviewOpen.value = false;
+        router.get(window.location.pathname + window.location.search, {}, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
     } catch (error) {
         applyError.value =
             error instanceof Error
@@ -775,6 +766,11 @@ const removeDocument = (document: UploadedDocument) => {
         preserveScroll: true,
     });
 };
+
+defineExpose({
+    runStoredDocumentOcr,
+    clearSelectedFiles
+});
 </script>
 
 <template>
@@ -790,7 +786,7 @@ const removeDocument = (document: UploadedDocument) => {
             </div>
 
             <label
-                v-if="canChooseProject"
+                v-if="canChooseProject && !storedOcrDocumentId"
                 class="mt-4 block min-w-0 space-y-1.5"
             >
                 <span class="text-xs font-medium text-muted-foreground"
@@ -803,7 +799,7 @@ const removeDocument = (document: UploadedDocument) => {
                 />
             </label>
 
-            <label class="mt-4 block min-w-0 space-y-1.5">
+            <label v-if="!storedOcrDocumentId" class="mt-4 block min-w-0 space-y-1.5">
                 <span class="text-xs font-medium text-muted-foreground"
                     >Jenis Dokumen</span
                 >
@@ -817,6 +813,7 @@ const removeDocument = (document: UploadedDocument) => {
             </label>
 
             <label
+                v-if="!storedOcrDocumentId"
                 class="mt-4 flex min-h-40 min-w-0 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-sidebar-border/80 bg-muted/20 px-4 py-6 text-center transition sm:min-h-48 sm:px-5 sm:py-8 dark:border-sidebar-border"
                 :class="
                     hasDocumentType
@@ -982,7 +979,7 @@ const removeDocument = (document: UploadedDocument) => {
                 <InputError :message="form.errors.documents" />
             </div>
 
-            <div class="mt-4 flex justify-end">
+            <div v-if="!storedOcrDocumentId" class="mt-4 flex justify-end">
                 <Button
                     type="button"
                     :disabled="
@@ -1000,92 +997,6 @@ const removeDocument = (document: UploadedDocument) => {
             </div>
         </div>
 
-        <div
-            class="min-w-0 rounded-lg border border-sidebar-border/70 bg-background p-3 shadow-xs sm:p-4 dark:border-sidebar-border"
-        >
-            <div class="flex min-w-0 items-center gap-2">
-                <FileText class="size-4 shrink-0 text-muted-foreground" />
-                <h3 class="text-sm font-medium">Dokumen Proyek</h3>
-            </div>
-
-            <div class="mt-4 grid min-w-0 gap-2">
-                <div
-                    v-for="document in props.documents"
-                    :key="document.id"
-                    class="flex min-w-0 flex-col gap-3 rounded-md border border-sidebar-border/60 px-3 py-2 sm:flex-row sm:items-center sm:justify-between dark:border-sidebar-border"
-                >
-                    <a
-                        :href="document.url"
-                        target="_blank"
-                        rel="noreferrer"
-                        :title="`${document.originalName} - ${documentSummary(document)}`"
-                        class="flex min-w-0 flex-1 items-start gap-3 overflow-hidden"
-                    >
-                        <FileText
-                            class="mt-0.5 size-4 shrink-0 text-muted-foreground"
-                        />
-                        <span class="min-w-0 flex-1 overflow-hidden">
-                            <span
-                                class="block max-w-full text-sm font-medium break-all whitespace-normal text-foreground"
-                            >
-                                <TextPreview
-                                    :text="document.originalName"
-                                    :max="64"
-                                />
-                            </span>
-                            <span
-                                class="block max-w-full text-xs break-words whitespace-normal text-muted-foreground"
-                            >
-                                <TextPreview
-                                    :text="documentSummary(document)"
-                                    :max="96"
-                                />
-                            </span>
-                        </span>
-                    </a>
-                    <div
-                        class="flex shrink-0 items-center gap-1 self-end sm:self-auto"
-                    >
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            :disabled="
-                                isReadingFile &&
-                                storedOcrDocumentId === document.id
-                            "
-                            @click="runStoredDocumentOcr(document)"
-                        >
-                            <LoaderCircle
-                                v-if="
-                                    isReadingFile &&
-                                    storedOcrDocumentId === document.id
-                                "
-                                class="mr-2 size-4 animate-spin"
-                            />
-                            <RotateCcw v-else class="mr-2 size-4" />
-                            OCR ulang
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-sm"
-                            class="text-destructive"
-                            @click="removeDocument(document)"
-                        >
-                            <Trash2 class="size-4" />
-                        </Button>
-                    </div>
-                </div>
-
-                <div
-                    v-if="props.documents.length === 0"
-                    class="rounded-md border border-dashed border-sidebar-border/70 bg-muted/20 p-4 text-sm text-muted-foreground"
-                >
-                    {{ props.emptyText }}
-                </div>
-            </div>
-        </div>
 
         <Dialog v-model:open="isPreviewOpen">
             <DialogContent
@@ -1328,97 +1239,6 @@ const removeDocument = (document: UploadedDocument) => {
                         OCR ini.
                     </p>
                 </div>
-
-                <section
-                    v-if="(extractionComponentType === 'rab' || extractionComponentType === 'rap') && previewBudgetItems.length > 0"
-                    class="min-w-0 space-y-3"
-                >
-                    <h4 class="text-sm font-medium">Baris anggaran</h4>
-
-                    <div class="max-h-[38dvh] max-w-full overflow-auto rounded-md border border-sidebar-border/60 dark:border-sidebar-border">
-                        <table class="min-w-[60rem] table-fixed text-sm">
-                            <thead class="sticky top-0 z-10 bg-muted text-left text-xs">
-                                <tr>
-                                    <th class="w-[20rem] px-3 py-2">Uraian</th>
-                                    <th class="w-[11rem] px-3 py-2">Bagian</th>
-                                    <th class="w-[7rem] px-3 py-2">Qty</th>
-                                    <th class="w-[7rem] px-3 py-2">Unit</th>
-                                    <th class="w-[10rem] px-3 py-2">Harga Satuan</th>
-                                    <th class="w-[10rem] px-3 py-2">Total</th>
-                                    <th class="w-[5rem] px-3 py-2"></th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                <tr
-                                    v-for="(item, index) in previewBudgetItems"
-                                    :key="`${item.description}-${index}`"
-                                    class="border-t border-sidebar-border/50 align-top"
-                                >
-                                    <td class="px-3 py-2">
-                                        <textarea
-                                            v-model="item.description"
-                                            class="min-h-12 w-full min-w-0 resize-y rounded-md border border-input bg-transparent px-2 py-1 text-sm"
-                                        />
-                                    </td>
-
-                                    <td class="px-3 py-2">
-                                        <input
-                                            v-model="item.sub_category"
-                                            class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-2 text-sm"
-                                        />
-                                    </td>
-
-                                    <td class="px-3 py-2">
-                                        <input
-                                            v-model="item.quantity"
-                                            type="number"
-                                            step="0.01"
-                                            class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-2 text-sm"
-                                        />
-                                    </td>
-
-                                    <td class="px-3 py-2">
-                                        <input
-                                            v-model="item.unit"
-                                            class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-2 text-sm"
-                                        />
-                                    </td>
-
-                                    <td class="px-3 py-2">
-                                        <input
-                                            v-model="item.unit_price"
-                                            type="number"
-                                            step="0.01"
-                                            class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-2 text-sm"
-                                        />
-                                    </td>
-
-                                    <td class="px-3 py-2">
-                                        <input
-                                            v-model="item.total_price"
-                                            type="number"
-                                            step="0.01"
-                                            class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-2 text-sm"
-                                        />
-                                    </td>
-
-                                    <td class="px-3 py-2">
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon-sm"
-                                            class="text-destructive"
-                                            @click="removeDraftField('budget', index)"
-                                        >
-                                            <Trash2 class="size-4" />
-                                        </Button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
 
                 <DialogFooter class="mt-4 shrink-0">
                     <Button

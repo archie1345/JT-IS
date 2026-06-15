@@ -30,11 +30,18 @@ class ProjectCostItemsController extends Controller
     public function destroy(int $id)
     {
         $item = ProjectCostItem::query()->findOrFail($id);
-        $projectCost = $item->projectCost;
-        $item->delete();
-        $this->syncTotal($projectCost);
 
-        return redirect()->back()->with('success', 'Item biaya berhasil dihapus.');
+        $projectCostId = $item->project_cost_id;
+
+        $item->delete();
+
+        if ($projectCostId) {
+            $projectCost = ProjectCost::query()->find($projectCostId);
+
+            if ($projectCost) {
+                $this->syncTotal($projectCost);
+            }
+        }
     }
 
     protected function validated(Request $request): array

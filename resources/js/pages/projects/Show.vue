@@ -29,7 +29,6 @@ import {
 } from '@/components/ui/select';
 import type { BreadcrumbItem } from '@/types';
 import type {
-    ClientOption,
     DocumentConnectionOption,
     Mode,
     PaymentStatus,
@@ -51,7 +50,6 @@ const props = defineProps<{
         latitude?: number | null;
         longitude?: number | null;
     };
-    clients: ClientOption[];
     documentGroups: ProjectDocumentGroup[];
     progress: ProgressSnapshot;
     recentReport: {
@@ -116,11 +114,6 @@ const paymentStatusOptions: Array<{
 ];
 
 const form = useForm({
-    client_id: props.project.clientId
-        ? String(props.project.clientId)
-        : props.clients[0]?.id
-          ? String(props.clients[0].id)
-          : '',
     name: props.project.name,
     contract_number: props.project.contractNumber ?? '',
     contract_value: props.project.contractValue || 0,
@@ -233,13 +226,6 @@ const getProjectHealthStatusClass = (status: string) =>
         Critical: 'bg-rose-500/15 text-rose-600 ring-1 ring-rose-500/25',
         'On Hold': 'bg-slate-500/15 text-slate-600 ring-1 ring-slate-500/25',
     })[status] ?? 'bg-slate-500/15 text-slate-600 ring-1 ring-slate-500/25';
-
-const selectedClient = computed(
-    () =>
-        props.clients.find(
-            (client) => String(client.id) === String(form.client_id),
-        ) ?? null,
-);
 
 const liveProgressScore = computed(() =>
     Math.max(
@@ -412,31 +398,15 @@ const getCurrentLocation = () => {
                             <template #title-meta>
                                 <p
                                     class="mt-2 max-w-full truncate text-sm text-muted-foreground"
-                                    :title="
-                                        selectedClient?.name ??
-                                        'Pilih klien untuk menghubungkan proyek ini.'
-                                    "
+                                    :title="form.contract_number || 'Nomor kontrak belum diisi.'"
                                 >
                                     {{
-                                        selectedClient?.name ??
-                                        'Pilih klien untuk menghubungkan proyek ini.'
+                                        form.contract_number ||
+                                        'Nomor kontrak belum diisi.'
                                     }}
                                 </p>
                             </template>
                             <template #summary>
-                                <div class="rounded-xl bg-muted/30 p-4">
-                                    <p
-                                        class="text-xs tracking-[0.18em] text-muted-foreground uppercase"
-                                    >
-                                        Klien
-                                    </p>
-                                    <p
-                                        class="mt-1 text-sm font-medium break-words text-foreground"
-                                    >
-                                        {{ form.client_id || '-' }}
-                                    </p>
-                                </div>
-
                                 <div class="rounded-xl bg-muted/30 p-4">
                                     <p
                                         class="text-xs tracking-[0.18em] text-muted-foreground uppercase"
@@ -597,20 +567,6 @@ const getCurrentLocation = () => {
                                         placeholder="Nama proyek"
                                     />
                                     <InputError :message="form.errors.name" />
-                                </label>
-
-                                <label class="min-w-0 space-y-2">
-                                    <span
-                                        class="text-sm font-medium text-foreground"
-                                        >Klien</span
-                                    >
-                                    <Input
-                                        v-model="form.client_id"
-                                        placeholder="Masukkan nama klien"
-                                    />
-                                    <InputError
-                                        :message="form.errors.client_id"
-                                    />
                                 </label>
 
                                 <label class="min-w-0 space-y-2">

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\Project;
 use App\Support\ProjectDocumentData;
@@ -19,9 +18,6 @@ class ProjectDetailsController extends Controller
         return Inertia::render('projects/Show', $this->pagePayload(
             project: null,
             mode: 'create',
-            defaults: [
-                'clientId' => $request->integer('client') ?: null,
-            ],
         ));
     }
 
@@ -30,7 +26,6 @@ class ProjectDetailsController extends Controller
         $data = $this->validatePayload($request);
 
         $project = Project::create([
-            'client_id' => $data['client_id'],
             'name' => $data['name'],
             'contract_number' => $data['contract_number'] ?? null,
             'contract_value' => $data['contract_value'],
@@ -56,7 +51,6 @@ class ProjectDetailsController extends Controller
         $data = $this->validatePayload($request, $project->id);
 
         $project->update([
-            'client_id' => $data['client_id'],
             'name' => $data['name'],
             'contract_number' => $data['contract_number'] ?? null,
             'contract_value' => $data['contract_value'],
@@ -75,7 +69,6 @@ class ProjectDetailsController extends Controller
     protected function validatePayload(Request $request, ?int $projectId = null): array
     {
         return $request->validate([
-            'client_id' => ['required', 'integer', 'exists:clients,id'],
             'name' => ['required', 'string', 'max:200'],
             'contract_number' => ['nullable', 'string', 'max:100'],
             'contract_value' => ['required', 'numeric', 'min:0'],
@@ -116,7 +109,6 @@ class ProjectDetailsController extends Controller
 
         if ($project->exists) {
             $project->load([
-                'client:id,name,contact',
                 'latestInvoice' => fn($query) => $query->select(
                     'invoices.id',
                     'invoices.project_id',
@@ -158,10 +150,7 @@ class ProjectDetailsController extends Controller
             'mode' => $mode,
             'project' => [
                 'id' => $project->exists ? $project->id : null,
-                'clientId' => $project->exists ? $project->client_id : ($defaults['clientId'] ?? null),
                 'name' => $project->exists ? $project->name : '',
-                'clientName' => $project->exists ? $project->client?->name : null,
-                'clientContact' => $project->exists ? $project->client?->contact : null,
                 'contractNumber' => $project->exists ? $project->contract_number : '',
                 'contractValue' => (float) ($project->exists ? $project->contract_value ?? 0 : 0),
                 'location' => $project->exists ? $project->location : '',
@@ -181,19 +170,10 @@ class ProjectDetailsController extends Controller
                 'latestProgressPercent' => $latestProgressReport?->progress_percent,
                 'latestProgressNote' => $latestProgressReport?->description,
                 'latestProgressApproved' => $latestProgressReport
-                    ? (bool) ($latestProgressReport->approved_by_client && $latestProgressReport->approved_by_internal)
+                    ? (bool) ($latestProgressReport->approved_by_internal)
                     : false,
                 'latestApprovedProgressPercent' => $latestApprovedProgressReport?->progress_percent,
             ],
-            'clients' => Client::query()
-                ->orderBy('name')
-                ->get(['id', 'name', 'contact'])
-                ->map(fn(Client $client): array => [
-                    'id' => $client->id,
-                    'name' => $client->name,
-                    'contact' => $client->contact,
-                ])
-                ->all(),
             'documentGroups' => $documentGroups,
             'uploadedDocuments' => $uploadedDocuments,
             'documentConnections' => $documentConnections,

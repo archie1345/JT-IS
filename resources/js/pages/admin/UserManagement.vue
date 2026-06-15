@@ -13,13 +13,11 @@ import type {
     AccountRoleOption,
     AdminStats,
     AdminUserRow,
-    ClientChoice,
     EmployeeRoleOption,
 } from '@/types/user';
 
 const props = defineProps<{
     users: AdminUserRow[];
-    clients: ClientChoice[];
     stats: AdminStats;
     userTypes: AccountRoleOption[];
     employeeRoleSuggestions: EmployeeRoleOption[];
@@ -42,7 +40,6 @@ const breadcrumbs: BreadcrumbItem[] = [
         <div class="flex flex-col gap-4 rounded-xl p-4">
             <AdminAccountManagementRbac
                 :users="props.users"
-                :clients="props.clients"
                 :stats="props.stats"
                 :user-types="props.userTypes"
                 :employee-role-suggestions="props.employeeRoleSuggestions"

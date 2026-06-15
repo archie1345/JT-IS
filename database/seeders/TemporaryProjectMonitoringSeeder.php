@@ -2,12 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Models\Client;
 use App\Models\Invoice;
+use App\Models\ProgressReport;
 use App\Models\Project;
 use App\Models\ProjectCost;
 use App\Models\ProjectDocument;
-use App\Models\ProgressReport;
 use App\Models\Rab;
 use App\Models\Rap;
 use App\Models\Tender;
@@ -26,10 +25,10 @@ class TemporaryProjectMonitoringSeeder extends Seeder
 
         DB::transaction(function (): void {
             $users = [
-                ['name' => 'Demo Admin', 'email' => 'admin@example.com', 'user_type' => 'admin', 'employee_role' => 'System Admin', 'roles' => ['admin']],
-                ['name' => 'Demo Operational', 'email' => 'operational@example.com', 'user_type' => 'employee', 'employee_role' => 'operational', 'roles' => ['employee', 'operational']],
-                ['name' => 'Demo Finance', 'email' => 'finance@example.com', 'user_type' => 'employee', 'employee_role' => 'finance', 'roles' => ['employee', 'finance']],
-                ['name' => 'Demo Management', 'email' => 'management@example.com', 'user_type' => 'employee', 'employee_role' => 'management', 'roles' => ['employee', 'management']],
+                ['name' => 'Demo Admin', 'email' => 'admin@jte.com', 'user_type' => 'admin', 'employee_role' => 'System Admin', 'roles' => ['admin']],
+                ['name' => 'Demo Operational', 'email' => 'operational@jte.com', 'user_type' => 'employee', 'employee_role' => 'operational', 'roles' => ['employee', 'operational']],
+                ['name' => 'Demo Finance', 'email' => 'finance@jte.com', 'user_type' => 'employee', 'employee_role' => 'finance', 'roles' => ['employee', 'finance']],
+                ['name' => 'Demo Management', 'email' => 'management@jte.com', 'user_type' => 'employee', 'employee_role' => 'management', 'roles' => ['employee', 'management']],
             ];
 
             foreach ($users as $seed) {
@@ -39,20 +38,19 @@ class TemporaryProjectMonitoringSeeder extends Seeder
                 $user = User::query()->updateOrCreate(
                     ['email' => $seed['email']],
                     array_merge($seed, [
-                        'password' => Hash::make('password'),
+                        'password' => Hash::make('password123'),
                         'email_verified_at' => now(),
                     ]),
                 );
                 $user->syncRoles($roles);
             }
 
-            $clientA = Client::query()->create(['name' => 'Perum Jasa Tirta I', 'contact' => 'procurement@jasatirta.test']);
-            $clientB = Client::query()->create(['name' => 'PT Kawasan Energi Nusantara', 'contact' => 'project@ken.test']);
-            $clientC = Client::query()->create(['name' => 'PT Tirta Infrastruktur', 'contact' => 'finance@tirta.test']);
+            $ownerA = 'Perum Jasa Tirta I';
+            $ownerB = 'PT Kawasan Energi Nusantara';
 
             Tender::query()->create([
                 'title' => 'Rehabilitasi Panel Kontrol PLTM',
-                'owner' => $clientA->name,
+                'owner' => $ownerA,
                 'value' => 950000000,
                 'status' => 'open',
                 'document_number' => 'PNW/OPEN/001',
@@ -61,21 +59,21 @@ class TemporaryProjectMonitoringSeeder extends Seeder
 
             Tender::query()->create([
                 'title' => 'Pekerjaan Intake Pompa Sungai',
-                'owner' => $clientB->name,
+                'owner' => $ownerB,
                 'value' => 1450000000,
                 'status' => 'submitted',
                 'document_number' => 'PNW/SUB/002',
                 'document_date' => now()->subDays(8),
             ]);
 
-            $projectA = $this->project($clientA, 'Project A - Revitalisasi SCADA Bendungan', 1800000000, now()->subMonth(), now()->addMonths(5), 'ongoing');
-            $projectB = $this->project($clientB, 'Project B - Penguatan Jaringan Distribusi', 2200000000, now()->subMonths(2), now()->addMonths(3), 'ongoing');
-            $projectC = $this->project($clientC, 'Project C - Perbaikan Turbin Minihidro', 1250000000, now()->subMonths(6), now()->subDays(10), 'ongoing');
+            $projectA = $this->project('Project A - Revitalisasi SCADA Bendungan', 1800000000, now()->subMonth(), now()->addMonths(5), 'ongoing');
+            $projectB = $this->project('Project B - Penguatan Jaringan Distribusi', 2200000000, now()->subMonths(2), now()->addMonths(3), 'ongoing');
+            $projectC = $this->project('Project C - Perbaikan Turbin Minihidro', 1250000000, now()->subMonths(6), now()->subDays(10), 'ongoing');
 
             Tender::query()->create([
                 'project_id' => $projectA->id,
                 'title' => 'Revitalisasi SCADA Bendungan',
-                'owner' => $clientA->name,
+                'owner' => $ownerA,
                 'value' => 1800000000,
                 'status' => 'won',
                 'document_number' => 'PNW/WON/003',
@@ -86,14 +84,14 @@ class TemporaryProjectMonitoringSeeder extends Seeder
             $this->seedBudget($projectB, 2150000000, 1800000000);
             $this->seedBudget($projectC, 1200000000, 1000000000);
 
-            $this->progress($projectA, 50, true, true, 'BA MC 50% disetujui.');
-            $this->progress($projectB, 75, true, true, 'BA MC 75% disetujui.');
-            $this->progress($projectC, 75, true, true, 'BA MC 75% disetujui.');
-            $this->progress($projectC, 90, true, false, 'Draft progress lapangan 90%, belum disetujui client.');
+            $this->progress($projectA, 50, true, 'BA MC 50% disetujui.');
+            $this->progress($projectB, 75, true, 'BA MC 75% disetujui.');
+            $this->progress($projectC, 75, true, 'BA MC 75% disetujui.');
+            $this->progress($projectC, 90, false, 'Draft progress lapangan 90%, belum disetujui internal.');
 
             Storage::disk('public')->put(
                 'projects/'.$projectA->id.'/project/demo-bamc.txt',
-                "BA MC 50%\nProgress fisik pekerjaan Revitalisasi SCADA Bendungan telah disetujui internal dan client.",
+                "BA MC 50%\nProgress fisik pekerjaan Revitalisasi SCADA Bendungan telah disetujui internal.",
             );
             ProjectDocument::query()->create([
                 'project_id' => $projectA->id,
@@ -104,7 +102,7 @@ class TemporaryProjectMonitoringSeeder extends Seeder
                 'path' => 'projects/'.$projectA->id.'/project/demo-bamc.txt',
                 'mime_type' => 'text/plain',
                 'size' => 96,
-                'ocr_text' => "BA MC 50%\nProgress fisik pekerjaan Revitalisasi SCADA Bendungan telah disetujui internal dan client.",
+                'ocr_text' => "BA MC 50%\nProgress fisik pekerjaan Revitalisasi SCADA Bendungan telah disetujui internal.",
                 'ocr_engine' => 'seeded-demo',
                 'ocr_processed_at' => now(),
             ]);
@@ -146,10 +144,9 @@ class TemporaryProjectMonitoringSeeder extends Seeder
         });
     }
 
-    private function project(Client $client, string $name, float $value, mixed $start, mixed $end, string $status): Project
+    private function project(string $name, float $value, mixed $start, mixed $end, string $status): Project
     {
         return Project::query()->create([
-            'client_id' => $client->id,
             'name' => $name,
             'contract_number' => 'JTE/'.str_pad((string) (Project::query()->count() + 1), 3, '0', STR_PAD_LEFT).'/2026',
             'contract_value' => $value,
@@ -169,7 +166,7 @@ class TemporaryProjectMonitoringSeeder extends Seeder
         ]);
         $rab->update(['total_budget' => $rab->items()->sum('total_price')]);
 
-        $rap = Rap::query()->create(['project_id' => $project->id, 'document_number' => 'RAP-'.$project->id]);
+        $rap = Rap::query()->create(['project_id' => $project->id, 'document_number' => 'RPA-'.$project->id]);
         $rap->items()->createMany([
             ['description' => 'Pelaksanaan lapangan', 'quantity' => 1, 'unit' => 'ls', 'unit_price' => $rapTotal * 0.65, 'total_price' => $rapTotal * 0.65],
             ['description' => 'Pengadaan dan logistik', 'quantity' => 1, 'unit' => 'ls', 'unit_price' => $rapTotal * 0.35, 'total_price' => $rapTotal * 0.35],
@@ -177,7 +174,7 @@ class TemporaryProjectMonitoringSeeder extends Seeder
         $rap->update(['total_budget' => $rap->items()->sum('total_price')]);
     }
 
-    private function progress(Project $project, float $percent, bool $clientApproved, bool $internalApproved, string $description): ProgressReport
+    private function progress(Project $project, float $percent, bool $internalApproved, string $description): ProgressReport
     {
         return ProgressReport::query()->create([
             'project_id' => $project->id,
@@ -186,7 +183,6 @@ class TemporaryProjectMonitoringSeeder extends Seeder
             'progress_percent' => $percent,
             'report_date' => now()->subDays((int) max(1, 100 - $percent)),
             'description' => $description,
-            'approved_by_client' => $clientApproved,
             'approved_by_internal' => $internalApproved,
         ]);
     }

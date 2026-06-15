@@ -27,7 +27,6 @@ class ProgressReportsController extends CrudResourceController
             'period_end' => ['nullable', 'date'],
             'report_date' => ['nullable', 'date'],
             'description' => ['nullable', 'string'],
-            'approved_by_client' => ['nullable', 'boolean'],
             'approved_by_internal' => ['nullable', 'boolean'],
         ];
     }
@@ -43,7 +42,6 @@ class ProgressReportsController extends CrudResourceController
             'period_end' => ['sometimes', 'nullable', 'date'],
             'report_date' => ['sometimes', 'nullable', 'date'],
             'description' => ['sometimes', 'nullable', 'string'],
-            'approved_by_client' => ['sometimes', 'nullable', 'boolean'],
             'approved_by_internal' => ['sometimes', 'nullable', 'boolean'],
         ];
     }
@@ -59,7 +57,7 @@ class ProgressReportsController extends CrudResourceController
 
         return ProgressReport::query()
             ->when($projectId > 0, fn (Builder $query) => $query->where('project_id', $projectId))
-            ->with(['project:id,client_id,name', 'project.client:id,name'])
+            ->with('project:id,name')
             ->orderByDesc('report_date')
             ->orderByDesc('id');
     }
@@ -71,7 +69,6 @@ class ProgressReportsController extends CrudResourceController
             'id' => $record->id,
             'project_id' => $record->project_id,
             'project_name' => $record->project?->name,
-            'client_name' => $record->project?->client?->name,
             'document_number' => $record->document_number,
             'document_type' => $record->document_type,
             'progress_percent' => $record->progress_percent,
@@ -79,7 +76,6 @@ class ProgressReportsController extends CrudResourceController
             'period_end' => optional($record->period_end)->format('Y-m-d'),
             'report_date' => optional($record->report_date)->format('Y-m-d'),
             'description' => $record->description,
-            'approved_by_client' => $record->approved_by_client ? '1' : '0',
             'approved_by_internal' => $record->approved_by_internal ? '1' : '0',
         ];
     }
@@ -88,13 +84,11 @@ class ProgressReportsController extends CrudResourceController
     {
         return [
             'projectOptions' => Project::query()
-                ->with('client:id,name')
                 ->orderBy('name')
-                ->get(['id', 'client_id', 'name'])
+                ->get(['id', 'name'])
                 ->map(fn (Project $project): array => [
                     'value' => $project->id,
                     'label' => $project->name ?? 'Proyek tanpa nama',
-                    'hint' => $project->client?->name,
                 ])
                 ->all(),
             'uploadedDocuments' => ProjectDocument::query()
@@ -111,7 +105,7 @@ class ProgressReportsController extends CrudResourceController
     public function show(int $id): Response
     {
         $record = ProgressReport::query()
-            ->with(['project:id,client_id,name', 'project.client:id,name'])
+            ->with('project:id,name')
             ->findOrFail($id);
 
         return Inertia::render('shared/RecordDetails', [
@@ -156,10 +150,6 @@ class ProgressReportsController extends CrudResourceController
             ['name' => 'period_start', 'label' => 'Awal Periode', 'type' => 'date'],
             ['name' => 'period_end', 'label' => 'Akhir Periode', 'type' => 'date'],
             ['name' => 'report_date', 'label' => 'Tanggal Laporan', 'type' => 'date'],
-            ['name' => 'approved_by_client', 'label' => 'Approval Klien', 'type' => 'select', 'options' => [
-                ['value' => '0', 'label' => 'Tidak'],
-                ['value' => '1', 'label' => 'Ya'],
-            ]],
             ['name' => 'approved_by_internal', 'label' => 'Approval Internal', 'type' => 'select', 'options' => [
                 ['value' => '0', 'label' => 'Tidak'],
                 ['value' => '1', 'label' => 'Ya'],
@@ -171,13 +161,11 @@ class ProgressReportsController extends CrudResourceController
     protected function projectOptions(): array
     {
         return Project::query()
-            ->with('client:id,name')
             ->orderBy('name')
-            ->get(['id', 'client_id', 'name'])
+            ->get(['id', 'name'])
             ->map(fn (Project $project): array => [
                 'value' => $project->id,
                 'label' => $project->name ?? 'Proyek tanpa nama',
-                'hint' => $project->client?->name,
             ])
             ->all();
     }

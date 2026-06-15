@@ -8,18 +8,8 @@ return new class extends Migration {
 
     public function up(): void
     {
-
-        Schema::create('clients', function (Blueprint $table) {
-            $table->id();
-            $table->string('name', 150)->nullable();
-            $table->string('contact', 150)->nullable();
-            $table->timestamps();
-            $table->softDeletes();
-        });
-
         Schema::create('projects', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('client_id')->nullable()->constrained('clients')->nullOnDelete();
             $table->string('name', 200)->nullable();
             $table->string('contract_number', 100)->nullable();
             $table->decimal('contract_value', 15, 2)->nullable();
@@ -124,7 +114,6 @@ return new class extends Migration {
         Schema::create('progress_approvals', function (Blueprint $table) {
             $table->id();
             $table->foreignId('progress_report_id')->constrained('progress_reports')->cascadeOnDelete();
-            $table->boolean('approved_by_client')->default(false);
             $table->boolean('approved_by_internal')->default(false);
             $table->softDeletes();
         });
@@ -185,6 +174,5 @@ return new class extends Migration {
         Schema::dropIfExists('project_documents');
         Schema::dropIfExists('project_users');
         Schema::dropIfExists('projects');
-        Schema::dropIfExists('clients');
     }
 };

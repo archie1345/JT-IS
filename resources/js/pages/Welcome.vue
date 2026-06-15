@@ -169,12 +169,12 @@ const strengths = [
                         </p>
                         <p class="mt-3 text-sm leading-6 text-white/80">
                             Layanan JTE mengutamakan mutu, biaya, dan waktu
-                            untuk mendukung kebutuhan klien di berbagai sektor.
+                            untuk mendukung kebutuhan mitra di berbagai sektor.
                         </p>
                         <div class="mt-5 grid grid-cols-2 gap-3 text-sm">
                             <div class="rounded-md bg-white/10 p-3">
                                 <p class="text-2xl font-semibold">200+</p>
-                                <p class="text-white/70">Klien</p>
+                                <p class="text-white/70">Mitra</p>
                             </div>
                             <div class="rounded-md bg-white/10 p-3">
                                 <p class="text-2xl font-semibold">1000+</p>

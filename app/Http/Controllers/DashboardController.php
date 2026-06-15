@@ -178,14 +178,12 @@ class DashboardController extends Controller
     private function problemProjects(): array
     {
         return Project::query()
-            ->with('client:id,name')
             ->latest('id')
             ->get()
             ->map(function (Project $project): array {
                 return [
                     'id' => $project->id,
                     'name' => $project->name ?? 'Proyek tanpa nama',
-                    'client' => $project->client?->name ?? '-',
                     'status' => $project->projectHealthStatus(),
                     'warnings' => $project->projectHealthWarnings(),
                     'contractValue' => (float) ($project->contract_value ?? 0),
@@ -202,14 +200,12 @@ class DashboardController extends Controller
     private function recentProjects(): array
     {
         return Project::query()
-            ->with('client:id,name')
             ->latest('id')
             ->limit(8)
             ->get()
             ->map(fn (Project $project): array => [
                 'id' => $project->id,
                 'name' => $project->name ?? 'Proyek tanpa nama',
-                'client' => $project->client?->name ?? '-',
                 'status' => $project->projectHealthStatus(),
                 'dbStatus' => $project->status,
                 'approvedProgress' => $project->latestApprovedProgressPercent() ?? 0,
@@ -221,7 +217,7 @@ class DashboardController extends Controller
     private function recentProgress(): array
     {
         return ProgressReport::query()
-            ->with('project:id,name,client_id', 'project.client:id,name')
+            ->with('project:id,name')
             ->latest('report_date')
             ->latest('id')
             ->limit(8)
@@ -230,10 +226,9 @@ class DashboardController extends Controller
                 'id' => $report->id,
                 'projectId' => $report->project_id,
                 'projectName' => $report->project?->name ?? 'Proyek tanpa nama',
-                'client' => $report->project?->client?->name ?? '-',
                 'percent' => (float) ($report->progress_percent ?? 0),
                 'date' => optional($report->report_date)->format('Y-m-d'),
-                'approved' => (bool) ($report->approved_by_client && $report->approved_by_internal),
+                'approved' => (bool) $report->approved_by_internal,
                 'documentNumber' => $report->document_number,
             ])
             ->all();

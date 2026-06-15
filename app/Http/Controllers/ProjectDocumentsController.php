@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -108,6 +109,51 @@ class ProjectDocumentsController extends Controller
                 'pages' => [],
             ], $exception->statusCode());
         }
+    }
+
+    public function ocrStored(ProjectDocument $projectDocument, OcrService $ocrService): JsonResponse
+    {
+        abort_unless($projectDocument->project()->exists(), 404);
+
+        $disk = Storage::disk('public');
+        abort_unless($disk->exists($projectDocument->path), 404);
+
+        $file = new UploadedFile(
+            $disk->path($projectDocument->path),
+            $projectDocument->original_name,
+            $projectDocument->mime_type,
+            null,
+            true,
+        );
+
+        try {
+            $payload = $ocrService->extract($file);
+        } catch (OcrNotConfiguredException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+                'engine' => 'manual',
+                'text' => '',
+                'pages' => [],
+            ], 503);
+        } catch (OcrProviderException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+                'engine' => 'manual',
+                'text' => '',
+                'pages' => [],
+            ], $exception->statusCode());
+        }
+
+        $projectDocument->update([
+            'ocr_text' => $payload['text'] ?? '',
+            'ocr_engine' => $payload['engine'] ?? 'ocr',
+            'ocr_processed_at' => now(),
+        ]);
+
+        return response()->json([
+            ...$payload,
+            'document' => self::serialize($projectDocument->refresh()),
+        ]);
     }
 
     public function applyExtraction(Request $request): JsonResponse

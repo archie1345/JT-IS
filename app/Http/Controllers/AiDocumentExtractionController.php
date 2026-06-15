@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Project;
 use App\Models\Rab;
 use App\Models\Rap;
-use App\Models\Client;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,14 +19,6 @@ class AiDocumentExtractionController extends Controller
     public function index(): Response
     {
         return Inertia::render('dev/AiDocumentExtraction', [
-            'clients' => Client::query()
-                ->orderBy('name')
-                ->get(['id', 'name'])
-                ->map(fn (Client $client): array => [
-                    'id' => $client->id,
-                    'name' => $client->name ?? 'Client #'.$client->id,
-                ])
-                ->values(),
             'projects' => Project::query()
                 ->orderBy('name')
                 ->get(['id', 'name'])
@@ -94,7 +85,6 @@ class AiDocumentExtractionController extends Controller
         $validated = $request->validate([
             'project_id' => ['nullable', 'integer', 'exists:projects,id'],
             'auto_create_project' => ['nullable', 'boolean'],
-            'client_id' => ['nullable', 'integer', 'exists:clients,id'],
             'kind' => ['required', 'string', 'in:rab,rap'],
             'items' => ['nullable', 'array'],
             'items.*.category' => ['nullable', 'string', 'max:150'],
@@ -123,7 +113,6 @@ class AiDocumentExtractionController extends Controller
                 $project = Project::query()->findOrFail($validated['project_id']);
             } elseif ($validated['auto_create_project'] ?? false) {
                 $project = Project::query()->create([
-                    'client_id' => $validated['client_id'] ?? null,
                     'name' => $projectUpdates['name'] ?? 'Untitled extracted project',
                     'contract_number' => $projectUpdates['contract_number'] ?? null,
                     'contract_value' => $projectUpdates['contract_value'] ?? 0,

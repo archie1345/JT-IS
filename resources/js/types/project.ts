@@ -7,12 +7,6 @@ export type ProjectHealthStatus =
 export type PaymentStatus = 'pending' | 'paid' | 'overdue' | 'partial';
 export type Mode = 'create' | 'edit';
 
-export type ClientOption = {
-    id: number;
-    name: string;
-    contact: null | string;
-};
-
 export type UploadedDocument = {
     id: number;
     projectId?: number | null;
@@ -75,10 +69,7 @@ export type ProgressSnapshot = {
 
 export type ProjectDetails = {
     id: null | number;
-    clientId: null | number;
     name: string;
-    clientName: null | string;
-    clientContact: null | string;
     contractNumber: null | string;
     contractValue: number;
     location: null | string;
@@ -100,7 +91,6 @@ export type ProjectDetails = {
 export type ProjectItem = {
     id: number;
     projectName: string;
-    client: string;
     estPrice: number;
     deadline: string;
     paymentStatus: PaymentStatus;
@@ -111,5 +101,4 @@ export type ProjectItem = {
 export type ProjectsPageProps = {
     projects?: ProjectItem[];
     data?: ProjectItem[];
-    activeClientId?: number | null;
 };

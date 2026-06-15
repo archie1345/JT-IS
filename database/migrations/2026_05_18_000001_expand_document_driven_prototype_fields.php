@@ -42,9 +42,6 @@ return new class extends Migration
             if (! Schema::hasColumn('progress_reports', 'period_end')) {
                 $table->date('period_end')->nullable();
             }
-            if (! Schema::hasColumn('progress_reports', 'approved_by_client')) {
-                $table->boolean('approved_by_client')->default(false);
-            }
             if (! Schema::hasColumn('progress_reports', 'approved_by_internal')) {
                 $table->boolean('approved_by_internal')->default(false);
             }
@@ -138,7 +135,6 @@ return new class extends Migration
                 'document_type',
                 'period_start',
                 'period_end',
-                'approved_by_client',
                 'approved_by_internal',
             ]);
         });

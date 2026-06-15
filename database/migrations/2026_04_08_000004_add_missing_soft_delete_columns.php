@@ -9,7 +9,6 @@ return new class extends Migration
 
     private array $tables = [
         'users',
-        'clients',
         'projects',
         'project_users',
         'tenders',

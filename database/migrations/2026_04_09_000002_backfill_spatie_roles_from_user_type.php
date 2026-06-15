@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        foreach (['admin', 'employee', 'client'] as $roleName) {
+        foreach (['admin', 'employee'] as $roleName) {
             Role::findOrCreate($roleName, 'web');
         }
 

@@ -1,10 +1,9 @@
 <?php
 
-use App\Models\Client;
 use App\Models\Invoice;
+use App\Models\ProgressReport;
 use App\Models\Project;
 use App\Models\ProjectCost;
-use App\Models\ProgressReport;
 use App\Models\Rab;
 use App\Models\Rap;
 use App\Models\Tender;
@@ -16,7 +15,7 @@ test('won tender can be converted to a project once', function () {
 
     $tender = Tender::query()->create([
         'title' => 'Tender Demo Won',
-        'owner' => 'PT Demo Client',
+        'owner' => 'PT Demo Owner',
         'value' => 1000000,
         'status' => 'won',
     ]);
@@ -46,7 +45,7 @@ test('rab and rap totals use item sums', function () {
     $rab->items()->create(['description' => 'A', 'quantity' => 2, 'unit_price' => 100, 'total_price' => 200]);
     $rab->items()->create(['description' => 'B', 'quantity' => 1, 'unit_price' => 300, 'total_price' => 300]);
 
-    $rap = Rap::query()->create(['project_id' => $project->id]);
+    $rap = rap::query()->create(['project_id' => $project->id]);
     $rap->items()->create(['description' => 'A', 'quantity' => 1, 'unit_price' => 250, 'total_price' => 250]);
     $rap->items()->create(['description' => 'B', 'quantity' => 3, 'unit_price' => 50, 'total_price' => 150]);
 
@@ -74,9 +73,7 @@ test('project health becomes warning and critical from health thresholds', funct
 test('project detail save cannot change the progress snapshot percentage', function () {
     $this->actingAs(User::factory()->admin()->create());
 
-    $client = Client::query()->create(['name' => 'Snapshot Client']);
     $project = Project::query()->create([
-        'client_id' => $client->id,
         'name' => 'Snapshot Guard Demo',
         'contract_value' => 1000000,
         'status' => 'ongoing',
@@ -90,7 +87,6 @@ test('project detail save cannot change the progress snapshot percentage', funct
     ]);
 
     $this->patch(route('projects.update', $project), [
-        'client_id' => $client->id,
         'name' => 'Snapshot Guard Updated',
         'contract_value' => 1500000,
         'status' => 'completed',
@@ -131,9 +127,7 @@ test('bamc progress update can change the progress snapshot percentage', functio
 test('overdue invoice appears in dashboard warning data', function () {
     $this->actingAs(User::factory()->admin()->create());
 
-    $client = Client::query()->create(['name' => 'Client Warning']);
     $project = Project::query()->create([
-        'client_id' => $client->id,
         'name' => 'Overdue Invoice Demo',
         'contract_value' => 1000000,
         'status' => 'ongoing',
@@ -245,7 +239,6 @@ test('progress ocr apply does not auto approve bamc suggestions', function () {
     $report = ProgressReport::query()->where('project_id', $project->id)->first();
 
     expect((float) $report->progress_percent)->toBe(80.0);
-    expect((bool) $report->approved_by_client)->toBeFalse();
     expect((bool) $report->approved_by_internal)->toBeFalse();
 });
 

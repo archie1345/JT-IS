@@ -42,7 +42,7 @@ const printPreview = () => {
         </div>
 
         <InvoicePrintPreview
-            :bill-to="props.invoice.client_name"
+            :bill-to="props.invoice.project_name"
             :description="props.invoice.description"
             :due-date="props.invoice.due_date"
             :invoice-date="props.invoice.invoice_date"

@@ -72,7 +72,6 @@ const uploadConnectionOptions = computed(() =>
 const columns = [
     { key: 'id', label: 'Id' },
     { key: 'project_name', label: 'Proyek' },
-    { key: 'client_name', label: 'Klien' },
     { key: 'invoice_number', label: 'Invoice No.' },
     { key: 'amount', label: 'Nilai' },
     { key: 'tax_amount', label: 'Pajak' },

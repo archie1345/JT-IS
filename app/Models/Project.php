@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Services\ProjectStatusService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -16,10 +15,10 @@ class Project extends Model
     use HasFactory, SoftDeletes;
 
     protected $table = 'projects';
+
     protected $primaryKey = 'id';
 
     protected $fillable = [
-        'client_id',
         'name',
         'contract_number',
         'contract_value',
@@ -34,17 +33,11 @@ class Project extends Model
     protected function casts(): array
     {
         return [
-            'client_id' => 'integer',
             'contract_value' => 'decimal:2',
             'start_date' => 'date',
             'end_date' => 'date',
             'deleted_at' => 'datetime',
         ];
-    }
-
-    public function client(): BelongsTo
-    {
-        return $this->belongsTo(Client::class);
     }
 
     public function projectUsers(): HasMany
@@ -137,7 +130,6 @@ class Project extends Model
     public function latestApprovedProgressReport(): ?ProgressReport
     {
         return $this->progressReports()
-            ->where('approved_by_client', true)
             ->where('approved_by_internal', true)
             ->latest('report_date')
             ->latest('id')

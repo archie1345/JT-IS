@@ -9,7 +9,6 @@ import type { ProjectItem } from '@/types/project';
 const props = defineProps<{
     projects?: ProjectItem[];
     data?: ProjectItem[];
-    activeClientId?: number | null;
 }>();
 
 const rows = computed(() => props.projects ?? props.data ?? []);
@@ -70,11 +69,6 @@ const projectColumns = [
         label: 'Nama Proyek',
         accessor: (row: Record<string, unknown>) =>
             (row as ProjectItem).projectName,
-    },
-    {
-        key: 'client',
-        label: 'Klien',
-        accessor: (row: Record<string, unknown>) => (row as ProjectItem).client,
     },
     {
         key: 'estPrice',

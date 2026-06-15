@@ -35,7 +35,6 @@ type WarningItem = { type: string; level: string; message: string };
 type ProblemProject = {
     id: number;
     name: string;
-    client: string;
     status: string;
     warnings: WarningItem[];
     contractValue: number;
@@ -47,7 +46,6 @@ type RecentProgress = {
     id: number;
     projectId: number;
     projectName: string;
-    client: string;
     percent: number;
     date: string | null;
     approved: boolean;
@@ -934,11 +932,6 @@ onBeforeUnmount(() => {
                                                     >
                                                         {{ project.name }}
                                                     </button>
-                                                    <p
-                                                        class="max-w-[15rem] truncate text-xs text-muted-foreground"
-                                                    >
-                                                        {{ project.client }}
-                                                    </p>
                                                 </td>
                                                 <td class="px-3 py-3">
                                                     <span
@@ -1050,9 +1043,8 @@ onBeforeUnmount(() => {
                                     </span>
                                     <span
                                         class="block truncate text-xs text-muted-foreground"
-                                        :title="`${progress.client} | ${progress.date ?? '-'}`"
+                                        :title="progress.date ?? '-'"
                                     >
-                                        {{ progress.client }} |
                                         {{ progress.date ?? '-' }}
                                     </span>
                                 </span>

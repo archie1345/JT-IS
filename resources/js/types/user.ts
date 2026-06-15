@@ -1,4 +1,4 @@
-export type AccountRole = 'admin' | 'employee' | 'client';
+export type AccountRole = 'admin' | 'employee';
 
 export type AccountRoleOption = {
     value: AccountRole;
@@ -12,14 +12,12 @@ export type EmployeeRoleOption = {
 
 export type AdminUserRow = {
     id: number;
-    clientId: number | null;
     name: string;
     email: string;
     userType: AccountRole;
     userTypeLabel: string;
     employeeRole: string | null;
     employeeRoleLabel: string | null;
-    clientName: string | null;
     verifiedAt: string | null;
     createdAt: string | null;
 };
@@ -28,10 +26,4 @@ export type AdminStats = {
     total: number;
     admin: number;
     employee: number;
-    client: number;
-};
-
-export type ClientChoice = {
-    id: number;
-    name: string | null;
 };

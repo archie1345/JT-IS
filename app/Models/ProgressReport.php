@@ -21,7 +21,6 @@ class ProgressReport extends Model
         'period_end',
         'report_date',
         'description',
-        'approved_by_client',
         'approved_by_internal',
     ];
 
@@ -33,7 +32,6 @@ class ProgressReport extends Model
             'period_start' => 'date',
             'period_end' => 'date',
             'report_date' => 'date',
-            'approved_by_client' => 'boolean',
             'approved_by_internal' => 'boolean',
             'deleted_at' => 'datetime',
         ];

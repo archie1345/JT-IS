@@ -21,7 +21,7 @@ class ProgressDocumentExtractor
             'report_date' => $dateMatch[1] ?? null,
             'signatures_detected' => [
                 'internal' => (bool) preg_match('/(?:internal|pelaksana|kontraktor|jasa tirta energi|jte)/i', $text),
-                'client' => (bool) preg_match('/(?:client|klien|pemilik|pengguna jasa|ppk|jasa tirta i)/i', $text),
+                'owner' => (bool) preg_match('/(?:owner|pemilik|pengguna jasa|ppk|jasa tirta i)/i', $text),
             ],
         ];
     }

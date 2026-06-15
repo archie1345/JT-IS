@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
 import {
-    Building2,
     CheckCircle2,
     Mail,
     PencilLine,
@@ -37,24 +36,21 @@ import type {
     AccountRoleOption,
     AdminStats,
     AdminUserRow,
-    ClientChoice,
     EmployeeRoleOption,
 } from '@/types/user';
 
 const props = defineProps<{
     users: AdminUserRow[];
-    clients: ClientChoice[];
     stats: AdminStats;
     userTypes: AccountRoleOption[];
     employeeRoleSuggestions: EmployeeRoleOption[];
 }>();
 
 const defaultForm = {
-    client_id: '',
     name: '',
     email: '',
     password: '',
-    user_type: 'client' as AccountRole,
+    user_type: 'employee' as AccountRole,
     employee_role: '',
 };
 
@@ -67,18 +63,11 @@ const selectedUser = computed(
     () => props.users.find((u) => u.id === selectedUserId.value) ?? null,
 );
 
-const selectedClient = computed(
-    () =>
-        props.clients.find((c) => String(c.id) === String(form.client_id)) ??
-        null,
-);
-
 const isEditing = computed(() => selectedUserId.value !== null);
 
 const ROLE_BADGE_CLASSES: Record<AccountRole, string> = {
     admin: 'bg-rose-500/15 text-rose-600 ring-1 ring-rose-500/25',
     employee: 'bg-blue-500/15 text-blue-600 ring-1 ring-blue-500/25',
-    client: 'bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/25',
 };
 
 const roleLabel = (role: AccountRole) =>
@@ -104,8 +93,6 @@ const verificationBadgeClass = (verifiedAt: unknown) =>
 
 const getUserRow = (row: unknown) => row as AdminUserRow;
 
-const isClientRow = (row: unknown) => getUserRow(row).userType === 'client';
-
 const userColumns: SpreadsheetColumn[] = [
     { key: 'id', label: 'Id', widthClass: 'min-w-[5rem]' },
     {
@@ -122,11 +109,6 @@ const userColumns: SpreadsheetColumn[] = [
         key: 'userTypeLabel',
         label: 'Role',
         accessor: (row) => getUserRow(row).userTypeLabel,
-    },
-    {
-        key: 'clientName',
-        label: 'Klien',
-        accessor: (row) => getUserRow(row).clientName ?? '-',
     },
     {
         key: 'verifiedAt',
@@ -150,7 +132,6 @@ const loadUser = (row: unknown) => {
     form.password = '';
     form.user_type = user.userType;
     form.employee_role = user.employeeRole ?? '';
-    form.client_id = user.clientId ? String(user.clientId) : '';
 };
 
 const resetToCreate = () => {
@@ -198,10 +179,6 @@ const openEditModal = (row: unknown) => {
 watch(
     () => form.user_type,
     (role: AccountRole) => {
-        if (role !== 'client') {
-            form.client_id = '';
-        }
-
         if (role !== 'employee') {
             form.employee_role = '';
         }
@@ -221,8 +198,7 @@ watch(
                     Manajemen Akun
                 </h1>
                 <p class="text-sm text-muted-foreground">
-                    Buat dan edit akun klien, karyawan, dan admin dari satu
-                    tempat.
+                    Buat dan edit akun karyawan dan admin dari satu tempat.
                 </p>
             </div>
 
@@ -231,7 +207,7 @@ watch(
             </Badge>
         </div>
 
-        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="grid gap-3 sm:grid-cols-3">
             <div
                 class="rounded-xl border border-sidebar-border/70 bg-background p-4 shadow-sm"
             >
@@ -266,18 +242,6 @@ watch(
                 </p>
                 <p class="mt-2 text-2xl font-semibold text-foreground">
                     {{ props.stats.employee }}
-                </p>
-            </div>
-            <div
-                class="rounded-xl border border-sidebar-border/70 bg-background p-4 shadow-sm"
-            >
-                <p
-                    class="text-xs tracking-[0.18em] text-muted-foreground uppercase"
-                >
-                    Klien
-                </p>
-                <p class="mt-2 text-2xl font-semibold text-foreground">
-                    {{ props.stats.client }}
                 </p>
             </div>
         </div>
@@ -315,20 +279,6 @@ watch(
                 </div>
             </template>
 
-            <template #cell-clientName="{ value, row }">
-                <span
-                    class="inline-flex items-center gap-2"
-                    :class="
-                        isClientRow(row)
-                            ? 'text-foreground'
-                            : 'text-muted-foreground'
-                    "
-                >
-                    <Building2 class="size-4 text-muted-foreground" />
-                    {{ value || '-' }}
-                </span>
-            </template>
-
             <template #cell-verifiedAt="{ value }">
                 <Badge :class="verificationBadgeClass(value)">
                     {{ value || 'Menunggu' }}
@@ -362,7 +312,7 @@ watch(
                         {{ isEditing ? 'Edit Akun' : 'Tambah Akun' }}
                     </DialogTitle>
                     <DialogDescription>
-                        Buat akun admin, karyawan, atau klien dari satu popup.
+                        Buat akun admin atau karyawan dari satu popup.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -393,14 +343,6 @@ watch(
                                     employeeRoleLabel(
                                         form.employee_role || null,
                                     )
-                                }}
-                            </Badge>
-                            <Badge
-                                v-if="form.user_type === 'client'"
-                                variant="outline"
-                            >
-                                {{
-                                    selectedClient?.name ?? 'Klien terhubung di sini'
                                 }}
                             </Badge>
                         </div>
@@ -474,7 +416,6 @@ watch(
                             </SelectContent>
                         </Select>
                         <p class="text-xs text-muted-foreground">
-                            Akun klien perlu dihubungkan ke data klien.
                             Akun karyawan bisa memakai access tag khusus.
                         </p>
                         <InputError :message="form.errors.user_type" />
@@ -510,38 +451,13 @@ watch(
                         <InputError :message="form.errors.employee_role" />
                     </label>
 
-                    <label
-                        v-if="form.user_type === 'client'"
-                        class="block min-w-0 space-y-2"
-                    >
-                        <span class="text-sm font-medium text-foreground"
-                            >Klien Terkait</span
-                        >
-                        <Select v-model="form.client_id">
-                            <SelectTrigger class="w-full">
-                                <SelectValue placeholder="Pilih klien" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem
-                                    v-for="client in props.clients"
-                                    :key="client.id"
-                                    :value="String(client.id)"
-                                >
-                                    {{ client.name ?? `Klien #${client.id}` }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <InputError :message="form.errors.client_id" />
-                    </label>
-
                     <div
-                        v-else
                         class="rounded-xl border border-dashed border-sidebar-border/70 bg-muted/20 p-4 text-sm text-muted-foreground"
                     >
                         {{
                             form.user_type === 'employee'
                                 ? 'Akses karyawan diatur dengan tag di atas.'
-                                : 'Role ini tidak membutuhkan link klien.'
+                                : 'Admin memiliki akses penuh sesuai permission yang diberikan.'
                         }}
                     </div>
 
@@ -565,9 +481,6 @@ watch(
                                       )
                                     : '-'
                             }}
-                        </p>
-                        <p>
-                            Klien dipilih: {{ selectedClient?.name ?? '-' }}
                         </p>
                     </div>
                 </div>

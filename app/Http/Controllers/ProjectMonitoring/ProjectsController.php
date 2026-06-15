@@ -11,7 +11,6 @@ class ProjectsController extends CrudResourceController
     protected function storeRules(): array
     {
         return [
-            'client_id' => ['nullable', 'integer', 'exists:clients,id'],
             'name' => ['nullable', 'string', 'max:200'],
             'contract_number' => ['nullable', 'string', 'max:100'],
             'contract_value' => ['nullable', 'numeric', 'min:0'],
@@ -25,7 +24,6 @@ class ProjectsController extends CrudResourceController
     protected function updateRules(int $id): array
     {
         return [
-            'client_id' => ['sometimes', 'nullable', 'integer', 'exists:clients,id'],
             'name' => ['sometimes', 'nullable', 'string', 'max:200'],
             'contract_number' => ['sometimes', 'nullable', 'string', 'max:100'],
             'contract_value' => ['sometimes', 'nullable', 'numeric', 'min:0'],

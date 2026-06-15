@@ -1,12 +1,9 @@
 <?php
 
 use App\Http\Controllers\AiDocumentExtractionController;
-use App\Http\Controllers\ClientDetailsController;
-use App\Http\Controllers\ClientsPageController;
 use App\Http\Controllers\ProjectDetailsController;
 use App\Http\Controllers\ProjectDocumentsController;
 use App\Http\Controllers\ProjectsPageController;
-use App\Http\Controllers\ProjectMonitoring\ClientsController;
 use App\Http\Controllers\ProjectMonitoring\FundRequestsController;
 use App\Http\Controllers\ProjectMonitoring\InvoiceItemsController;
 use App\Http\Controllers\ProjectMonitoring\InvoicesController;
@@ -84,6 +81,9 @@ Route::middleware(['auth', 'verified', 'role:admin|employee'])->group(function (
             Route::post('apply-extraction', [ProjectDocumentsController::class, 'applyExtraction'])
                 ->middleware('permission:action.projects.update')
                 ->name('apply-extraction');
+            Route::post('{projectDocument}/ocr', [ProjectDocumentsController::class, 'ocrStored'])
+                ->middleware('permission:action.projects.update')
+                ->name('ocr-stored');
             Route::get('{projectDocument}', [ProjectDocumentsController::class, 'show'])
                 ->middleware('permission:page.projects.view')
                 ->name('show');
@@ -250,29 +250,6 @@ Route::middleware(['auth', 'verified', 'role:admin|employee'])->group(function (
                 ->whereNumber('id')
                 ->name('destroy');
         });
-
-    Route::prefix('client')->group(function (): void {
-        Route::get('/', ClientsPageController::class)
-            ->middleware('permission:page.clients.view')
-            ->name('client');
-        Route::get('create', [ClientDetailsController::class, 'create'])
-            ->middleware('permission:action.clients.create')
-            ->name('client.create');
-        Route::post('/', [ClientDetailsController::class, 'store'])
-            ->middleware('permission:action.clients.create')
-            ->name('client.store');
-        Route::get('{client}', [ClientDetailsController::class, 'show'])
-            ->middleware('permission:page.clients.view')
-            ->name('client.show');
-        Route::patch('{client}', [ClientDetailsController::class, 'update'])
-            ->middleware('permission:action.clients.update')
-            ->name('client.update');
-    });
-
-    Route::resource('clients-data', ClientsController::class)
-        ->middleware('permission:page.clients.view')
-        ->only(['index', 'store', 'show', 'update', 'destroy'])
-        ->names('clients-data');
 
     Route::inertia('billing-test', 'dev/BillingTest')
         ->middleware('permission:page.billing-test.view')

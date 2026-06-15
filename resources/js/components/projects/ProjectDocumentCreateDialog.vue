@@ -481,7 +481,7 @@ const submitDocumentCreate = () => {
                     class="min-w-0 space-y-2"
                 >
                     <span class="text-sm font-medium text-foreground">
-                        Owner / Klien
+                        Owner
                     </span>
                     <Input v-model="documentForm.owner" />
                     <InputError :message="documentForm.errors.owner" />

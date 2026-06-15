@@ -83,7 +83,7 @@ const fields = [
     },
     {
         name: 'owner',
-        label: 'Owner / Klien',
+        label: 'Owner',
         type: 'text',
         placeholder: 'Contoh: Perum Jasa Tirta I',
     },

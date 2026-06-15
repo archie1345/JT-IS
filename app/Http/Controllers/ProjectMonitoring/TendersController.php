@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\ProjectMonitoring;
 
 use App\Http\Controllers\ProjectDocumentsController;
-use App\Models\Client;
 use App\Models\Project;
 use App\Models\ProjectDocument;
 use App\Models\Tender;
@@ -61,7 +60,7 @@ class TendersController extends CrudResourceController
 
         return Tender::query()
             ->when($projectId > 0, fn (Builder $query) => $query->where('project_id', $projectId))
-            ->with(['project:id,client_id,name', 'project.client:id,name'])
+            ->with('project:id,name')
             ->orderByDesc('id');
     }
 
@@ -72,7 +71,6 @@ class TendersController extends CrudResourceController
             'id' => $record->id,
             'project_id' => $record->project_id,
             'project_name' => $record->project?->name,
-            'client_name' => $record->project?->client?->name,
             'title' => $record->title,
             'document_number' => $record->document_number,
             'document_date' => optional($record->document_date)->format('Y-m-d'),
@@ -114,18 +112,7 @@ class TendersController extends CrudResourceController
                 return $tender->project;
             }
 
-            $clientId = null;
-
-            if (filled($tender->owner)) {
-                $client = Client::query()->firstOrCreate(
-                    ['name' => $tender->owner],
-                    ['contact' => null],
-                );
-                $clientId = $client->id;
-            }
-
             $project = Project::query()->create([
-                'client_id' => $clientId,
                 'name' => $tender->title,
                 'contract_value' => $tender->value ?? 0,
                 'location' => $tender->location,
@@ -145,13 +132,11 @@ class TendersController extends CrudResourceController
     {
         return [
             'projectOptions' => Project::query()
-                ->with('client:id,name')
                 ->orderBy('name')
-                ->get(['id', 'client_id', 'name'])
+                ->get(['id', 'name'])
                 ->map(fn (Project $project): array => [
                     'value' => $project->id,
                     'label' => $project->name ?? 'Proyek tanpa nama',
-                    'hint' => $project->client?->name,
                 ])
                 ->all(),
             'uploadedDocuments' => ProjectDocument::query()
@@ -168,7 +153,7 @@ class TendersController extends CrudResourceController
     public function show(int $id): Response
     {
         $record = Tender::query()
-            ->with(['project:id,client_id,name', 'project.client:id,name'])
+            ->with('project:id,name')
             ->findOrFail($id);
 
         return Inertia::render('shared/RecordDetails', [
@@ -205,7 +190,7 @@ class TendersController extends CrudResourceController
             ['name' => 'document_number', 'label' => 'Nomor Dokumen', 'type' => 'text', 'placeholder' => 'Contoh: 001/SPH/JTE/II/2026'],
             ['name' => 'document_date', 'label' => 'Tanggal Dokumen', 'type' => 'date'],
             ['name' => 'title', 'label' => 'Nama Pekerjaan / Paket', 'type' => 'text'],
-            ['name' => 'owner', 'label' => 'Owner / Klien', 'type' => 'text'],
+            ['name' => 'owner', 'label' => 'Owner', 'type' => 'text'],
             ['name' => 'location', 'label' => 'Lokasi', 'type' => 'textarea'],
             ['name' => 'value', 'label' => 'Nilai Penawaran / Kontrak', 'type' => 'number', 'min' => 0, 'step' => '0.01'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => [
@@ -221,13 +206,11 @@ class TendersController extends CrudResourceController
     protected function projectOptions(): array
     {
         return Project::query()
-            ->with('client:id,name')
             ->orderBy('name')
-            ->get(['id', 'client_id', 'name'])
+            ->get(['id', 'name'])
             ->map(fn (Project $project): array => [
                 'value' => $project->id,
                 'label' => $project->name ?? 'Proyek tanpa nama',
-                'hint' => $project->client?->name,
             ])
             ->all();
     }

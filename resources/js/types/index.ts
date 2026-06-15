@@ -1,6 +1,5 @@
 export * from './admin-permissions';
 export * from './auth';
-export * from './client';
 export * from './entity';
 export * from './navigation';
 export * from './project';

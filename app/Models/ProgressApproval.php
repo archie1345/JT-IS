@@ -15,7 +15,6 @@ class ProgressApproval extends Model
 
     protected $fillable = [
         'progress_report_id',
-        'approved_by_client',
         'approved_by_internal',
     ];
 
@@ -23,7 +22,6 @@ class ProgressApproval extends Model
     {
         return [
             'progress_report_id' => 'integer',
-            'approved_by_client' => 'boolean',
             'approved_by_internal' => 'boolean',
             'deleted_at' => 'datetime',
         ];

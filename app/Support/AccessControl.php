@@ -27,7 +27,6 @@ class AccessControl
                     ['name' => 'sidebar.operational.rabs.view', 'label' => 'Menu RAB', 'description' => 'Tampilkan halaman RAB di section operational.'],
                     ['name' => 'sidebar.operational.raps.view', 'label' => 'Menu RAP', 'description' => 'Tampilkan halaman RAP di section operational.'],
                     ['name' => 'sidebar.operational.progress.view', 'label' => 'Menu Progress Update', 'description' => 'Tampilkan shortcut progress update di section operational.'],
-                    ['name' => 'sidebar.clients.view', 'label' => 'Menu Klien', 'description' => 'Tampilkan shortcut klien di sidebar.'],
                     ['name' => 'sidebar.admin.users.view', 'label' => 'Menu User Admin', 'description' => 'Tampilkan shortcut manajemen user dan permission di sidebar.'],
                     ['name' => 'sidebar.footer.testing.view', 'label' => 'Shortcut Testing', 'description' => 'Tampilkan shortcut halaman testing di footer.'],
                     ['name' => 'sidebar.footer.accounts.view', 'label' => 'Shortcut Manajemen Akun', 'description' => 'Tampilkan shortcut manajemen akun di footer.'],
@@ -44,7 +43,6 @@ class AccessControl
                     ['name' => 'page.rabs.view', 'label' => 'Buka RAB', 'description' => 'Izinkan membuka daftar dan detail RAB.'],
                     ['name' => 'page.raps.view', 'label' => 'Buka RAP', 'description' => 'Izinkan membuka daftar dan detail RAP.'],
                     ['name' => 'page.pipeline.view', 'label' => 'Buka Pipeline Laporan', 'description' => 'Izinkan membuka halaman laporan marketing atau pipeline.'],
-                    ['name' => 'page.clients.view', 'label' => 'Buka Klien', 'description' => 'Izinkan membuka halaman klien.'],
                     ['name' => 'page.fund-requests.view', 'label' => 'Buka Pengajuan Dana', 'description' => 'Izinkan membuka modul pengajuan dana.'],
                     ['name' => 'page.invoices.view', 'label' => 'Buka Invoice', 'description' => 'Izinkan membuka modul invoice.'],
                     ['name' => 'page.admin.accounts.view', 'label' => 'Buka Manajemen Akun', 'description' => 'Izinkan membuka halaman admin akun dan manajemen akses.'],
@@ -75,8 +73,6 @@ class AccessControl
                     ['name' => 'action.progress-updates.create', 'label' => 'Tambah Progress Update', 'description' => 'Izinkan membuat laporan progress proyek.'],
                     ['name' => 'action.progress-updates.update', 'label' => 'Update Progress Update', 'description' => 'Izinkan edit laporan progress proyek.'],
                     ['name' => 'action.progress-updates.delete', 'label' => 'Hapus Progress Update', 'description' => 'Izinkan menghapus laporan progress proyek.'],
-                    ['name' => 'action.clients.create', 'label' => 'Tambah Klien', 'description' => 'Izinkan membuat data klien.'],
-                    ['name' => 'action.clients.update', 'label' => 'Update Klien', 'description' => 'Izinkan edit data klien.'],
                     ['name' => 'action.admin.accounts.create', 'label' => 'Tambah Akun', 'description' => 'Izinkan membuat akun user dari halaman admin.'],
                     ['name' => 'action.admin.accounts.update', 'label' => 'Update Akun', 'description' => 'Izinkan edit akun user dari halaman admin.'],
                     ['name' => 'action.admin.accounts.delete', 'label' => 'Hapus Akun', 'description' => 'Izinkan soft delete akun user dari halaman admin.'],
@@ -146,12 +142,6 @@ class AccessControl
                 'items' => [
                     ['title' => 'Realisasi Biaya', 'href' => route('project-costs.index'), 'icon' => 'FileCheck', 'permission' => 'sidebar.finance.cost-realization.view'],
                     ['title' => 'Tagihan', 'href' => route('invoices.index'), 'icon' => 'BadgeDollarSign', 'permission' => 'sidebar.finance.billing.view'],
-                ],
-            ],
-            [
-                'label' => 'Klien',
-                'items' => [
-                    ['title' => 'Klien', 'href' => route('client'), 'icon' => 'Building2', 'permission' => 'sidebar.clients.view'],
                 ],
             ],
             [
@@ -292,7 +282,6 @@ class AccessControl
         return array_values(array_unique([
             'admin',
             'employee',
-            'client',
             ...collect(self::employeeRoleSuggestions())->pluck('value')->all(),
         ]));
     }
@@ -306,7 +295,6 @@ class AccessControl
             'page.rabs.view' => ['sidebar.operational.rabs.view'],
             'page.raps.view' => ['sidebar.operational.raps.view'],
             'page.pipeline.view' => ['sidebar.marketing.reports.view'],
-            'page.clients.view' => ['sidebar.clients.view'],
             'page.fund-requests.view' => ['sidebar.operational.progress.view'],
             'page.invoices.view' => ['sidebar.finance.billing.view'],
             'page.admin.accounts.view' => ['sidebar.admin.users.view'],
@@ -330,8 +318,6 @@ class AccessControl
             'action.progress-updates.create' => ['sidebar.operational.progress.view'],
             'action.progress-updates.update' => ['sidebar.operational.progress.view'],
             'action.progress-updates.delete' => ['sidebar.operational.progress.view'],
-            'action.clients.create' => ['page.clients.view', 'sidebar.clients.view'],
-            'action.clients.update' => ['page.clients.view', 'sidebar.clients.view'],
             'action.admin.accounts.create' => ['page.admin.accounts.view', 'sidebar.admin.users.view'],
             'action.admin.accounts.update' => ['page.admin.accounts.view', 'sidebar.admin.users.view'],
             'action.admin.accounts.delete' => ['page.admin.accounts.view', 'sidebar.admin.users.view'],
@@ -363,26 +349,18 @@ class AccessControl
                 'action.raps.update',
                 'action.raps.delete',
             ],
-            'client' => [
-                'sidebar.dashboard.view',
-                'page.dashboard.view',
-            ],
             'marketing' => [
                 'sidebar.dashboard.view',
                 'sidebar.marketing.projects.view',
                 'sidebar.marketing.reports.view',
-                'sidebar.clients.view',
                 'page.dashboard.view',
                 'page.projects.view',
                 'page.pipeline.view',
-                'page.clients.view',
                 'action.projects.create',
                 'action.projects.update',
                 'action.pipeline.create',
                 'action.pipeline.update',
                 'action.pipeline.delete',
-                'action.clients.create',
-                'action.clients.update',
             ],
             'finance' => [
                 'sidebar.dashboard.view',
@@ -413,10 +391,8 @@ class AccessControl
             'management' => [
                 'sidebar.dashboard.view',
                 'sidebar.marketing.projects.view',
-                'sidebar.clients.view',
                 'page.dashboard.view',
                 'page.projects.view',
-                'page.clients.view',
             ],
             'procurement' => [
                 'sidebar.dashboard.view',

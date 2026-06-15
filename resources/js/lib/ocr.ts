@@ -7,6 +7,7 @@ export type OcrResponse = {
         page?: number;
         text?: string;
     }[];
+    message?: string;
     text?: string;
 };
 
@@ -26,6 +27,48 @@ const cookieValue = (name: string) =>
         .slice(1)
         .join('=');
 
+const csrfRequestHeaders = (headers?: HeadersInit) => {
+    const requestHeaders = new Headers(headers);
+    const xsrfToken = cookieValue('XSRF-TOKEN');
+    const fallbackToken = csrfToken();
+
+    if (xsrfToken) {
+        requestHeaders.set('X-XSRF-TOKEN', decodeURIComponent(xsrfToken));
+    } else if (fallbackToken) {
+        requestHeaders.set('X-CSRF-TOKEN', fallbackToken);
+    }
+
+    return requestHeaders;
+};
+
+const refreshCsrfCookie = () =>
+    fetch('/sanctum/csrf-cookie', {
+        credentials: 'same-origin',
+        headers: {
+            Accept: 'application/json',
+        },
+    });
+
+export const csrfFetch = async (
+    input: RequestInfo | URL,
+    init: RequestInit = {},
+) => {
+    const buildRequest = (): RequestInit => ({
+        ...init,
+        credentials: init.credentials ?? 'same-origin',
+        headers: csrfRequestHeaders(init.headers),
+    });
+
+    let response = await fetch(input, buildRequest());
+
+    if (response.status === 419) {
+        await refreshCsrfCookie();
+        response = await fetch(input, buildRequest());
+    }
+
+    return response;
+};
+
 const buildOcrRequest = (file: File) => {
     const xsrfToken = cookieValue('XSRF-TOKEN');
     const fallbackToken = csrfToken();
@@ -38,12 +81,9 @@ const buildOcrRequest = (file: File) => {
 
     return {
         body: formData,
-        headers: {
+        headers: csrfRequestHeaders({
             Accept: 'application/json',
-            ...(xsrfToken
-                ? { 'X-XSRF-TOKEN': decodeURIComponent(xsrfToken) }
-                : { 'X-CSRF-TOKEN': fallbackToken }),
-        },
+        }),
     };
 };
 
@@ -66,13 +106,7 @@ export const extractWithLaravelOcr = async (
     let response = await postOcrFile(file, endpoint);
 
     if (response.status === 419) {
-        await fetch('/sanctum/csrf-cookie', {
-            credentials: 'same-origin',
-            headers: {
-                Accept: 'application/json',
-            },
-        });
-
+        await refreshCsrfCookie();
         response = await postOcrFile(file, endpoint);
     }
 

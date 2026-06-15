@@ -55,7 +55,7 @@ class ProjectCostsController extends CrudResourceController
 
         return ProjectCost::query()
             ->when($projectId > 0, fn (Builder $query) => $query->where('project_id', $projectId))
-            ->with(['project:id,client_id,name', 'project.client:id,name'])
+            ->with('project:id,name')
             ->orderByDesc('date')
             ->orderByDesc('id');
     }
@@ -67,7 +67,6 @@ class ProjectCostsController extends CrudResourceController
             'id' => $record->id,
             'project_id' => $record->project_id,
             'project_name' => $record->project?->name,
-            'client_name' => $record->project?->client?->name,
             'reference_number' => $record->reference_number,
             'category' => $record->category,
             'vendor' => $record->vendor,
@@ -81,13 +80,11 @@ class ProjectCostsController extends CrudResourceController
     {
         return [
             'projectOptions' => Project::query()
-                ->with('client:id,name')
                 ->orderBy('name')
-                ->get(['id', 'client_id', 'name'])
+                ->get(['id', 'name'])
                 ->map(fn (Project $project): array => [
                     'value' => $project->id,
                     'label' => $project->name ?? 'Proyek tanpa nama',
-                    'hint' => $project->client?->name,
                 ])
                 ->all(),
             'uploadedDocuments' => ProjectDocument::query()
@@ -104,7 +101,7 @@ class ProjectCostsController extends CrudResourceController
     public function show(int $id): Response
     {
         $record = ProjectCost::query()
-            ->with(['items', 'project:id,client_id,name', 'project.client:id,name'])
+            ->with(['items', 'project:id,name'])
             ->findOrFail($id);
 
         return Inertia::render('finance/FinancialDocumentDetails', [
@@ -220,13 +217,11 @@ class ProjectCostsController extends CrudResourceController
     protected function projectOptions(): array
     {
         return Project::query()
-            ->with('client:id,name')
             ->orderBy('name')
-            ->get(['id', 'client_id', 'name'])
+            ->get(['id', 'name'])
             ->map(fn (Project $project): array => [
                 'value' => $project->id,
                 'label' => $project->name ?? 'Proyek tanpa nama',
-                'hint' => $project->client?->name,
             ])
             ->all();
     }

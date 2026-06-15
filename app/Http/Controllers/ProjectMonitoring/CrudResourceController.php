@@ -109,7 +109,6 @@ abstract class CrudResourceController extends Controller
     protected function inertiaView(): ?string
     {
         return match ($this->modelClass()) {
-            \App\Models\Client::class => 'clients/Index',
             \App\Models\Project::class => 'projects/Index',
             \App\Models\Rab::class => 'budget/rabs/Index',
             \App\Models\Rap::class => 'budget/raps/Index',
@@ -129,7 +128,6 @@ abstract class CrudResourceController extends Controller
         }
 
         return match ($this->table) {
-            'clients' => \App\Models\Client::class,
             'projects' => \App\Models\Project::class,
             'project_users' => \App\Models\ProjectUser::class,
             'tenders' => \App\Models\Tender::class,

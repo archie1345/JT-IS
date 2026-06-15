@@ -43,14 +43,12 @@ const uploadConnectionOptions = computed(() =>
 const columns = [
     { key: 'id', label: 'Id' },
     { key: 'project_name', label: 'Proyek' },
-    { key: 'client_name', label: 'Klien' },
     { key: 'document_number', label: 'No. Dokumen' },
     { key: 'document_type', label: 'Jenis Dokumen' },
     { key: 'progress_percent', label: 'Progress %' },
     { key: 'period_start', label: 'Awal Periode' },
     { key: 'period_end', label: 'Akhir Periode' },
     { key: 'report_date', label: 'Tanggal Laporan' },
-    { key: 'approved_by_client', label: 'Klien OK' },
     { key: 'approved_by_internal', label: 'Internal OK' },
     { key: 'description', label: 'Ringkasan' },
 ] satisfies SpreadsheetColumn[];
@@ -92,15 +90,6 @@ const fields = [
     { name: 'period_end', label: 'Akhir Periode', type: 'date' },
     { name: 'report_date', label: 'Tanggal Laporan', type: 'date' },
     {
-        name: 'approved_by_client',
-        label: 'Approval Klien',
-        type: 'select',
-        options: [
-            { value: '0', label: 'Tidak' },
-            { value: '1', label: 'Ya' },
-        ],
-    },
-    {
         name: 'approved_by_internal',
         label: 'Approval Internal',
         type: 'select',
@@ -138,9 +127,6 @@ const fields = [
         :pagination="props.pagination"
         create-label="Tambah Laporan Progress"
     >
-        <template #cell-approved_by_client="{ value }">
-            {{ value === '1' || value === 1 ? 'Ya' : 'Tidak' }}
-        </template>
         <template #cell-approved_by_internal="{ value }">
             {{ value === '1' || value === 1 ? 'Ya' : 'Tidak' }}
         </template>

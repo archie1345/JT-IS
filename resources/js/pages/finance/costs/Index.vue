@@ -43,7 +43,6 @@ const uploadConnectionOptions = computed(() =>
 const columns = [
     { key: 'id', label: 'Id' },
     { key: 'project_name', label: 'Proyek' },
-    { key: 'client_name', label: 'Klien' },
     { key: 'reference_number', label: 'No. Referensi' },
     { key: 'category', label: 'Kategori' },
     { key: 'vendor', label: 'Vendor' },
@@ -92,7 +91,7 @@ const fields = [
     <CrudPrototypePage
         head-title="Realisasi Biaya"
         title="Realisasi Biaya"
-        description="Catat pengeluaran proyek agar manajemen bisa membandingkan realisasi biaya dengan RAP."
+        description="Catat pengeluaran proyek agar manajemen bisa membandingkan realisasi biaya dengan rap."
         :breadcrumbs="breadcrumbs"
         :rows="props.records"
         :columns="columns"

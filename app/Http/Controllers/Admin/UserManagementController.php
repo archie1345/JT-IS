@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Client;
 use App\Models\User;
 use App\Support\AccessControl;
 use Illuminate\Http\RedirectResponse;
@@ -26,7 +25,7 @@ class UserManagementController extends Controller
         $users = User::query()
             ->latest('id')
             ->get(['id', 'name', 'email', 'user_type', 'employee_role', 'email_verified_at', 'created_at'])
-            ->map(fn(User $user): array => [
+            ->map(fn (User $user): array => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
@@ -56,12 +55,12 @@ class UserManagementController extends Controller
             ->where('guard_name', 'web')
             ->where('name', '!=', 'admin')
             ->get()
-            ->sortBy(fn(Role $role): array => [
+            ->sortBy(fn (Role $role): array => [
                 $role->name === 'employee' ? 0 : 1,
                 $role->name,
             ])
             ->values()
-            ->map(fn(Role $role): array => [
+            ->map(fn (Role $role): array => [
                 'id' => $role->id,
                 'name' => $role->name,
                 'label' => $this->roleDisplayLabel($role->name),
@@ -73,9 +72,6 @@ class UserManagementController extends Controller
 
         return Inertia::render('admin/UserManagement', [
             'users' => $users,
-            'clients' => Client::query()
-                ->orderBy('name')
-                ->get(['id', 'name']),
             'stats' => $stats,
             'userTypes' => [
                 ['value' => 'admin', 'label' => 'Admin'],
@@ -102,7 +98,7 @@ class UserManagementController extends Controller
 
         if ($data['user_type'] === 'admin') {
             $user->assignRole('admin');
-        } elseif ($data['user_type'] === 'employee' && !empty($data['employee_role'])) {
+        } elseif ($data['user_type'] === 'employee' && ! empty($data['employee_role'])) {
             $user->assignRole($data['employee_role']);
         }
 
@@ -124,7 +120,7 @@ class UserManagementController extends Controller
 
         if ($data['user_type'] === 'admin') {
             $user->syncRoles(['admin']);
-        } elseif ($data['user_type'] === 'employee' && !empty($data['employee_role'])) {
+        } elseif ($data['user_type'] === 'employee' && ! empty($data['employee_role'])) {
             $user->syncRoles([$data['employee_role']]);
         }
 
@@ -179,10 +175,11 @@ class UserManagementController extends Controller
             DB::statement('ALTER TABLE users ADD COLUMN employee_role VARCHAR(50) NULL AFTER user_type');
         }
 
+        DB::statement("UPDATE users SET user_type = 'employee' WHERE user_type = 'client'");
         DB::statement("ALTER TABLE users MODIFY user_type ENUM('employee','admin') NOT NULL DEFAULT 'employee'");
     }
 
-    protected function normalizeEmployeeRole(null|string $role): ?string
+    protected function normalizeEmployeeRole(?string $role): ?string
     {
         $value = trim((string) $role);
         if ($value === '') {

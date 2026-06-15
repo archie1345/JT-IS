@@ -5,6 +5,7 @@ import {
     FileSearch,
     FileText,
     LoaderCircle,
+    RotateCcw,
     ScanText,
     Trash2,
     Upload,
@@ -22,7 +23,7 @@ import {
 import OptionSelect from '@/components/prototype/OptionSelect.vue';
 import { useDocumentOcr } from '@/composables/useDocumentOcr';
 import { extractImportantDocumentData } from '@/lib/documentExtraction';
-import { csrfToken } from '@/lib/ocr';
+import { csrfFetch, type OcrResponse } from '@/lib/ocr';
 import type { UploadedDocument } from '@/types/project';
 
 type ProjectOption = {
@@ -79,6 +80,10 @@ const input = ref<HTMLInputElement | null>(null);
 const applyStatus = ref<null | string>(null);
 const applyError = ref<null | string>(null);
 const ocrNotice = ref<null | string>(null);
+const appliedExtractionComponent = ref<null | { id: number; type: string }>(
+    null,
+);
+const storedOcrDocumentId = ref<null | number>(null);
 const isApplying = ref(false);
 const isPreviewOpen = ref(false);
 const {
@@ -129,7 +134,7 @@ const selectedProjectValue = computed({
 const documentTypeOptions = [
     { value: 'contract', label: 'Kontrak' },
     { value: 'rab', label: 'RAB' },
-    { value: 'rap', label: 'RAP' },
+    { value: 'rap', label: 'rap' },
     { value: 'bamc', label: 'BAMC / Berita Acara' },
     { value: 'invoice', label: 'Tagihan' },
     { value: 'receipt', label: 'Bukti Pembayaran' },
@@ -145,6 +150,17 @@ const defaultDocumentTypeFor = (componentType: string) =>
         progress_report: 'bamc',
         project: 'contract',
     })[componentType] ?? 'other';
+
+const initialDocumentTypeFor = (componentType: string) =>
+    componentType === 'project' ? '' : defaultDocumentTypeFor(componentType);
+
+const extractionTypeForDocumentType: Record<string, string> = {
+    rab: 'rab',
+    rap: 'rap',
+    invoice: 'invoice',
+    receipt: 'project_cost',
+    bamc: 'progress_report',
+};
 
 const documentTypeLabel = (value?: null | string) =>
     documentTypeOptions.find((option) => option.value === value)?.label ??
@@ -212,7 +228,7 @@ const form = useForm<{
     documents: [],
     component_type: props.componentType,
     component_id: props.componentId,
-    document_type: defaultDocumentTypeFor(props.componentType),
+    document_type: initialDocumentTypeFor(props.componentType),
     ocr_text: '',
     ocr_engine: '',
 });
@@ -220,7 +236,6 @@ const form = useForm<{
 const canChooseProject = computed(
     () => !props.projectId && props.projectOptions.length > 0,
 );
-const canChooseConnection = computed(() => props.connectionOptions.length > 0);
 const defaultConnectionOption = computed<ConnectionOption>(() => ({
     value: `${props.componentType}:${props.componentId ?? 'general'}`,
     label: 'Dokumen umum',
@@ -250,11 +265,33 @@ const effectiveComponentType = computed(
 const effectiveComponentId = computed(
     () => selectedConnection.value?.componentId ?? props.componentId,
 );
+const extractionComponentType = computed(() => {
+    if (effectiveComponentType.value !== 'project') {
+        return effectiveComponentType.value;
+    }
+
+    return extractionTypeForDocumentType[form.document_type] ?? 'project';
+});
+const extractionComponentId = computed(() => {
+    if (extractionComponentType.value === effectiveComponentType.value) {
+        return effectiveComponentId.value;
+    }
+
+    if (
+        appliedExtractionComponent.value?.type ===
+        extractionComponentType.value
+    ) {
+        return appliedExtractionComponent.value.id;
+    }
+
+    return null;
+});
 const uploadUrl = computed(() =>
     selectedProjectId.value
         ? `/projects/${selectedProjectId.value}/documents`
         : '',
 );
+const hasDocumentType = computed(() => form.document_type.trim() !== '');
 const ocrConfigured = computed(
     () => page.props.features?.ocr?.configured ?? true,
 );
@@ -265,18 +302,28 @@ const ocrUnavailableMessage = computed(
 );
 
 watch(selectedConnection, (connection) => {
+    appliedExtractionComponent.value = null;
+
     if (connection?.projectId) {
         selectedProjectId.value = connection.projectId;
     }
 
     if (connection?.componentType) {
-        form.document_type = defaultDocumentTypeFor(connection.componentType);
+        form.document_type = initialDocumentTypeFor(connection.componentType);
     }
 });
+watch(
+    () => form.document_type,
+    () => {
+        appliedExtractionComponent.value = null;
+        storedOcrDocumentId.value = null;
+    },
+);
 const selectedFileNames = computed(() =>
     form.documents.map((file) => file.name).join(', '),
 );
 const statusText = computed(() => {
+    if (!hasDocumentType.value) return 'Pilih jenis dokumen';
     if (isReadingFile.value) return 'Membaca dokumen...';
     if (form.processing) return 'Mengunggah dokumen...';
     if (form.documents.length > 0) {
@@ -294,7 +341,7 @@ const extractedData = computed(() =>
     ocrText.value.trim()
         ? extractImportantDocumentData(
               ocrText.value,
-              effectiveComponentType.value,
+              extractionComponentType.value,
           )
         : null,
 );
@@ -348,7 +395,7 @@ const metadataPreview = computed(() => {
         {
             label: 'Progress',
             value:
-                effectiveComponentType.value === 'progress_report' &&
+                extractionComponentType.value === 'progress_report' &&
                 previewProgressPercent.value !== ''
                     ? previewProgressPercent.value
                     : null,
@@ -356,8 +403,8 @@ const metadataPreview = computed(() => {
         {
             label: 'Nilai',
             value:
-                (effectiveComponentType.value === 'invoice' ||
-                    effectiveComponentType.value === 'project_cost') &&
+                (extractionComponentType.value === 'invoice' ||
+                    extractionComponentType.value === 'project_cost') &&
                 previewAmount.value !== ''
                     ? previewAmount.value
                     : null,
@@ -388,12 +435,12 @@ const applySummary = computed(() => {
 const canApplyExtraction = computed(
     () =>
         Boolean(selectedProjectId.value && ocrText.value.trim()) &&
-        (effectiveComponentType.value === 'project' ||
-            effectiveComponentType.value === 'rab' ||
-            effectiveComponentType.value === 'rap' ||
-            effectiveComponentType.value === 'invoice' ||
-            effectiveComponentType.value === 'project_cost' ||
-            effectiveComponentType.value === 'progress_report'),
+        (extractionComponentType.value === 'project' ||
+            extractionComponentType.value === 'rab' ||
+            extractionComponentType.value === 'rap' ||
+            extractionComponentType.value === 'invoice' ||
+            extractionComponentType.value === 'project_cost' ||
+            extractionComponentType.value === 'progress_report'),
 );
 
 const openExtractionPreview = () => {
@@ -409,22 +456,33 @@ const openExtractionPreview = () => {
         ),
     ) as Record<string, number | string>;
     previewProgressPercent.value =
-        effectiveComponentType.value === 'progress_report'
+        extractionComponentType.value === 'progress_report'
             ? sanitizePercentInput(
                   String(extractedData.value?.metadata.progress_percent ?? ''),
               )
             : '';
     previewAmount.value =
-        effectiveComponentType.value === 'invoice' ||
-        effectiveComponentType.value === 'project_cost'
+        extractionComponentType.value === 'invoice' ||
+        extractionComponentType.value === 'project_cost'
             ? (extractedAmount.value ?? '')
             : '';
     previewBudgetItems.value = budgetItems.value.map((item) => ({ ...item }));
     isPreviewOpen.value = true;
 };
 
-const removePreviewBudgetItem = (index: number) => {
-    previewBudgetItems.value.splice(index, 1);
+const removeDraftField = (
+    type: 'project' | 'progress' | 'amount' | 'budget',
+    keyOrIndex?: string | number
+) => {
+    if (type === 'project' && typeof keyOrIndex === 'string') {
+        previewProjectUpdates.value[keyOrIndex] = '';
+    } else if (type === 'progress') {
+        previewProgressPercent.value = ''; 
+    } else if (type === 'amount') {
+        previewAmount.value = ''; 
+    } else if (type === 'budget' && typeof keyOrIndex === 'number') {
+        previewBudgetItems.value.splice(keyOrIndex, 1);
+    }
 };
 
 const runOcr = async (file: File) => {
@@ -439,6 +497,114 @@ const runOcr = async (file: File) => {
     }
 };
 
+type StoredOcrPayload = OcrResponse & {
+    document?: UploadedDocument;
+};
+
+const loadOcrPayload = (
+    payload: StoredOcrPayload,
+    successStatus = 'OCR selesai',
+) => {
+    const text = typeof payload.text === 'string' ? payload.text : '';
+
+    ocrText.value = text;
+    ocrEngine.value =
+        typeof payload.engine === 'string' ? payload.engine : 'ocr';
+    readerStatus.value = `${successStatus} via ${ocrEngine.value}`;
+    ocrProgress.value = 100;
+    uploadError.value = text.trim()
+        ? null
+        : 'OCR selesai, tetapi tidak menemukan teks yang bisa dibaca. Silakan input manual.';
+};
+
+const prepareExtractionFromDocument = (document: UploadedDocument) => {
+    if (document.projectId) {
+        selectedProjectId.value = document.projectId;
+    }
+
+    if (
+        document.documentType &&
+        documentTypeOptions.some(
+            (option) => option.value === document.documentType,
+        )
+    ) {
+        form.document_type = document.documentType;
+    }
+
+    if (document.componentType && document.componentId) {
+        const connectionValue = `${document.componentType}:${document.componentId}`;
+
+        if (
+            connectionSelectOptions.value.some(
+                (option) => option.value === connectionValue,
+            )
+        ) {
+            selectedConnectionValue.value = connectionValue;
+        }
+
+        if (document.componentType !== 'project') {
+            appliedExtractionComponent.value = {
+                type: document.componentType,
+                id: document.componentId,
+            };
+        }
+    }
+};
+
+const runStoredDocumentOcr = async (document: UploadedDocument) => {
+    applyStatus.value = null;
+    applyError.value = null;
+    ocrNotice.value = null;
+    resetOcr();
+    uploadError.value = null;
+    readerStatus.value = 'Mengirim dokumen tersimpan ke OCR';
+    ocrProgress.value = 10;
+    isReadingFile.value = true;
+
+    try {
+        prepareExtractionFromDocument(document);
+        storedOcrDocumentId.value = document.id;
+
+        const response = await csrfFetch(
+            `/projects/documents/${document.id}/ocr`,
+            {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                },
+            },
+        );
+        const payload = (await response.json().catch(() => ({}))) as
+            | StoredOcrPayload
+            | { message?: string };
+
+        if (!response.ok) {
+            throw new Error(
+                typeof payload.message === 'string'
+                    ? payload.message
+                    : 'OCR dokumen tersimpan gagal.',
+            );
+        }
+
+        loadOcrPayload(
+            payload as StoredOcrPayload,
+            'OCR dokumen tersimpan selesai',
+        );
+        prepareExtractionFromDocument(
+            (payload as StoredOcrPayload).document ?? document,
+        );
+    } catch (error) {
+        uploadError.value =
+            error instanceof Error
+                ? error.message
+                : 'OCR dokumen tersimpan gagal.';
+        readerStatus.value = 'OCR gagal';
+        ocrProgress.value = 0;
+    } finally {
+        isReadingFile.value = false;
+    }
+};
+
 const applyExtraction = async () => {
     if (!selectedProjectId.value || !ocrText.value.trim()) {
         return;
@@ -449,35 +615,36 @@ const applyExtraction = async () => {
     isApplying.value = true;
 
     try {
-        const response = await fetch('/projects/documents/apply-extraction', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken(),
+        const response = await csrfFetch(
+            '/projects/documents/apply-extraction',
+            {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    project_id: selectedProjectId.value,
+                    component_type: extractionComponentType.value,
+                    component_id: extractionComponentId.value,
+                    project_updates: previewProjectUpdates.value,
+                    items:
+                        extractionComponentType.value === 'rab' ||
+                        extractionComponentType.value === 'rap'
+                            ? previewBudgetItems.value
+                            : [],
+                    progress_percent:
+                        extractionComponentType.value === 'progress_report'
+                            ? previewProgressPercent.value || null
+                            : null,
+                    amount:
+                        extractionComponentType.value === 'invoice' ||
+                        extractionComponentType.value === 'project_cost'
+                            ? previewAmount.value || null
+                            : null,
+                }),
             },
-            body: JSON.stringify({
-                project_id: selectedProjectId.value,
-                component_type: effectiveComponentType.value,
-                component_id: effectiveComponentId.value,
-                project_updates: previewProjectUpdates.value,
-                items:
-                    effectiveComponentType.value === 'rab' ||
-                    effectiveComponentType.value === 'rap'
-                        ? previewBudgetItems.value
-                        : [],
-                progress_percent:
-                    effectiveComponentType.value === 'progress_report'
-                        ? previewProgressPercent.value || null
-                        : null,
-                amount:
-                    effectiveComponentType.value === 'invoice' ||
-                    effectiveComponentType.value === 'project_cost'
-                        ? previewAmount.value || null
-                        : null,
-            }),
-        });
+        );
 
         const payload = await response.json().catch(() => ({}));
 
@@ -493,8 +660,16 @@ const applyExtraction = async () => {
             typeof payload.message === 'string'
                 ? payload.message
                 : 'Draft hasil OCR berhasil diterapkan.';
+        if (
+            typeof payload.component_type === 'string' &&
+            typeof payload.component_id === 'number'
+        ) {
+            appliedExtractionComponent.value = {
+                type: payload.component_type,
+                id: payload.component_id,
+            };
+        }
         isPreviewOpen.value = false;
-        router.reload();
     } catch (error) {
         applyError.value =
             error instanceof Error
@@ -506,7 +681,13 @@ const applyExtraction = async () => {
 };
 
 const setFiles = (files: File[]) => {
+    if (!hasDocumentType.value) {
+        return;
+    }
+
     form.documents = files;
+    appliedExtractionComponent.value = null;
+    storedOcrDocumentId.value = null;
     resetOcr();
     ocrNotice.value = null;
 
@@ -524,6 +705,8 @@ const clearSelectedFiles = () => {
     form.reset('documents');
     form.ocr_text = '';
     form.ocr_engine = '';
+    appliedExtractionComponent.value = null;
+    storedOcrDocumentId.value = null;
     applyStatus.value = null;
     applyError.value = null;
     ocrNotice.value = null;
@@ -535,21 +718,33 @@ const clearSelectedFiles = () => {
 };
 
 const handleChange = (event: Event) => {
+    if (!hasDocumentType.value) {
+        return;
+    }
+
     const target = event.target as HTMLInputElement;
     setFiles(Array.from(target.files ?? []));
 };
 
 const handleDrop = (event: DragEvent) => {
+    if (!hasDocumentType.value) {
+        return;
+    }
+
     setFiles(Array.from(event.dataTransfer?.files ?? []));
 };
 
 const upload = () => {
-    if (!uploadUrl.value || form.documents.length === 0) {
+    if (
+        !uploadUrl.value ||
+        !hasDocumentType.value ||
+        form.documents.length === 0
+    ) {
         return;
     }
 
-    form.component_type = effectiveComponentType.value;
-    form.component_id = effectiveComponentId.value;
+    form.component_type = extractionComponentType.value;
+    form.component_id = extractionComponentId.value;
     form.ocr_text = form.documents.length === 1 ? ocrText.value : '';
     form.ocr_engine =
         form.documents.length === 1 && ocrEngine.value ? ocrEngine.value : '';
@@ -608,20 +803,6 @@ const removeDocument = (document: UploadedDocument) => {
                 />
             </label>
 
-            <label
-                v-if="canChooseConnection"
-                class="mt-4 block min-w-0 space-y-1.5"
-            >
-                <span class="text-xs font-medium text-muted-foreground"
-                    >Hubungkan ke</span
-                >
-                <OptionSelect
-                    v-model="selectedConnectionValue"
-                    :options="connectionSelectOptions"
-                    placeholder="Pilih koneksi"
-                />
-            </label>
-
             <label class="mt-4 block min-w-0 space-y-1.5">
                 <span class="text-xs font-medium text-muted-foreground"
                     >Jenis Dokumen</span
@@ -629,12 +810,19 @@ const removeDocument = (document: UploadedDocument) => {
                 <OptionSelect
                     v-model="form.document_type"
                     :options="documentTypeOptions"
+                    allow-empty
+                    empty-label="Pilih jenis dokumen"
                     placeholder="Pilih jenis dokumen"
                 />
             </label>
 
             <label
-                class="mt-4 flex min-h-40 min-w-0 cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-sidebar-border/80 bg-muted/20 px-4 py-6 text-center transition hover:bg-muted/40 sm:min-h-48 sm:px-5 sm:py-8 dark:border-sidebar-border"
+                class="mt-4 flex min-h-40 min-w-0 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-sidebar-border/80 bg-muted/20 px-4 py-6 text-center transition sm:min-h-48 sm:px-5 sm:py-8 dark:border-sidebar-border"
+                :class="
+                    hasDocumentType
+                        ? 'cursor-pointer hover:bg-muted/40'
+                        : 'cursor-not-allowed opacity-60'
+                "
                 @dragover.prevent
                 @drop.prevent="handleDrop"
             >
@@ -643,6 +831,7 @@ const removeDocument = (document: UploadedDocument) => {
                     type="file"
                     multiple
                     class="sr-only"
+                    :disabled="!hasDocumentType"
                     @change="handleChange"
                 />
                 <span
@@ -800,6 +989,7 @@ const removeDocument = (document: UploadedDocument) => {
                         form.processing ||
                         isReadingFile ||
                         form.documents.length === 0 ||
+                        !hasDocumentType ||
                         !uploadUrl
                     "
                     @click="upload"
@@ -853,15 +1043,39 @@ const removeDocument = (document: UploadedDocument) => {
                             </span>
                         </span>
                     </a>
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        class="self-end text-destructive sm:self-auto"
-                        @click="removeDocument(document)"
+                    <div
+                        class="flex shrink-0 items-center gap-1 self-end sm:self-auto"
                     >
-                        <Trash2 class="size-4" />
-                    </Button>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            :disabled="
+                                isReadingFile &&
+                                storedOcrDocumentId === document.id
+                            "
+                            @click="runStoredDocumentOcr(document)"
+                        >
+                            <LoaderCircle
+                                v-if="
+                                    isReadingFile &&
+                                    storedOcrDocumentId === document.id
+                                "
+                                class="mr-2 size-4 animate-spin"
+                            />
+                            <RotateCcw v-else class="mr-2 size-4" />
+                            OCR ulang
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            class="text-destructive"
+                            @click="removeDocument(document)"
+                        >
+                            <Trash2 class="size-4" />
+                        </Button>
+                    </div>
                 </div>
 
                 <div
@@ -891,29 +1105,40 @@ const removeDocument = (document: UploadedDocument) => {
                         <h4 class="text-sm font-medium">Field proyek</h4>
 
                         <div class="grid min-w-0 gap-3 lg:grid-cols-2">
-                            <label
+                            <div
                                 v-for="field in projectUpdatePreview"
                                 :key="field.label"
-                                class="min-w-0 space-y-1.5"
+                                class="flex min-w-0 items-start gap-2"
+                                :class="{ 'lg:col-span-2': field.label === 'Lokasi' }"
                             >
-                                <span
-                                    class="text-xs font-medium text-muted-foreground"
+                                <label class="min-w-0 flex-1 space-y-1.5">
+                                    <span class="text-xs font-medium text-muted-foreground">
+                                        {{ field.label }}
+                                    </span>
+
+                                    <textarea
+                                        v-if="field.label === 'Lokasi'"
+                                        v-model="previewProjectUpdates[field.key]"
+                                        class="min-h-24 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs"
+                                    />
+
+                                    <input
+                                        v-else
+                                        v-model="previewProjectUpdates[field.key]"
+                                        class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+                                    />
+                                </label>
+
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    class="mt-6 shrink-0 text-destructive"
+                                    @click="removeDraftField('project', field.key)"
                                 >
-                                    {{ field.label }}
-                                </span>
-
-                                <textarea
-                                    v-if="field.label === 'Lokasi'"
-                                    v-model="previewProjectUpdates[field.key]"
-                                    class="min-h-24 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs"
-                                />
-
-                                <input
-                                    v-else
-                                    v-model="previewProjectUpdates[field.key]"
-                                    class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
-                                />
-                            </label>
+                                    <Trash2 class="size-4" />
+                                </Button>
+                            </div>
                         </div>
                     </section>
 
@@ -921,56 +1146,71 @@ const removeDocument = (document: UploadedDocument) => {
                         v-if="metadataPreview.length > 0"
                         class="grid min-w-0 gap-3 sm:grid-cols-2"
                     >
-                        <label
-                            v-if="effectiveComponentType === 'progress_report'"
-                            class="min-w-0 space-y-1.5"
+                        <div
+                            v-if="extractionComponentType === 'progress_report' && previewProgressPercent !== null"
+                            class="flex min-w-0 items-start gap-2"
                         >
-                            <span
-                                class="text-xs font-medium text-muted-foreground"
+                            <label class="min-w-0 flex-1 space-y-1.5">
+                                <span class="text-xs font-medium text-muted-foreground">
+                                    Persentase Progress
+                                </span>
+
+                                <input
+                                    v-model="previewProgressPercent"
+                                    type="text"
+                                    inputmode="decimal"
+                                    pattern="^\d{0,3}(\.\d{0,2})?$"
+                                    min="0"
+                                    max="100"
+                                    step="0.01"
+                                    class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+                                    @input="handleProgressPercentInput"
+                                />
+                            </label>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                class="mt-6 shrink-0 text-destructive"
+                                @click="removeDraftField('progress')"
                             >
-                                Persentase Progress
-                            </span>
+                                <Trash2 class="size-4" />
+                            </Button>
+                        </div>
 
-                            <input
-                                v-model="previewProgressPercent"
-                                type="text"
-                                inputmode="decimal"
-                                pattern="^\d{0,3}(\.\d{0,2})?$"
-                                min="0"
-                                max="100"
-                                step="0.01"
-                                class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
-                                @input="handleProgressPercentInput"
-                            />
-                        </label>
-
-                        <label
-                            v-if="
-                                effectiveComponentType === 'invoice' ||
-                                effectiveComponentType === 'project_cost'
-                            "
-                            class="min-w-0 space-y-1.5"
+                        <div
+                            v-if="(extractionComponentType === 'invoice' || extractionComponentType === 'project_cost') && previewAmount !== null"
+                            class="flex min-w-0 items-start gap-2"
                         >
-                            <span
-                                class="text-xs font-medium text-muted-foreground"
-                            >
-                                Nilai
-                            </span>
+                            <label class="min-w-0 flex-1 space-y-1.5">
+                                <span class="text-xs font-medium text-muted-foreground">
+                                    Nilai
+                                </span>
 
-                            <input
-                                v-model="previewAmount"
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
-                            />
-                        </label>
+                                <input
+                                    v-model="previewAmount"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+                                />
+                            </label>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                class="mt-6 shrink-0 text-destructive"
+                                @click="removeDraftField('amount')"
+                            >
+                                <Trash2 class="size-4" />
+                            </Button>
+                        </div>
                     </section>
 
                     <section
                         v-if="
-                            (effectiveComponentType === 'rab' ||
-                                effectiveComponentType === 'rap') &&
+                            (extractionComponentType === 'rab' ||
+                                extractionComponentType === 'rap') &&
                             previewBudgetItems.length > 0
                         "
                         class="min-w-0 space-y-3"
@@ -1065,11 +1305,7 @@ const removeDocument = (document: UploadedDocument) => {
                                                 variant="ghost"
                                                 size="icon-sm"
                                                 class="text-destructive"
-                                                @click="
-                                                    removePreviewBudgetItem(
-                                                        index,
-                                                    )
-                                                "
+                                                @click="removeDraftField('budget', index)"
                                             >
                                                 <Trash2 class="size-4" />
                                             </Button>
@@ -1093,6 +1329,97 @@ const removeDocument = (document: UploadedDocument) => {
                     </p>
                 </div>
 
+                <section
+                    v-if="(extractionComponentType === 'rab' || extractionComponentType === 'rap') && previewBudgetItems.length > 0"
+                    class="min-w-0 space-y-3"
+                >
+                    <h4 class="text-sm font-medium">Baris anggaran</h4>
+
+                    <div class="max-h-[38dvh] max-w-full overflow-auto rounded-md border border-sidebar-border/60 dark:border-sidebar-border">
+                        <table class="min-w-[60rem] table-fixed text-sm">
+                            <thead class="sticky top-0 z-10 bg-muted text-left text-xs">
+                                <tr>
+                                    <th class="w-[20rem] px-3 py-2">Uraian</th>
+                                    <th class="w-[11rem] px-3 py-2">Bagian</th>
+                                    <th class="w-[7rem] px-3 py-2">Qty</th>
+                                    <th class="w-[7rem] px-3 py-2">Unit</th>
+                                    <th class="w-[10rem] px-3 py-2">Harga Satuan</th>
+                                    <th class="w-[10rem] px-3 py-2">Total</th>
+                                    <th class="w-[5rem] px-3 py-2"></th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                <tr
+                                    v-for="(item, index) in previewBudgetItems"
+                                    :key="`${item.description}-${index}`"
+                                    class="border-t border-sidebar-border/50 align-top"
+                                >
+                                    <td class="px-3 py-2">
+                                        <textarea
+                                            v-model="item.description"
+                                            class="min-h-12 w-full min-w-0 resize-y rounded-md border border-input bg-transparent px-2 py-1 text-sm"
+                                        />
+                                    </td>
+
+                                    <td class="px-3 py-2">
+                                        <input
+                                            v-model="item.sub_category"
+                                            class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-2 text-sm"
+                                        />
+                                    </td>
+
+                                    <td class="px-3 py-2">
+                                        <input
+                                            v-model="item.quantity"
+                                            type="number"
+                                            step="0.01"
+                                            class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-2 text-sm"
+                                        />
+                                    </td>
+
+                                    <td class="px-3 py-2">
+                                        <input
+                                            v-model="item.unit"
+                                            class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-2 text-sm"
+                                        />
+                                    </td>
+
+                                    <td class="px-3 py-2">
+                                        <input
+                                            v-model="item.unit_price"
+                                            type="number"
+                                            step="0.01"
+                                            class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-2 text-sm"
+                                        />
+                                    </td>
+
+                                    <td class="px-3 py-2">
+                                        <input
+                                            v-model="item.total_price"
+                                            type="number"
+                                            step="0.01"
+                                            class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-2 text-sm"
+                                        />
+                                    </td>
+
+                                    <td class="px-3 py-2">
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon-sm"
+                                            class="text-destructive"
+                                            @click="removeDraftField('budget', index)"
+                                        >
+                                            <Trash2 class="size-4" />
+                                        </Button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
                 <DialogFooter class="mt-4 shrink-0">
                     <Button
                         type="button"
@@ -1113,6 +1440,7 @@ const removeDocument = (document: UploadedDocument) => {
                         />
                         Terapkan Draft
                     </Button>
+                    
                 </DialogFooter>
             </DialogContent>
         </Dialog>

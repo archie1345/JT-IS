@@ -11,8 +11,8 @@ use App\Models\Rap;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -59,7 +59,7 @@ class InvoicesController extends CrudResourceController
 
         return Invoice::query()
             ->when($projectId > 0, fn (Builder $query) => $query->where('project_id', $projectId))
-            ->with(['project:id,client_id,name', 'project.client:id,name'])
+            ->with('project:id,name')
             ->orderByDesc('invoice_date')
             ->orderByDesc('id');
     }
@@ -71,7 +71,6 @@ class InvoicesController extends CrudResourceController
             'id' => $record->id,
             'project_id' => $record->project_id,
             'project_name' => $record->project?->name,
-            'client_name' => $record->project?->client?->name,
             'invoice_number' => $record->invoice_number,
             'amount' => $record->amount !== null ? (float) $record->amount : null,
             'tax_amount' => $record->tax_amount !== null ? (float) $record->tax_amount : null,
@@ -86,13 +85,11 @@ class InvoicesController extends CrudResourceController
     {
         return [
             'projectOptions' => Project::query()
-                ->with('client:id,name')
                 ->orderBy('name')
-                ->get(['id', 'client_id', 'name'])
+                ->get(['id', 'name'])
                 ->map(fn (Project $project): array => [
                     'value' => $project->id,
                     'label' => $project->name ?? 'Proyek tanpa nama',
-                    'hint' => $project->client?->name,
                 ])
                 ->all(),
             'uploadedDocuments' => ProjectDocument::query()
@@ -134,7 +131,7 @@ class InvoicesController extends CrudResourceController
     public function show(int $id): Response
     {
         $record = Invoice::query()
-            ->with(['items', 'project:id,client_id,name', 'project.client:id,name'])
+            ->with(['items', 'project:id,name'])
             ->findOrFail($id);
 
         return Inertia::render('finance/FinancialDocumentDetails', [
@@ -195,8 +192,7 @@ class InvoicesController extends CrudResourceController
     {
         $invoice->load([
             'items',
-            'project:id,client_id,name',
-            'project.client:id,name',
+            'project:id,name',
         ]);
 
         $items = $invoice->items()
@@ -303,13 +299,11 @@ class InvoicesController extends CrudResourceController
     protected function projectOptions(): array
     {
         return Project::query()
-            ->with('client:id,name')
             ->orderBy('name')
-            ->get(['id', 'client_id', 'name'])
+            ->get(['id', 'name'])
             ->map(fn (Project $project): array => [
                 'value' => $project->id,
                 'label' => $project->name ?? 'Proyek tanpa nama',
-                'hint' => $project->client?->name,
             ])
             ->all();
     }

@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { useDocumentOcr } from '@/composables/useDocumentOcr';
 import { extractImportantDocumentData } from '@/lib/documentExtraction';
-import { csrfToken } from '@/lib/ocr';
+import { csrfFetch } from '@/lib/ocr';
 import type {
     ExtractedDocumentItem,
     ExtractedDocumentMetadata,
@@ -26,18 +26,12 @@ type ProjectOption = {
     name: string;
 };
 
-type ClientOption = {
-    id: number;
-    name: string;
-};
-
 type BudgetPreviewItem = ExtractedDocumentItem & {
     category: string;
     subCategory: string;
 };
 
 const props = defineProps<{
-    clients?: ClientOption[];
     projects?: ProjectOption[];
 }>();
 
@@ -62,7 +56,6 @@ const {
 });
 const selectedProjectId = ref('');
 const autoCreateProject = ref(false);
-const selectedClientId = ref('');
 const createdProjects = ref<ProjectOption[]>([]);
 const budgetKind = ref<'rab' | 'rap'>('rab');
 const saveStatus = ref<null | string>(null);
@@ -223,27 +216,25 @@ const saveBudgetItems = async () => {
     isSavingBudgetItems.value = true;
 
     try {
-        const response = await fetch('/ai-document-extraction/budget-items', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken(),
+        const response = await csrfFetch(
+            '/ai-document-extraction/budget-items',
+            {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    project_id: selectedProjectId.value
+                        ? Number(selectedProjectId.value)
+                        : null,
+                    auto_create_project: autoCreateProject.value,
+                    kind: budgetKind.value,
+                    project_updates: projectUpdatePayload.value,
+                    items: budgetItems.value.map(budgetItemPayload),
+                }),
             },
-            body: JSON.stringify({
-                project_id: selectedProjectId.value
-                    ? Number(selectedProjectId.value)
-                    : null,
-                auto_create_project: autoCreateProject.value,
-                client_id: selectedClientId.value
-                    ? Number(selectedClientId.value)
-                    : null,
-                kind: budgetKind.value,
-                project_updates: projectUpdatePayload.value,
-                items: budgetItems.value.map(budgetItemPayload),
-            }),
-        });
+        );
 
         const payload = await response.json().catch(() => ({}));
 
@@ -602,7 +593,7 @@ const handleDrop = (event: DragEvent) => {
                         </label>
 
                         <div
-                            class="grid min-w-0 gap-2 sm:grid-cols-[minmax(12rem,1fr)_minmax(10rem,0.8fr)_8rem_auto]"
+                            class="grid min-w-0 gap-2 sm:grid-cols-[minmax(12rem,1fr)_8rem_auto]"
                         >
                             <select
                                 v-model="selectedProjectId"
@@ -616,21 +607,6 @@ const handleDrop = (event: DragEvent) => {
                                     :value="String(project.id)"
                                 >
                                     {{ project.name }}
-                                </option>
-                            </select>
-
-                            <select
-                                v-model="selectedClientId"
-                                class="h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                                :disabled="!autoCreateProject"
-                            >
-                                <option value="">No client</option>
-                                <option
-                                    v-for="client in props.clients ?? []"
-                                    :key="client.id"
-                                    :value="String(client.id)"
-                                >
-                                    {{ client.name }}
                                 </option>
                             </select>
 

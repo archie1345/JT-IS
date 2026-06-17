@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import type { BreadcrumbItem } from '@/types';
 import type { UploadedDocument } from '@/types/project';
 import type { ProjectOption, ConnectionOption } from '@/types/options';
+import DocumentList from '@/components/shared/DocumentList.vue';
+import { usePage } from '@inertiajs/vue3';
 
 type Field = {
     name: string;
@@ -65,6 +67,10 @@ watch(
     },
     { deep: true }
 );
+
+const page = usePage();
+
+const isPipelinePage = computed(() => page.url.startsWith('/pipeline'));
 
 const isInvoiceRecord = computed(
     () => props.upload?.componentType === 'invoice',
@@ -167,6 +173,21 @@ const openInvoicePreview = () => {
                             </Button>
                         </div>
                     </form>
+                </EntityPageSection>
+
+                <EntityPageSection
+                    v-if="props.upload && !isPipelinePage"
+                    title="File Terlampir"
+                    description="Dokumen yang terhubung ke data ini."
+                >
+                    <DocumentList
+                        :project-id="props.upload.projectId"
+                        :component-type="props.upload.componentType"
+                        :component-id="props.upload.componentId"
+                        :documents="props.upload.documents"
+                        title="File Data"
+                        description="Upload file sumber dan bukti pendukung untuk data ini."
+                    />
                 </EntityPageSection>
             </section>
         </div>
